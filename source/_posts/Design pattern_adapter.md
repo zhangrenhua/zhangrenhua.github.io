@@ -14,7 +14,7 @@ date: 2015-11-07 17:11:12
 　用电器做例子，笔记本电脑的插头一般都是三相的，即除了阳极、阴极外，还有一个地极。而有些地方的电源插座却只有两极，没有地极。电源插座与笔记本电脑的电源插头不匹配使得笔记本电脑无法使用。这时候一个三相到两相的转换器（适配器）就能解决此问题，而这正像是本模式所做的事情。
 适配器模式有类的适配器模式和对象的适配器模式两种不同形式。
 ### 类适配器模式
-![Alt text](/images/sjms-lspq.jpg)
+![Alt text](http://7xoqbc.com1.z0.glb.clouddn.com/sjms-lspq.jpg)
 在上图中可以看出，Adaptee类并没有sampleOperation2()方法，而客户端则期待这个方法。为使客户端能够使用Adaptee类，提供一个中间环节，即类Adapter，把Adaptee的API与Target类的API衔接起来。Adapter与Adaptee是继承关系，这决定了这个适配器模式是类的：
 模式所涉及的角色有：
 ●&nbsp;&nbsp;&nbsp;&nbsp;目标(Target角色：这就是所期待得到的接口。注意：由于这里讨论的是类适配器模式，因此目标不可以是类。
@@ -56,7 +56,7 @@ public class Adapter extends Adaptee implements Target {
 ```
 ### 对象适配器模式
 与类的适配器模式一样，对象的适配器模式把被适配的类的API转换成为目标类的API，与类的适配器模式不同的是，对象的适配器模式不是使用继承关系连接到Adaptee类，而是使用委派关系连接到Adaptee类。
-![Alt text](/images/sjms-dspq.jpg)
+![Alt text](http://7xoqbc.com1.z0.glb.clouddn.com/sjms-dspq.jpg)
 从上图可以看出，Adaptee类并没有sampleOperation2()方法，而客户端则期待这个方法。为使客户端能够使用Adaptee类，需要提供一个包装(Wrapper)类Adapter。这个包装类包装了一个Adaptee的实例，从而此包装类能够把Adaptee的API与Target类的API衔接起来。Adapter与Adaptee是委派关系，这决定了适配器模式是对象的。
 ```
 public interface Target {
