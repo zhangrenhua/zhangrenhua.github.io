@@ -13,7 +13,7 @@ date: 2016-4-19 20:40:16
 笔者使用Spark1.6.0，Spark升级尤为频繁，每次都修复大量bug，所以选择新版本。
 本人第一次编写scala程序，望大家多多指教。
 
-地址：https://github.com/zhangrenhua/dataload
+项目地址：https://github.com/zhangrenhua/dataload
 
 ## 项目功能
 
