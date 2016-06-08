@@ -1,6 +1,6 @@
 ---
 title: 实时计算UV《基数估计算法》
-description: <br/><br/>在大数据分布式计算的时候，PV(Page View)可以很方便相加合并，但UV(Unique Visitor)不能。<br/><br/>分布式计算的情况下，几百个业务、数十万URL同时统计UV，如果还要分时段统计(每分钟/每5分钟合并/每小时合并/每天合并)，内存的消耗是不可接受的。<br/><br/>这个时候，概率的力量就体现了出来。我们在Probabilistic Data Structures for Web Analytics and Data Mining可以看到，精确的哈希表统计UV和基数计数的内存比较，并不是一个数量级的。基数计数可以让你实现UV的合并，内存消耗极小，并且误差完全在可接受范围内。<br/><br/>UV概念可参考<a href="/2016/05/26/IP、网站浏览量（PV）、访问次数（VV）、独立访客（UV）有什么区别？/">《网站浏览量（PV）、访问次数（VV）、独立访客（UV）区别》</a>具体算法是Adaptive Counting，使用的计算库是stream-2.7.0.jar。
+description: <br/><br/>在大数据分布式计算的时候，PV(Page View)可以很方便相加合并，但UV(Unique Visitor)不能。<br/><br/>分布式计算的情况下，几百个业务、数十万URL同时统计UV，如果还要分时段统计(每分钟/每5分钟合并/每小时合并/每天合并)，内存的消耗是不可接受的。<br/><br/>这个时候，概率的力量就体现了出来。我们在Probabilistic Data Structures for Web Analytics and Data Mining可以看到，精确的哈希表统计UV和基数计数的内存比较，并不是一个数量级的。基数计数可以让你实现UV的合并，内存消耗极小，并且误差完全在可接受范围内。<br/><br/>UV概念可参考<a href="/2016/06/07/IP、网站浏览量（PV）、访问次数（VV）、独立访客（UV）有什么区别？/">《网站浏览量（PV）、访问次数（VV）、独立访客（UV）区别》</a>具体算法是Adaptive Counting，使用的计算库是stream-2.7.0.jar。
 tags: [java]
 categories: 网站分析
 date: 2016-6-8 10:59:14
@@ -14,7 +14,7 @@ date: 2016-6-8 10:59:14
 
 这个时候，概率的力量就体现了出来。我们在Probabilistic Data Structures for Web Analytics and Data Mining可以看到，精确的哈希表统计UV和基数计数的内存比较，并不是一个数量级的。基数计数可以让你实现UV的合并，内存消耗极小，并且误差完全在可接受范围内。
 
-UV概念可参考[《网站浏览量（PV）、访问次数（VV）、独立访客（UV）区别》](/2016/05/26/IP、网站浏览量（PV）、访问次数（VV）、独立访客（UV）有什么区别？/)
+UV概念可参考[《网站浏览量（PV）、访问次数（VV）、独立访客（UV）区别》](/2016/06/07/IP、网站浏览量（PV）、访问次数（VV）、独立访客（UV）有什么区别？/)
 具体算法是Adaptive Counting，使用的计算库是stream-2.7.0.jar。
 
 
