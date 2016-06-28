@@ -100,9 +100,7 @@ create /solr "solr"
 ```
 
 
-
 #### 安装solr自带例子
-
 
 **下载**
 
@@ -133,9 +131,17 @@ tar zxvf solr-6.0.1.tgz
 
 <font color="red">在Solr部署中，必须先将collection配置文件上传至zookeeper中，后面才能创建collection。如果你不是新手，你也可以上传你自己真正要使用的配置文件。</font>
 
+查看zk目录：
+```
+./bin/zkCli.sh -server localhost:2181
+```
+![Alt text](http://7xoqbc.com1.z0.glb.clouddn.com/solr6.0.1-zk-ls.png)
+
+
 以前的schema.xml换成了managed-schema文件，具体配置文档：https://cwiki.apache.org/confluence/display/solr/Documents%2C+Fields%2C+and+Schema+Design
 
-#### 创建collection并导入测试数据
+
+#### 使用自带的jetty启动服务
 
 **进入solr-6.0.1目录，启动服务：**
 ```
@@ -159,8 +165,12 @@ cd solr-6.0.1
 
 命令行操作参数参考：https://cwiki.apache.org/confluence/display/solr/Command+Line+Utilities
 
-**solr面板：**
+
+solr面板
 ![Alt text](http://7xoqbc.com1.z0.glb.clouddn.com/solr6.0.1-dashboard.png)
+
+
+#### 创建collection并导入测试数据
 
 **在页面创建collections集群**
 
