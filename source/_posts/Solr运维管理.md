@@ -1,6 +1,6 @@
 ---
 title: Solr运维管理
-description: 
+description: Solr运维管理，主要有Collection、Core、Shard、Replica的创建删除与更新，以及后续会添加一些应急处理方案。
 tags: [hadoop生态圈, solr]
 categories: solr
 date: 2016-6-23 09:29:24
@@ -232,7 +232,7 @@ http://hynamet01:8983/solr/admin/collections?action=DELETESHARD&collection=colle
 
 
 
-待续。。。
+未完待续。。。
 
 
 
