@@ -1,6 +1,6 @@
 ---
 title: Spark streaming数据无丢失读取kafka，以及源码分析
-description: 忙于工作交接，忙于“吸毒”，导致一个多月没有更新博客了。也许是因为这边的工作环境原因吧！没有比较大一点的项目，没有大数据量，导致学习兴趣下降。逆水行舟不进则退，必须开始动起来，最近自己在规划一个apache日志实时处理，用于监控项目的负载情况和简单的网络攻击防御处理。</br>采用spark streaming + kafka实时处理数据，保证数据的无丢失读取。</br>上面所说的“吸毒”其实就是，守望先锋。。。</br><h2 id="_2"><a name="user-content-_2" href="#_2" class="headeranchor-link" aria-hidden="true"><span class="headeranchor"></span></a>流处理的概念</h2></br>先解释下流处理中的一些概念：</br>- At most once 每条数据最多被处理一次</br>- At least once 每条数据最少被处理一次</br>- Exactly once 每条数据只会被处理一次</br></br>kafka streaming中怎么能满足上面的其中一点呢？请看下面分析与总结。
+description: 忙于工作交接，忙于“吸毒”，导致一个多月没有更新博客了。也许是因为这边的工作环境原因吧！没有比较大一点的项目，没有大数据量，导致学习兴趣下降。逆水行舟不进则退，必须开始动起来，最近自己在规划一个apache日志实时处理，用于监控项目的负载情况和简单的网络攻击防御处理。</br>采用spark streaming + kafka实时处理数据，保证数据的无丢失读取。</br>上面所说的“吸毒”其实就是，守望先锋。。。</br><h2 id="_2"><a name="user-content-_2" href="#_2" class="headeranchor-link" aria-hidden="true"><span class="headeranchor"></span></a>流处理的概念</h2>先解释下流处理中的一些概念：</br>- At most once 每条数据最多被处理一次</br>- At least once 每条数据最少被处理一次</br>- Exactly once 每条数据只会被处理一次</br></br>kafka streaming中怎么能满足上面的其中一点呢？请看下面分析与总结。
 tags: [hadoop生态圈, spark streaming, streaming-loganalysis]
 categories: spark
 date: 2016-8-2 16:06:10
@@ -35,16 +35,16 @@ kafka streaming中怎么能满足上面的其中一点呢？请看下面分析�
 #### 源码分析
 
 查看`KafkaUtils` 84行左右，当调用createStream的时候其实是创建了一个`KafkaInputDStream`对象:
-![KafkaUtils source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source1.jpg)
+![KafkaUtils source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source1.png)
 
 查看`KafkaInputDStream`类，有个`getReceiver`方法，改方法是获取一个kafka数据接收器，根据`useReliableReceiver`参数来决定使用哪个接收器：
-![KafkaInputDStream source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source2.jpg)
+![KafkaInputDStream source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source2.png)
 
 这里先来讲`KafkaReceiver`接收器，在`KafkaInputDStream`中的`KafkaReceiver`类中，可以看出，这是一个简单的kafka消息接收器，采用`ConsumerConnector`来接收数据：
-![KafkaInputDStream source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source3.jpg)
+![KafkaInputDStream source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source3.png)
 
 上面这个类，就是简单的数据接收器，下面就来具体讲下`ReliableKafkaReceiver`接收器，从名字可以看出它是一个可靠的接收器，为什么呢？那就从开始阅读源码吧：
-![ReliableKafkaReceiver source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source4.jpg)
+![ReliableKafkaReceiver source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source4.png)
 
 从上面类的注释中可以看出，
 1、它默认是关闭的，设置`spark.streaming.receiver.writeaheadlog.enable=true` 即可启用。
@@ -53,7 +53,7 @@ kafka streaming中怎么能满足上面的其中一点呢？请看下面分析�
 4、ReliableKafkaReceiver已将`auto.commit.enable`参数设置为false，外面设置为true不会生效，并会打印警告日志。
 
 ReliableKafkaReceiver类，其实也是采用`ConsumerConnector`来获取数据，但是有一点不同的，就是ReliableKafkaReceiver是自动维护topic的偏移信息的，通过zkClient来手动的提交偏移量：
-![ReliableKafkaReceiver source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source5.jpg)
+![ReliableKafkaReceiver source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source5.png)
 
 
 查看streaming数据获取的启动方法`onStart`，该方法主要做了以下处理：
@@ -63,47 +63,47 @@ ReliableKafkaReceiver类，其实也是采用`ConsumerConnector`来获取数据�
 4、`props.setProperty(AUTO_OFFSET_COMMIT, "false")`，强制设置`auto.commit.enable`为false
 5、`consumerConnector`，初始化消息读取器
 6、`zkClient`，初始化zkClient，用户读写kafka偏移信息
-![ReliableKafkaReceiver source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source6.jpg)
+![ReliableKafkaReceiver source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source6.png)
 
 根据topic数据量来创建线程池，启动MessageHandler线程来获取数据：
-![ReliableKafkaReceiver source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source7.jpg)
+![ReliableKafkaReceiver source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source7.png)
 
 一直接收数据，并调用`storeMessageAndMetadata`方法来存储数据：
-![ReliableKafkaReceiver source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source8.jpg)
+![ReliableKafkaReceiver source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source8.png)
 
 `storeMessageAndMetadata`方法中通过调用`blockGenerator.addDataWithCallback(data, metadata)`来添加数据：
-![ReliableKafkaReceiver source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source9.jpg)
+![ReliableKafkaReceiver source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source9.png)
 
 `addDataWithCallback`方法中其实是调用
-![ReliableKafkaReceiver source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source10.jpg)
+![ReliableKafkaReceiver source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source10.png)
 
 调用`waitToPush`控制接收速度，并将数据添加到`currentBuffer`中，然后调用GeneratedBlockHandler的`onAddData`方法将偏移量信息更新到`topicPartitionOffsetMap`中：
-![ReliableKafkaReceiver source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source11.jpg)
+![ReliableKafkaReceiver source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source11.png)
 
 现在数据放入`currentBuffer`了，数据接收的偏移量也更新了，那么数据什么时候被读取？数据偏移量又是什么时候提交呢？请看BlockGenerator类的`start`方法，此方法做了三件事情：
 1、将状态设置为active
 2、启动`blockIntervalTimer`线程
 3、启动`blockPushingThread`线程
-![BlockGenerator source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source12.jpg)
+![BlockGenerator source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source12.png)
 
 `blockIntervalTimer`对象RecurringTimer类，该类其实就是每隔一段时间调用GeneratorState类的`updateCurrentBuffer`方法，`updateCurrentBuffer`方法是将当前从kafka接收到的数据`currentBuffer`放到一个block中，重置`currentBuffer`数据，并将block阻塞put到`blocksForPushing`中：
-![BlockGenerator source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source13.jpg)
+![BlockGenerator source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source13.png)
 
 当一个block被创建是调用`listener.onGenerateBlock(blockId)`更新偏移量：
-![ReliableKafkaReceiver source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source14.jpg)
-![ReliableKafkaReceiver source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source15.jpg)
+![ReliableKafkaReceiver source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source14.png)
+![ReliableKafkaReceiver source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source15.png)
 
 这个线程的频度控制是有参数`spark.streaming.blockInterval`控制的：
-![ReliableKafkaReceiver source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source17.jpg)
+![ReliableKafkaReceiver source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source17.png)
 
 `blockPushingThread`线程调用`keepPushingBlocks`方法，
-![ReliableKafkaReceiver source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source16.jpg)
+![ReliableKafkaReceiver source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source16.png)
 
 该方法主要从`blocksForPushing`中获取block，然后调用`pushBlock`：
-![ReliableKafkaReceiver source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source18.jpg)
+![ReliableKafkaReceiver source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source18.png)
 
 `pushBlock`方法则调用GeneratedBlockHandler的`onPushBlock`方法，`onPushBlock`方法这调用`storeBlockAndCommitOffset`进行数据推送，重试次数为3，如果3次推送失败，则停止接收。调用`store`函数来将block数据推入spark内存中：
-![ReliableKafkaReceiver source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source19.jpg)
+![ReliableKafkaReceiver source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source19.png)
 
 #### 结论
 
@@ -135,32 +135,32 @@ ReliableKafkaReceiver将数据放入缓存，通过重试机制保证写入到sp
 `fromOffsets`：topic下partition的偏移信息
 `messageHandler`：消息处理器
 创建DirectKafkaInputDStream对象：
-![DirectKafkaInputDStream source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source20.jpg)
+![DirectKafkaInputDStream source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source20.png)
 
 DirectKafkaInputDStream，在进行运算的时候会调用`compute`方法，此方法主要目的创建并返回KafkaRDD对象，真正的数据处理也在KafkaRDD中，使用Kafka Direct方式没有缓存，数据是一批批获取，
 DirectKafkaInputDStream继承InputDStream，最大重试次数为1，来确保语义一致性：
-![DirectKafkaInputDStream source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source21.jpg)
+![DirectKafkaInputDStream source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source21.png)
 
 KafkaRDD类中的`getPartitions`方法，从传入的偏移量信息中获取到每个Topic的Partition的Leader信息，host和port，然后实例化KafkaRDDPartition对象，
 KafkaRDDPartition继承Partition，封装了Partition的信息，如topic，偏移from和until，Broker的host和port信息。
-![KafkaRDD source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source22.jpg)
+![KafkaRDD source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source22.png)
 
 `compute`方法，如果偏移量from和util相等，则直接返回空的Iterator (偏移量相等则表示无数据)，不等则实例化KafkaRDDIterator对象:
-![KafkaRDD source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source23.jpg)
+![KafkaRDD source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source23.png)
 
 `clamp`方法。从maxMessagesPerPartition中获取。从配置文件中获取spark.streaming.kafka.maxRatePerPartition，比较maxRateLimitPerPartition和(limit / numPartitions)的值，并取最小值。其中sescPerBatch为传入的Duration的值，得到每一个BatchDuration处理的最大Offset值，当前的偏移量与允许每个Partition最大的消息处理量和该Partition当前的Offset值，这两个的最小值，作为untilOffsets。
-![KafkaRDDIterator source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source26.jpg)
+![KafkaRDDIterator source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source26.png)
 
 KafkaRDDIterator继承NextIterator，具有iterator的特性，有getNext和hasNext方法，可以对数据迭代操作并计算。KafkaRDDIterator内部，以传入的KafkaParams参数构造了一个和Kafka集合交互的KafkaCluster对象，处理Partition的Leader发生变化时的具体处理办法，重写了getNext方法。
 
 162行，如果TaskContext中之前没有失败过，即attemptNumber为0，则直接以KafkaRDDPartition中的host和port信息来连接Kafka，返回SimpleConsumer(Kafak的简单消费者，备注Kafka中还有高级消费者的API)；如果之前失败过，则找到该Partition新的Leader Broker信息，然后再进行连接。
-![KafkaRDDIterator source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source24.jpg)
+![KafkaRDDIterator source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source24.png)
 
 如果迭代器iter为空或者没有数据，则调用consumer发送FetchRequestBuilder给Broker，获取到一批数据。接下来再次判断iter是否有数据，如果没有则表示以读取到指定的untilOffset了。如果iter有数据，也会对offset和untilOffset进行比较，如果当前消费的offset大于等于untilOffset，则返回。如果当消费的offset小于untilOffset，则更新当前请求的Offset值，并调用messageHandler来处理当前的数据。其中messageHandler就是用户传入的对读取到的数据具体操作的函数。
-![KafkaRDDIterator source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source25.jpg)
+![KafkaRDDIterator source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source25.png)
 
 Spark Streaming可以根据输入的数据流量和当前的处理流量进行比较。动态资源分配调整，可以通过spark.streaming.backpressure.enabled来设置：
-![RateController source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source27.jpg)
+![RateController source](http://7xoqbc.com1.z0.glb.clouddn.com/spark-streaming-kafka-source27.png)
 
 
 ### 结论
