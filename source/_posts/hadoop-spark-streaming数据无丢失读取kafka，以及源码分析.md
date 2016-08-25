@@ -166,8 +166,8 @@ Spark Streaming可以根据输入的数据流量和当前的处理流量进行�
 ### 结论
 
 1、Kafka Direct底层采用SimpleConsumer对象来获取数据，根据传入的偏移信息来批次获取数据。
-2、使用Kafka Direct方式没有缓存，不存在内存溢出的问题，而使用Kafka Receiver有缓存。Receiver和Executor绑定，不能分布式，而使用Kafka Direct，默认数据就在多个Executor上。采用Receiver方式，数据来不及处理，延迟多次后Spark Streaming就有可能奔溃
-3、采用Kafka Direct方式，一批数据处理完，再去取一批数据，不会造成Spark Streaming奔溃。Kafka Direct可以办到语义一致性，确保数据消费。
+2、采用Kafka Direct方式，一批数据处理完，再去取一批数据。Kafka Direct可以办到语义一致性，确保数据消费。
+3、kafka Receiver通过高级api，性能没有Direct多线程多分区并行读取高。
 
 **如何确保数据无丢失？**
 
@@ -182,6 +182,8 @@ Spark Streaming可以根据输入的数据流量和当前的处理流量进行�
 下面通过示例代码来演示，kafka streaming数据无丢失读取，虽然不能保证数据只能被处理一次。
 
 <font color="red">但是我们可以从代码逻辑方面处理，只有在将数据处理完成后再向zk中提交kafka偏移信息。就算程序发生异常退出，我们在批次每运行时都清理上次没有完成的状态即可。</font>
+
+为什么我这里没有讲到使用checkpoint，因为checkpoint也不能完全保证数据不丢失，反而会降低streming的吞吐量。
 
 
 ## 示例代码
@@ -428,3 +430,11 @@ public final class JavaDirectKafkaWordCount {
 ```
 
 上面程序只是一个简单的读取kafka数据并打印的示例，采用`KafkaUtils.createDirectStream`来创建streaming，直接从kafka的broker服务上读取数据，存储并设置`offset`。
+
+为了确保task不会重复执行请设置下面两个参数：
+`spark.task.maxFailures=1`，Task重试次数为1，即不重试
+`spark.speculation=false`，关闭推测执行
+
+## 参考文档
+
+- http://spark.apache.org/docs/latest/streaming-kafka-integration.html
