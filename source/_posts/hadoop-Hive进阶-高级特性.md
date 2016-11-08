@@ -373,6 +373,12 @@ public class ThriftUtil {
 
     public static void main(String[] args) throws Exception {
         createCliHiveClient(true, "cdh-s1", 10000, 60);
+
+        TOpenSessionReq openReq = new TOpenSessionReq();
+        TOpenSessionResp openResp = client.OpenSession(openReq);
+        TSessionHandle sessHandle = openResp.getSessionHandle();
+        TExecuteStatementResp op = excuteSql(client, sessHandle, "select * from test", false, null);
+        getResult(op.getOperationHandle(), client);
     }
 
     public static void getResult(TOperationHandle op, TCLIService.Client client) throws TException {
