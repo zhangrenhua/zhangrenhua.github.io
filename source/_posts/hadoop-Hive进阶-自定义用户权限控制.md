@@ -34,6 +34,26 @@ Hive从0.10版本(包含0.10版本)以后可以通过元数据来控制权限，
 </property>
 ```
 
+cloudera manager配置（hive-site.xml 的 Hive 服务高级配置代码段（安全阀））：
+```
+<property>
+<name>hive.security.authorization.enabled</name>
+<value>true</value>
+<description>enable or disable the hive client authorization</description>
+</property>
+
+<property>
+<name>hive.security.authorization.createtable.owner.grants</name>
+<value>ALL</value>
+<description>the privileges automatically granted to the owner whenever a table gets created. An example like"select,drop" will grant select and drop privilege to the owner of the table</description>
+</property>
+
+<property>
+<name>hive.security.authorization.task.factory</name>
+<value>org.apache.hadoop.hive.ql.parse.authorization.HiveAuthorizationTaskFactoryImpl</value>
+</property>
+```
+
 `hive.security.authorization.enabled`：是开启权限验证，默认为false。
 `hive.security.authorization.createtable.owner.grants`：是指表的创建者对表拥有所有权限，例如创建一个表table1，这个用户对表table1拥有SELECT、DROP等操作。还有个值是NULL，表示表的创建者无法访问该表，这个肯定是不合理的。
 

@@ -119,7 +119,6 @@ tif命名规范：
 在`LAN.test.exp0.tif`所在的目录下打开一个命令行，产生相应的Box文件（*.box），该文件记录了tesseract识别出来的每一个字和其位置坐标。
 ```
 $ tesseract LAN.test.exp0.tif LAN.test.exp0 batch.nochop makebox
-batch.nochop makebox
 Tesseract Open Source OCR Engine v3.02 with Leptonica
 Page 1 of 2
 Page 2 of 2
