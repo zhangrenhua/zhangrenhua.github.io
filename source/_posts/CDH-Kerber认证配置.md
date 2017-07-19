@@ -95,7 +95,7 @@ default_domain：代表默认的域名
  kdc_tcp_ports = 88
 
 [realms]
- EXAMPLE.COM = {
+ BIGMAN.COM = {
   #master_key_type = aes256-cts
   acl_file = /var/kerberos/krb5kdc/kadm5.acl
   dict_file = /usr/share/dict/words
@@ -140,7 +140,7 @@ systemctl start kadmin
 
 ### 创建Kerberos管理员
 
-# 需要设置两次密码，当前设置为root
+**需要设置两次密码，当前设置为root**
 kadmin.local -q "addprinc cloudera-scm/admin"
 
 principal的名字的第二部分是admin,那么该principal就拥有administrative privileges这个账号将会被CDH用来生成其他用户/服务的principal
