@@ -253,6 +253,13 @@ grant  'hive', 'RWCA'   #授权hive用户有rwca权限
 
 参考：https://discuss.pivotal.io/hc/en-us/articles/201998166-HBase-SQL-statement-fails-with-Insufficient-permissions-for-user
 
+**hive on hbase授权impala用户**
+```
+kinit -kt /var/kerberos/keytab/hbase.keytab hbase/bigman-m2@BIGMAN.COM
+hbase shell
+grant  'impala', 'RWCA'
+```
+
 
 **sentry必须所有机器都有权限的用户和用户组，否则报错**
 
@@ -265,7 +272,6 @@ create role admin_role;
 GRANT ALL ON SERVER server1 TO ROLE admin_role;
 GRANT ROLE admin_role TO GROUP hive;
 
-
 drop role test_role;
 create role test_role;
 GRANT ALL ON table default.test TO ROLE test_role;
@@ -276,6 +282,66 @@ create role test_role;
 GRANT ALL ON database default TO ROLE test_role;
 GRANT ROLE test_role TO GROUP test;
 ```
+
+
+### 创建管理员权限用户
+
+#### 创建系统用户和组
+
+所有机器创建`bigman`用户以及`supergroup`组
+
+```
+groupadd supergroup
+useradd -g supergroup bigman
+```
+
+supergroup代表有hdfs管理员权限，可以根据hadoop配置参数`dfs.permissions.supergroup, dfs.permissions.superusergroup`修改。
+由于impala、impala验证的是操作系统的用户，不能使用虚拟用户，所以得创建系统级的用户和组
+
+#### 创建bigman票据
+
+在kerberos服务器执行：
+```
+kadmin.local -q "addprinc bigman/bigman-m1@BIGMAN.COM"
+```
+
+输入密码，回车。
+
+#### 导出keytab
+
+```
+kadmin.local
+xst -k /var/kerberos/keytab/bigman.keytab bigman/bigman-m1@BIGMAN.COM
+```
+
+导出keytab文件，为了不需要使用密码也能使用该票据。
+
+#### 登录hive，授权给bigman管理员权限
+
+```
+kinit -kt /var/kerberos/keytab/hive.keytab hive/bigman-m2@BIGMAN.COM
+beeline -u "jdbc:hive2://bigman-m2:10000/default;principal=hive/_HOST@BIGMAN.COM"
+
+#赋予admin角色
+GRANT ROLE admin_role TO GROUP supergroup;  
+```
+
+`admin_role`角色在之前已经创建好了的。
+
+#### ##登录hbase，授权给bigman权限
+```
+kinit -kt /var/kerberos/keytab/hbase.keytab hbase/bigman-m2@BIGMAN.COM
+hbase shell
+grant  'bigman', 'RWCA'
+```
+
+#### 验证
+```
+kinit bigman/bigman-m1   #输入密码
+beeline -u "jdbc:hive2://bigman-m2:10000/default;principal=hive/_HOST@BIGMAN.COM"
+```
+
+
 
 ## Windows下通过浏览器访问Hadoop web应用
 
@@ -325,6 +391,7 @@ admin_server = bigman-m1
 6、在 **Internet 选项**窗口，单击**高级**选项卡并滚动到**安全设置**。确保选中了**启用集成 Windows 认证（需要重新启动）**框。
 单击确定。重新启动 Microsoft Internet Explorer 以激活此配置。
 
+
 ## 激活Firefox 浏览器
 
 1、激活 Firefox。
@@ -355,8 +422,7 @@ Note
 成功访问：
 ![firefox-kerberos-success](http://7xoqbc.com1.z0.glb.clouddn.com/kerberos-config5.png)
 
-
-注：<font color="red">暂时只支持firefox浏览器，其它浏览器访问后面有空再研究。</font>
+注：<font color="red">本次测试采用firefox浏览器，其它浏览器访问请参考[这里](https://www.cloudera.com/documentation/enterprise/latest/topics/cdh_sg_browser_access_kerberos_protected_url.html)。</font>
 
 
 ## 最后
