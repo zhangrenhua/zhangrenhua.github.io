@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="google-site-verification" content="zUNgN8yGBtBZ8194JTl7PXh7YvztVw494zGKJ_8qH00">
+
+
+
+
+
+
+
+
+  <meta name="baidu-site-verification" content="kqLgluU8lc">
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/favicon.ico?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="k8s,docker,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="hua的博客" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="本文主要介绍如何搭建一个由三个微服务组成的留言板（Guestbook）系统的搭建，对Kubenetes对容器应用的基本操作和用法进行初步介绍。进一步深入Pod、RC、Service等核心对象的用法和技巧，对Kubernetes的应用管理进行全面讲解。Guestbook留言板系统将通过Pod、RC、Service等资源对象搭建完成，成功启动后再网页中显示一条“Hello World”留言。其系统架构">
+<meta name="keywords" content="k8s,docker">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Kubenetes-Guestbook">
+<meta property="og:url" content="http://www.zhangrenhua.com/2019/01/04/Kubenetes-Guestbook/index.html">
+<meta property="og:site_name" content="hua的博客">
+<meta property="og:description" content="本文主要介绍如何搭建一个由三个微服务组成的留言板（Guestbook）系统的搭建，对Kubenetes对容器应用的基本操作和用法进行初步介绍。进一步深入Pod、RC、Service等核心对象的用法和技巧，对Kubernetes的应用管理进行全面讲解。Guestbook留言板系统将通过Pod、RC、Service等资源对象搭建完成，成功启动后再网页中显示一条“Hello World”留言。其系统架构">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/kubernetes-guestbook1.jpg">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/kubernetes-guestbook2.jpg">
+<meta property="og:updated_time" content="2019-07-11T06:43:13.755Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Kubenetes-Guestbook">
+<meta name="twitter:description" content="本文主要介绍如何搭建一个由三个微服务组成的留言板（Guestbook）系统的搭建，对Kubenetes对容器应用的基本操作和用法进行初步介绍。进一步深入Pod、RC、Service等核心对象的用法和技巧，对Kubernetes的应用管理进行全面讲解。Guestbook留言板系统将通过Pod、RC、Service等资源对象搭建完成，成功启动后再网页中显示一条“Hello World”留言。其系统架构">
+<meta name="twitter:image" content="http://www.zhangrenhua.com/back_images/kubernetes-guestbook1.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.zhangrenhua.com/2019/01/04/Kubenetes-Guestbook/">
+
+
+
+
+
+  <title>Kubenetes-Guestbook | hua的博客</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-69647002-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?954f429681a4cd6dee6095ddaa2aac9a";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">hua的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">关注技术和人文的原创IT博客</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-schedule">
+          <a href="/schedule/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            日程表
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sitemap">
+          <a href="/sitemap.xml" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            站点地图
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="st-search-show-outputs">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <form class="site-search-form">
+  <input type="text" id="st-search-input" class="st-search-input st-default-search-input">
+</form>
+
+<script type="text/javascript">
+  (function(w,d,t,u,n,s,e){w['SwiftypeObject']=n;w[n]=w[n]||function(){
+    (w[n].q=w[n].q||[]).push(arguments);};s=d.createElement(t);
+    e=d.getElementsByTagName(t)[0];s.async=1;s.src=u;e.parentNode.insertBefore(s,e);
+  })(window,document,'script','//s.swiftypecdn.com/install/v2/st.js','_st');
+
+  _st('install', 'BAacTgC1f_bLy6kngppZ','2.0.0');
+</script>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.zhangrenhua.com/2019/01/04/Kubenetes-Guestbook/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="张仁华">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="http://www.zhangrenhua.com/back_images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hua的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Kubenetes-Guestbook</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-01-04T09:45:04+08:00">
+                2019-01-04
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index">
+                    <span itemprop="name">k8s</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2019/01/04/Kubenetes-Guestbook/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2019/01/04/Kubenetes-Guestbook/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  本文主要介绍如何搭建一个由三个微服务组成的留言板（Guestbook）系统的搭建，对Kubenetes对容器应用的基本操作和用法进行初步介绍。进一步深入Pod、RC、Service等核心对象的用法和技巧，对Kubernetes的应用管理进行全面讲解。<br><br>Guestbook留言板系统将通过Pod、RC、Service等资源对象搭建完成，成功启动后再网页中显示一条“Hello World”留言。其系统架构是一个基于PHP+Redis的分布式Web应用，前端PHP Web网站通过访问后端的Redis来完成用户留言的查询和添加等功能。同时Redis以Master+Slave的模式进行部署，实现数据的读写分离能力。<br><br>此教程不涉及docker镜像创建相关操作，都是基于已经创建好的docker镜像进行操作，主要目的是让大家学习使用kubenetes。<br><img src="http://www.zhangrenhua.com/back_images/kubernetes-guestbook2.jpg" alt="kubernetes-guestbook2">
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>本文主要介绍如何搭建一个由三个微服务组成的留言板（Guestbook）系统的搭建，对Kubenetes对容器应用的基本操作和用法进行初步介绍。进一步深入Pod、RC、Service等核心对象的用法和技巧，对Kubernetes的应用管理进行全面讲解。</p>
+<p>Guestbook留言板系统将通过Pod、RC、Service等资源对象搭建完成，成功启动后再网页中显示一条“Hello World”留言。其系统架构是一个基于PHP+Redis的分布式Web应用，前端PHP Web网站通过访问后端的Redis来完成用户留言的查询和添加等功能。同时Redis以Master+Slave的模式进行部署，实现数据的读写分离能力。</p>
+<p>此教程不涉及docker镜像创建相关操作，都是基于已经创建好的docker镜像进行操作，主要目的是让大家学习使用kubenetes。</p>
+<h2 id="创建redis-master-RC和Service"><a href="#创建redis-master-RC和Service" class="headerlink" title="创建redis-master RC和Service"></a>创建redis-master RC和Service</h2><p>首先为MySQL服务创建一个RC定义文件：<a href="http://www.zhangrenhua.com/back_images/ch2.3-redis-master-rc.yaml">ch2.3-redis-master-rc.yaml</a>，下面给出了改文件的完成内容和解释：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">ReplicationController</span>              <span class="comment"># 副本控制器RC</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line"><span class="attr">  name:</span> <span class="string">redis-master</span></span><br><span class="line"><span class="attr">  labels:</span></span><br><span class="line"><span class="attr">    name:</span> <span class="string">redis-master</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line"><span class="attr">  replicas:</span> <span class="number">1</span></span><br><span class="line"><span class="attr">  selector:</span></span><br><span class="line"><span class="attr">    name:</span> <span class="string">redis-master</span></span><br><span class="line"><span class="attr">  template:</span></span><br><span class="line"><span class="attr">    metadata:</span></span><br><span class="line"><span class="attr">      labels:</span></span><br><span class="line"><span class="attr">        name:</span> <span class="string">redis-master</span>               <span class="comment"># 标签名称</span></span><br><span class="line"><span class="attr">    spec:</span></span><br><span class="line"><span class="attr">      containers:</span></span><br><span class="line"><span class="attr">      - name:</span> <span class="string">master</span></span><br><span class="line"><span class="attr">        image:</span> <span class="string">kubeguide/redis-master</span>    </span><br><span class="line"><span class="attr">        ports:</span></span><br><span class="line"><span class="attr">        - containerPort:</span> <span class="number">6379</span>            <span class="comment"># 容器暴露的端口号</span></span><br></pre></td></tr></table></figure>
+
+<p>执行该文件：</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="selector-tag">kubectl</span> <span class="selector-tag">create</span> <span class="selector-tag">-f</span> <span class="selector-tag">ch2</span><span class="selector-class">.3-redis-master-rc</span><span class="selector-class">.yaml</span></span><br></pre></td></tr></table></figure>
+
+<p>首次执行需要下载docker镜像，需要等待容器启动</p>
+<p>接下来，我们用kubectl命令查看刚刚创建的RC：</p>
+<figure class="highlight crmsh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[root@bigman-m2 config]<span class="comment"># kubectl get rc</span></span><br><span class="line">NAME           DESIRED   CURRENT   READY   AGE</span><br><span class="line">redis-<span class="keyword">master</span>   <span class="title">1</span>         <span class="number">1</span>         <span class="number">1</span>       <span class="number">90s</span></span><br></pre></td></tr></table></figure>
+
+<p>使用kubectl命令查看刚刚创建的Pod：</p>
+<figure class="highlight lsl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[root@bigman-m2 config]# kubectl get pods</span><br><span class="line">NAME                 READY   STATUS    RESTARTS   AGE</span><br><span class="line">redis-master-lknwx   <span class="number">1</span>/<span class="number">1</span>     Running   <span class="number">0</span>          <span class="number">7</span>m20s</span><br></pre></td></tr></table></figure>
+
+<p>后面我们创建一个与之关联的Kubernetes Service的定义文件<a href="http://www.zhangrenhua.com/back_images/ch2.3-redis-master-service.yaml">ch2.3-redis-master-service.yaml</a>：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Service</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line"><span class="attr">  name:</span> <span class="string">redis-master</span></span><br><span class="line"><span class="attr">  labels:</span></span><br><span class="line"><span class="attr">    name:</span> <span class="string">redis-master</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line"><span class="attr">  selector:</span></span><br><span class="line"><span class="attr">    name:</span> <span class="string">redis-master</span></span><br><span class="line"><span class="attr">  ports:</span></span><br><span class="line"><span class="attr">  - port:</span> <span class="number">6379</span>                 <span class="comment"># Service提供服务的端口号</span></span><br><span class="line"><span class="attr">    targetPort:</span> <span class="number">6379</span>           <span class="comment"># 指后端Pod内容器应用监听的端口号</span></span><br></pre></td></tr></table></figure>
+
+<p>执行该文件：</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="selector-tag">kubectl</span> <span class="selector-tag">create</span> <span class="selector-tag">-f</span> <span class="selector-tag">ch2</span><span class="selector-class">.3-redis-master-service</span><span class="selector-class">.yaml</span></span><br></pre></td></tr></table></figure>
+
+<p>运行kubectl命令，查看刚刚创建的service</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[root@bigman-m2 config]# kubectl <span class="builtin-name">get</span> svc</span><br><span class="line">NAME          <span class="built_in"> TYPE </span>       CLUSTER-IP       EXTERNAL-IP   PORT(S)          AGE</span><br><span class="line">redis-master   ClusterIP   10.108.233.43    &lt;none&gt;        6379/TCP         8s</span><br></pre></td></tr></table></figure>
+
+<p>注意到redis-master服务被分配了一个值为10.108.233.43的虚拟IP地址，随后kubernetes集群中其他新创建的Pod就可以通过10.108.233.43+端口6379来访问这个服务了。</p>
+<p>当一个Pod运行在Node上时，kubelet将为每一个活动的Service添加环境变量，环境变量有两类：<br>DockerLink 环境变量：相当于Docker的–link参数实现容器连接时设置的环境变量。<br>Kubernetes Service环境变量：Kubernetes为Service设置的环境变量形式，{SVCNAME}_SERVICE_HOST 和{SVCNAME}_SERVICE_PORT变量，环境变量的名称为大写字母和下划线。</p>
+<p>例如：存在一个名称为“redies-master”的Service（它的cluster ip地址为10.108.233.43，端口号为6379，协议为TCP），它的环境变量如下：</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">root@brule-hbh7h:/# printenv</span></span><br><span class="line">QUALITY_WEB_PORT_8080_TCP_PORT=8080</span><br><span class="line">THEMATIC_ANALYSIS_SERVICE_HOST=10.43.102.16</span><br><span class="line">BRULE_PORT_2002_TCP_ADDR=10.43.68.108</span><br><span class="line">OPERATION_WEB_PORT=tcp://10.43.191.69:8080</span><br><span class="line">QUALITY_WEB_PORT=tcp://10.43.176.61:8080</span><br><span class="line">LANG=C.UTF-8</span><br><span class="line">BRULE_PORT=tcp://10.43.68.108:2002</span><br><span class="line">QUALITY_SERVICE_HOST=10.43.28.14</span><br><span class="line">QUALITY_WEB_PORT_8080_TCP=tcp://10.43.176.61:8080</span><br><span class="line">HOSTNAME=brule-hbh7h</span><br><span class="line">QUALITY_SERVICE_PORT=8080</span><br><span class="line">OPERATION_WEB_PORT_8080_TCP_PORT=8080</span><br><span class="line">QUALITY_WEB_PORT_8080_TCP_ADDR=10.43.176.61</span><br><span class="line">BRULE_SERVICE_HOST=10.43.68.108</span><br><span class="line">BRULE_PORT_2002_TCP=tcp://10.43.68.108:2002</span><br></pre></td></tr></table></figure>
+
+<h2 id="创建redis-slave-RC和Service"><a href="#创建redis-slave-RC和Service" class="headerlink" title="创建redis-slave RC和Service"></a>创建redis-slave RC和Service</h2><p>现在我们已经成功启动了redis-master服务，接下来我们继续完成redis-slave服务的创建过程。在本案例中会启动redis-slave服务的两个副本，每个副本上的redis进程斗鱼redis-master进行数据同步，与redis-master共同组成了一个具备读写分离能力的redis集群。</p>
+<p>首先为MySQL服务创建一个RC定义文件：<a href="http://www.zhangrenhua.com/back_images/ch2.3-redis-slave-rc.yaml">ch2.3-redis-slave-rc.yaml</a>，下面给出了改文件的完成内容和解释：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">ReplicationController</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line"><span class="attr">  name:</span> <span class="string">redis-slave</span></span><br><span class="line"><span class="attr">  labels:</span></span><br><span class="line"><span class="attr">    name:</span> <span class="string">redis-slave</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line"><span class="attr">  replicas:</span> <span class="number">2</span></span><br><span class="line"><span class="attr">  selector:</span></span><br><span class="line"><span class="attr">    name:</span> <span class="string">redis-slave</span></span><br><span class="line"><span class="attr">  template:</span></span><br><span class="line"><span class="attr">    metadata:</span></span><br><span class="line"><span class="attr">      labels:</span></span><br><span class="line"><span class="attr">        name:</span> <span class="string">redis-slave</span></span><br><span class="line"><span class="attr">    spec:</span></span><br><span class="line"><span class="attr">      containers:</span></span><br><span class="line"><span class="attr">      - name:</span> <span class="string">slave</span></span><br><span class="line"><span class="attr">        image:</span> <span class="string">kubeguide/guestbook-redis-slave</span></span><br><span class="line"><span class="attr">        env:</span></span><br><span class="line"><span class="attr">        - name:</span> <span class="string">GET_HOSTS_FROM</span>   <span class="comment"># 表示从环境变量中取redis-master服务的ip地址</span></span><br><span class="line"><span class="attr">          value:</span> <span class="string">env</span></span><br><span class="line"><span class="attr">        ports:</span></span><br><span class="line"><span class="attr">        - containerPort:</span> <span class="number">6379</span></span><br></pre></td></tr></table></figure>
+
+<p>redis-slave镜像启动脚本run.sh中使用了GET_HOSTS_FROM变量：</p>
+<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> <span class="string">[[ $&#123;GET_HOSTS_FROM:-dns&#125; == "env" ]]</span>; <span class="keyword">then</span></span><br><span class="line">  redis-server <span class="comment">--slaveof $&#123;REDIS_MASTER_SERVICE_HOST&#125; 6379</span></span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">  redis-server <span class="comment">--slaveof redis-master 6379</span></span><br><span class="line">fi</span><br></pre></td></tr></table></figure>
+
+<p>执行该文件：</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="selector-tag">kubectl</span> <span class="selector-tag">create</span> <span class="selector-tag">-f</span> <span class="selector-tag">ch2</span><span class="selector-class">.3-redis-slave-rc</span><span class="selector-class">.yaml</span></span><br></pre></td></tr></table></figure>
+
+<p>首次执行需要下载docker镜像，需要等待容器启动</p>
+<p>接下来，我们用kubectl命令查看刚刚创建的RC：</p>
+<figure class="highlight lsl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[root@bigman-m2 config]# kubectl get rc</span><br><span class="line">NAME           DESIRED   CURRENT   READY   AGE</span><br><span class="line">redis-master   <span class="number">1</span>         <span class="number">1</span>         <span class="number">1</span>       <span class="number">36</span>m</span><br><span class="line">redis-slave    <span class="number">2</span>         <span class="number">2</span>         <span class="number">2</span>       <span class="number">106</span>s</span><br></pre></td></tr></table></figure>
+
+<p>使用kubectl命令查看刚刚创建的Pod：</p>
+<figure class="highlight lsl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[root@bigman-m2 config]# kubectl get pods</span><br><span class="line">NAME                 READY   STATUS    RESTARTS   AGE</span><br><span class="line">redis-master-lknwx   <span class="number">1</span>/<span class="number">1</span>     Running   <span class="number">0</span>          <span class="number">36</span>m</span><br><span class="line">redis-slave<span class="number">-2</span>sdc8    <span class="number">1</span>/<span class="number">1</span>     Running   <span class="number">0</span>          <span class="number">68</span>s</span><br><span class="line">redis-slave-bkjhk    <span class="number">1</span>/<span class="number">1</span>     Running   <span class="number">0</span>          <span class="number">68</span>s</span><br></pre></td></tr></table></figure>
+
+<p>后面我们创建一个与之关联的Kubernetes Service的定义文件<a href="http://www.zhangrenhua.com/back_images/ch2.3-redis-slave-service.yaml">ch2.3-redis-slave-service.yaml</a>：</p>
+<figure class="highlight less"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">apiVersion</span>: v1</span><br><span class="line"><span class="attribute">kind</span>: Service</span><br><span class="line"><span class="attribute">metadata</span>:</span><br><span class="line">  <span class="attribute">name</span>: redis-slave</span><br><span class="line">  <span class="attribute">labels</span>:</span><br><span class="line">    <span class="attribute">name</span>: redis-slave</span><br><span class="line"><span class="attribute">spec</span>:</span><br><span class="line">  <span class="attribute">selector</span>:</span><br><span class="line">    <span class="attribute">name</span>: redis-slave</span><br><span class="line">  <span class="attribute">ports</span>:</span><br><span class="line">  - <span class="attribute">port</span>: <span class="number">6379</span></span><br></pre></td></tr></table></figure>
+
+<p>执行该文件：</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="selector-tag">kubectl</span> <span class="selector-tag">create</span> <span class="selector-tag">-f</span> <span class="selector-tag">ch2</span><span class="selector-class">.3-redis-slave-service</span><span class="selector-class">.yaml</span></span><br></pre></td></tr></table></figure>
+
+<p>运行kubectl命令，查看刚刚创建的service</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[root@bigman-m2 config]# kubectl <span class="builtin-name">get</span> svc</span><br><span class="line">NAME          <span class="built_in"> TYPE </span>       CLUSTER-IP       EXTERNAL-IP   PORT(S)          AGE</span><br><span class="line">redis-master   ClusterIP   10.108.233.43    &lt;none&gt;        6379/TCP         28m</span><br><span class="line">redis-slave    ClusterIP   10.98.129.161    &lt;none&gt;        6379/TCP         5s</span><br></pre></td></tr></table></figure>
+
+<p>注意到redis-master服务被分配了一个值为10.98.129.161的虚拟IP地址，随后kubernetes集群中其他新创建的Pod就可以通过10.98.129.161端口6379来访问这个服务了。此时redis主从集群模式已经搭建完毕，后面搭建前端服务。</p>
+<h2 id="创建frontend和Service"><a href="#创建frontend和Service" class="headerlink" title="创建frontend和Service"></a>创建frontend和Service</h2><p>前面已经创建好了一个具备读写分离能力的redis集群，现在开始部署前端PHP应用。</p>
+<p>首先为frontend服务创建一个RC定义文件：<a href="http://www.zhangrenhua.com/back_images/ch2.3-frontend-rc.yaml">ch2.3-frontend-rc.yaml</a>，下面给出了改文件的完成内容和解释：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">ReplicationController</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line"><span class="attr">  name:</span> <span class="string">frontend</span></span><br><span class="line"><span class="attr">  labels:</span></span><br><span class="line"><span class="attr">    name:</span> <span class="string">frontend</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line"><span class="attr">  replicas:</span> <span class="number">3</span></span><br><span class="line"><span class="attr">  selector:</span></span><br><span class="line"><span class="attr">    name:</span> <span class="string">frontend</span></span><br><span class="line"><span class="attr">  template:</span></span><br><span class="line"><span class="attr">    metadata:</span></span><br><span class="line"><span class="attr">      labels:</span></span><br><span class="line"><span class="attr">        name:</span> <span class="string">frontend</span></span><br><span class="line"><span class="attr">    spec:</span></span><br><span class="line"><span class="attr">      containers:</span></span><br><span class="line"><span class="attr">      - name:</span> <span class="string">php-redis</span></span><br><span class="line"><span class="attr">        image:</span> <span class="string">kubeguide/guestbook-php-frontend</span></span><br><span class="line"><span class="attr">        env:</span></span><br><span class="line"><span class="attr">        - name:</span> <span class="string">GET_HOSTS_FROM</span> <span class="comment"># 表示从环境变量中取redis-master服务的ip地址</span></span><br><span class="line"><span class="attr">          value:</span> <span class="string">env</span></span><br><span class="line"><span class="attr">        ports:</span></span><br><span class="line"><span class="attr">        - containerPort:</span> <span class="number">80</span></span><br></pre></td></tr></table></figure>
+
+<p>frontend镜像guestbook.php代码中使用了GET_HOSTS_FROM变量：<br><img src="http://www.zhangrenhua.com/back_images/kubernetes-guestbook1.jpg" alt="kubernetes-guestbook1"></p>
+<p><code>REDIS_MASTER_SERVICE_HOST</code>和<code>REDIS_SLAVE_SERVICE_HOST</code>两个环境变量是k8s默认为每个service生成的，具体前面章节有讲到。</p>
+<p>执行该文件：</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="selector-tag">kubectl</span> <span class="selector-tag">create</span> <span class="selector-tag">-f</span> <span class="selector-tag">ch2</span><span class="selector-class">.3-frontend-rc</span><span class="selector-class">.yaml</span></span><br></pre></td></tr></table></figure>
+
+<p>首次执行需要下载docker镜像，需要等待容器启动</p>
+<p>接下来，我们用kubectl命令查看刚刚创建的RC：</p>
+<figure class="highlight lsl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[root@bigman-m2 config]# kubectl get rc</span><br><span class="line">NAME           DESIRED   CURRENT   READY   AGE</span><br><span class="line">frontend       <span class="number">3</span>         <span class="number">3</span>         <span class="number">3</span>       <span class="number">9</span>m10s</span><br><span class="line">redis-master   <span class="number">1</span>         <span class="number">1</span>         <span class="number">1</span>       <span class="number">79</span>m</span><br><span class="line">redis-slave    <span class="number">2</span>         <span class="number">2</span>         <span class="number">2</span>       <span class="number">44</span>m</span><br></pre></td></tr></table></figure>
+
+<p>使用kubectl命令查看刚刚创建的Pod：</p>
+<figure class="highlight lsl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">[root@bigman-m2 config]# kubectl get pods</span><br><span class="line">[root@bigman-m2 config]# kubectl get pods</span><br><span class="line">NAME                 READY   STATUS    RESTARTS   AGE</span><br><span class="line">frontend-g94d4       <span class="number">1</span>/<span class="number">1</span>     Running   <span class="number">0</span>          <span class="number">9</span>m29s</span><br><span class="line">frontend-mtxf2       <span class="number">1</span>/<span class="number">1</span>     Running   <span class="number">0</span>          <span class="number">9</span>m29s</span><br><span class="line">frontend-prxq2       <span class="number">1</span>/<span class="number">1</span>     Running   <span class="number">0</span>          <span class="number">9</span>m29s</span><br><span class="line">redis-master-lknwx   <span class="number">1</span>/<span class="number">1</span>     Running   <span class="number">0</span>          <span class="number">79</span>m</span><br><span class="line">redis-slave<span class="number">-2</span>sdc8    <span class="number">1</span>/<span class="number">1</span>     Running   <span class="number">0</span>          <span class="number">44</span>m</span><br><span class="line">redis-slave-bkjhk    <span class="number">1</span>/<span class="number">1</span>     Running   <span class="number">0</span>          <span class="number">44</span>m</span><br></pre></td></tr></table></figure>
+
+<p>后面我们创建一个与之关联的Kubernetes Service的定义文件<a href="http://www.zhangrenhua.com/back_images/ch2.3-frontend-service.yaml">ch2.3-redis-slave-service.yaml</a>：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Service</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line"><span class="attr">  name:</span> <span class="string">frontend</span></span><br><span class="line"><span class="attr">  labels:</span></span><br><span class="line"><span class="attr">    name:</span> <span class="string">frontend</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line"><span class="attr">  selector:</span></span><br><span class="line"><span class="attr">    name:</span> <span class="string">frontend</span></span><br><span class="line"><span class="attr">  type:</span></span><br><span class="line">    <span class="string">NodePort</span>           <span class="comment"># 使用节点上物理端口</span></span><br><span class="line"><span class="attr">  ports:</span></span><br><span class="line"><span class="attr">  - port:</span> <span class="number">80</span></span><br><span class="line"><span class="attr">    nodePort:</span> <span class="number">30010</span>    <span class="comment"># 对外提供30010端口服务</span></span><br></pre></td></tr></table></figure>
+
+<p>执行该文件：</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="selector-tag">kubectl</span> <span class="selector-tag">create</span> <span class="selector-tag">-f</span> <span class="selector-tag">ch2</span><span class="selector-class">.3-frontend-service</span><span class="selector-class">.yaml</span></span><br></pre></td></tr></table></figure>
+
+<p>运行kubectl命令，查看刚刚创建的service</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[root@bigman-m2 config]# kubectl <span class="builtin-name">get</span> svc</span><br><span class="line">NAME          <span class="built_in"> TYPE </span>       CLUSTER-IP       EXTERNAL-IP   PORT(S)          AGE</span><br><span class="line">frontend       NodePort    10.110.72.4      &lt;none&gt;        80:30010/TCP     8s</span><br><span class="line">redis-master   ClusterIP   10.108.233.43    &lt;none&gt;        6379/TCP         67m</span><br><span class="line">redis-slave    ClusterIP   10.98.129.161    &lt;none&gt;        6379/TCP         38m</span><br></pre></td></tr></table></figure>
+
+<p>此时可以通过master节点的30010端口来访问前端页面了：</p>
+<p><img src="http://www.zhangrenhua.com/back_images/kubernetes-guestbook2.jpg" alt="kubernetes-guestbook2"></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/k8s/" rel="tag"># k8s</a>
+          
+            <a href="/tags/docker/" rel="tag"># docker</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/01/03/Kubenetes-Hello World/" rel="next" title="Kubenetes-Hello World">
+                <i class="fa fa-chevron-left"></i> Kubenetes-Hello World
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/01/09/Rancher2.1 HA部署k8s/" rel="prev" title="Rancher2.1 HA部署k8s">
+                Rancher2.1 HA部署k8s <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+<span class="jiathis_txt">分享到：</span>
+<a class="jiathis_button_fav">收藏夹</a>
+<a class="jiathis_button_copy">复制网址</a>
+<a class="jiathis_button_email">邮件</a>
+<a class="jiathis_button_weixin">微信</a>
+<a class="jiathis_button_qzone">QQ空间</a>
+<a class="jiathis_button_tqq">腾讯微博</a>
+<a class="jiathis_button_douban">豆瓣</a>
+<a class="jiathis_button_share">一键分享</a>
+
+<a href="http://www.jiathis.com/share?uid=2140465" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank">更多</a>
+<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+var jiathis_config={
+  data_track_clickback:true,
+  summary:"",
+  shortUrl:false,
+  hideMore:false
+}
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  <p>热评文章</p>
+  <div class="ds-top-threads" data-range="weekly" data-num-items="4"></div>
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div class="ds-thread" data-thread-key="2019/01/04/Kubenetes-Guestbook/" data-title="Kubenetes-Guestbook" data-url="http://www.zhangrenhua.com/2019/01/04/Kubenetes-Guestbook/">
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="http://www.zhangrenhua.com/back_images/avatar.jpg" alt="张仁华">
+            
+              <p class="site-author-name" itemprop="name">张仁华</p>
+              <p class="site-description motion-element" itemprop="description">记录软件生涯中的点点滴滴</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">76</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">17</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/zhangrenhua/" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://weibo.com/huaHBrother" target="_blank" title="Weibo">
+                      
+                        <i class="fa fa-fw fa-globe"></i>Weibo</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://douban.com/people/huaHBrother" target="_blank" title="douban">
+                      
+                        <i class="fa fa-fw fa-globe"></i>douban</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://zhihu.com/people/huaHBrother" target="_blank" title="zhihu">
+                      
+                        <i class="fa fa-fw fa-globe"></i>zhihu</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#介绍"><span class="nav-number">1.</span> <span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#创建redis-master-RC和Service"><span class="nav-number">2.</span> <span class="nav-text">创建redis-master RC和Service</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#创建redis-slave-RC和Service"><span class="nav-number">3.</span> <span class="nav-text">创建redis-slave RC和Service</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#创建frontend和Service"><span class="nav-number">4.</span> <span class="nav-text">创建frontend和Service</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">张仁华</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"iissnan-notes"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

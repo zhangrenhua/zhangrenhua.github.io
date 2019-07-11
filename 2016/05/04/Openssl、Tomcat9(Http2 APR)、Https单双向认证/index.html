@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="google-site-verification" content="zUNgN8yGBtBZ8194JTl7PXh7YvztVw494zGKJ_8qH00">
+
+
+
+
+
+
+
+
+  <meta name="baidu-site-verification" content="kqLgluU8lc">
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/favicon.ico?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="j2ee,tomcat,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="hua的博客" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="去年开始就有很多公司开始尝试HTTP2.0协议，目前为止HTTP协议只有三个版本，HTTP1.0、HTTP1.1、HTTP2.0。现在普遍还是HTTP1.1使用的比较多，具体为什么HTTP2.0现在很火大家可以网上找找答案，去深入了解不同协议之间的具体实现，以及性能差距。具体可以参考：【HTTP2优势分析】http://blog.csdn.net/jiayanhui2877/article/det">
+<meta name="keywords" content="j2ee,tomcat">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Openssl、Tomcat9(Http2 APR)、Https单&#x2F;双向认证">
+<meta property="og:url" content="http://www.zhangrenhua.com/2016/05/04/Openssl、Tomcat9(Http2 APR)、Https单双向认证/index.html">
+<meta property="og:site_name" content="hua的博客">
+<meta property="og:description" content="去年开始就有很多公司开始尝试HTTP2.0协议，目前为止HTTP协议只有三个版本，HTTP1.0、HTTP1.1、HTTP2.0。现在普遍还是HTTP1.1使用的比较多，具体为什么HTTP2.0现在很火大家可以网上找找答案，去深入了解不同协议之间的具体实现，以及性能差距。具体可以参考：【HTTP2优势分析】http://blog.csdn.net/jiayanhui2877/article/det">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/j2ee-openssl-install.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/j2ee-jdk-install.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/j2ee-tomcat-install.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/j2ee-tomcat-apr-install.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/j2ee-openssl-ca-demo.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/j2ee-tomcat-hosts.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/j2ee-tomcat-https-single.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/j2ee-tomcat-https-single-start.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/j2ee-tomcat-https-single.action.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/j2ee-tomcat-https-ca-install.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/j2ee-tomcat-https-ca-install1.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/j2ee-tomcat-https-single.action1.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/j2ee-tomcat-https-ca-install.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/j2ee-tomcat-https-ca-install1.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/j2ee-tomcat-https-ca-list.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/j2ee-tomcat-https-ca-chrome-test.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/j2ee-tomcat-http2-test.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/j2ee-tomcat-https-ca-ie-test.png">
+<meta property="og:updated_time" content="2019-07-11T06:43:13.760Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Openssl、Tomcat9(Http2 APR)、Https单&#x2F;双向认证">
+<meta name="twitter:description" content="去年开始就有很多公司开始尝试HTTP2.0协议，目前为止HTTP协议只有三个版本，HTTP1.0、HTTP1.1、HTTP2.0。现在普遍还是HTTP1.1使用的比较多，具体为什么HTTP2.0现在很火大家可以网上找找答案，去深入了解不同协议之间的具体实现，以及性能差距。具体可以参考：【HTTP2优势分析】http://blog.csdn.net/jiayanhui2877/article/det">
+<meta name="twitter:image" content="http://www.zhangrenhua.com/back_images/j2ee-openssl-install.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.zhangrenhua.com/2016/05/04/Openssl、Tomcat9(Http2 APR)、Https单双向认证/">
+
+
+
+
+
+  <title>Openssl、Tomcat9(Http2 APR)、Https单/双向认证 | hua的博客</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-69647002-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?954f429681a4cd6dee6095ddaa2aac9a";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">hua的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">关注技术和人文的原创IT博客</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-schedule">
+          <a href="/schedule/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            日程表
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sitemap">
+          <a href="/sitemap.xml" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            站点地图
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="st-search-show-outputs">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <form class="site-search-form">
+  <input type="text" id="st-search-input" class="st-search-input st-default-search-input">
+</form>
+
+<script type="text/javascript">
+  (function(w,d,t,u,n,s,e){w['SwiftypeObject']=n;w[n]=w[n]||function(){
+    (w[n].q=w[n].q||[]).push(arguments);};s=d.createElement(t);
+    e=d.getElementsByTagName(t)[0];s.async=1;s.src=u;e.parentNode.insertBefore(s,e);
+  })(window,document,'script','//s.swiftypecdn.com/install/v2/st.js','_st');
+
+  _st('install', 'BAacTgC1f_bLy6kngppZ','2.0.0');
+</script>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.zhangrenhua.com/2016/05/04/Openssl、Tomcat9(Http2 APR)、Https单双向认证/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="张仁华">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="http://www.zhangrenhua.com/back_images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hua的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Openssl、Tomcat9(Http2 APR)、Https单/双向认证</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-05-04T16:37:26+08:00">
+                2016-05-04
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/j2ee/" itemprop="url" rel="index">
+                    <span itemprop="name">j2ee</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2016/05/04/Openssl、Tomcat9(Http2 APR)、Https单双向认证/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2016/05/04/Openssl、Tomcat9(Http2 APR)、Https单双向认证/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  去年开始就有很多公司开始尝试HTTP2.0协议，目前为止HTTP协议只有三个版本，HTTP1.0、HTTP1.1、HTTP2.0。现在普遍还是HTTP1.1使用的比较多，具体为什么HTTP2.0现在很火大家可以网上找找答案，去深入了解不同协议之间的具体实现，以及性能差距。具体可以参考：【HTTP2优势分析】http://blog.csdn.net/jiayanhui2877/article/details/44957105<br><br>为什么使用这些版本：<br>1、tomcat9开始才支持HTTP2.0协议<br>2、jdk1.8才有HTTP2.0的具体实现<br>3、由于使用了Tomcat Apr底层实现，需下载native包。（bio、nio、apr性能比较）<br>4、Apr只支持OpenSSL生成的CA证书<br><br>本次尝试Windows下部署openssl、tomcat、tomcat apr、https、HTTP2.0。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>去年开始就有很多公司开始尝试HTTP2.0协议，目前为止HTTP协议只有三个版本，HTTP1.0、HTTP1.1、HTTP2.0。现在普遍还是HTTP1.1使用的比较多，具体为什么HTTP2.0现在很火大家可以网上找找答案，去深入了解不同协议之间的具体实现，以及性能差距。具体可以参考：<a href="http://blog.csdn.net/jiayanhui2877/article/details/44957105" target="_blank" rel="noopener">HTTP2优势分析</a></p>
+<p>本次尝试Windows下部署openssl、tomcat、tomcat apr、https、HTTP2.0。</p>
+<h2 id="软件版本"><a href="#软件版本" class="headerlink" title="软件版本"></a>软件版本</h2><table>
+<thead>
+<tr>
+<th>软件名称</th>
+<th>版本号</th>
+<th>下载地址</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>jdk</td>
+<td>1.8.0_11</td>
+<td><a href="http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html" target="_blank" rel="noopener">http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html</a></td>
+</tr>
+<tr>
+<td>tomcat</td>
+<td>9.0.0.M4</td>
+<td><a href="http://apache.fayea.com/tomcat/tomcat-9/v9.0.0.M4/bin/apache-tomcat-9.0.0.M4.tar.gz" target="_blank" rel="noopener">http://apache.fayea.com/tomcat/tomcat-9/v9.0.0.M4/bin/apache-tomcat-9.0.0.M4.tar.gz</a></td>
+</tr>
+<tr>
+<td>tomcat-native</td>
+<td>1.2.2</td>
+<td><a href="http://archive.apache.org/dist/tomcat/tomcat-connectors/native" target="_blank" rel="noopener">http://archive.apache.org/dist/tomcat/tomcat-connectors/native</a></td>
+</tr>
+<tr>
+<td>OpenSSL</td>
+<td>1.0.2g</td>
+<td><a href="http://www.openssl.org/news/openssl-1.0.2-notes.html" target="_blank" rel="noopener">http://www.openssl.org/news/openssl-1.0.2-notes.html</a></td>
+</tr>
+</tbody></table>
+<p><strong>为什么使用这些版本：</strong><br>1、tomcat9开始才支持HTTP2.0协议<br>2、jdk1.8才有HTTP2.0的具体实现<br>3、由于使用了Tomcat Apr底层实现，需下载native包。（bio、nio、apr性能比较）<br>4、Apr只支持OpenSSL生成的CA证书</p>
+<h2 id="软件安装"><a href="#软件安装" class="headerlink" title="软件安装"></a>软件安装</h2><h4 id="OpenSSL"><a href="#OpenSSL" class="headerlink" title="OpenSSL"></a>OpenSSL</h4><p>下载软件直接安装，配置Path环境变量即可：<br><img src="http://www.zhangrenhua.com/back_images/j2ee-openssl-install.png" alt="Alt text"></p>
+<h3 id="jdk"><a href="#jdk" class="headerlink" title="jdk"></a>jdk</h3><p>下载软件直接安装，配置Path和JAVA_HOME环境变量即可：<br><img src="http://www.zhangrenhua.com/back_images/j2ee-jdk-install.png" alt="Alt text"></p>
+<p>别忘了配置Path环境变量。</p>
+<h3 id="tomcat"><a href="#tomcat" class="headerlink" title="tomcat"></a>tomcat</h3><p>1、下载apache-tomcat-9.0.0.M4.tar.gz，解压到某个目录，如D:/盘：<br><img src="http://www.zhangrenhua.com/back_images/j2ee-tomcat-install.png" alt="Alt text"></p>
+<p>下载tomcat-native-1.2.2-win32-bin.zip并解压，将bin/x64/tcnative-1.dll复制到tomcat目录下的APR/lib（没有则先建立）：<br><img src="http://www.zhangrenhua.com/back_images/j2ee-tomcat-apr-install.png" alt="Alt text"></p>
+<p>2、修改bin目录下catalina.bat</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="builtin-name">set</span> <span class="attribute">CATALINA_OPTS</span>=<span class="string">"-Djava.library.path=../APR/lib"</span> </span><br><span class="line"><span class="builtin-name">set</span> <span class="attribute">JAVA_HOME</span>=C:\\Program Files\\Java\\jdk1.8.0_11</span><br></pre></td></tr></table></figure>
+
+<p>在setlocal后面加上如上两行，注意：<br><code>CATALINA_OPTS</code>是配置APR插件的位置<br><code>JAVA_HOME</code>是jdk安装目录，<font color="red">请填写自己的</font>。</p>
+<h2 id="OpenSSL生成CA证书"><a href="#OpenSSL生成CA证书" class="headerlink" title="OpenSSL生成CA证书"></a>OpenSSL生成CA证书</h2><p>以前用tomcat配置过HTTPS双向认证，那时候主要用的是JDK自带的keytool工具。这次是用tomcat + openssl，区别比较大</p>
+<p>在网上搜索了很多文章，发现全面介绍的不多，或者就是版本比较旧了。所以把我配置的过程完整地记录下来，以供参考</p>
+<p>首先要说明一下，HTTPS涉及到的内容非常繁杂，包括各种术语、命令、算法。本文会尽量把我知道的解释一下</p>
+<h3 id="环境准备"><a href="#环境准备" class="headerlink" title="环境准备"></a>环境准备</h3><p>根据上面步骤将jdk/openssl安装好即可，本次配置是运行在Windows上。</p>
+<h3 id="使用场景"><a href="#使用场景" class="headerlink" title="使用场景"></a>使用场景</h3><p>在tomcat配置一个HTTPS双向认证，既向客户端表明自己的身份，也只允许特定的客户端访问。本文说的主要是作为server端角色的配置，至于作为client的配置，最后也会稍微介绍一下，但是不会详细说明</p>
+<p>一般来说，互联网站不会去配置双向认证，因为客户端证书的分发和管理会比较麻烦，会把用户挡在门外，所以一般是不能这么做的。当然，像银行等对安全要求很高的网站，也会采用双向认证，比如U盾、安全控件什么的，其实就是固化的客户端证书 </p>
+<p>但是对于企业应用来说，客户一般是固定的，比如两个已知的系统对接、内部系统集成等。所以在企业应用领域，双向认证还是比较常见的 </p>
+<p><font color="red">其实对于某些安全要求很高的网站，会在配置了HTTPS的基础下对内容进行组合加密。或者根本不使用HTTPS，对数据进行多种加密。</font></p>
+<h3 id="背景知识"><a href="#背景知识" class="headerlink" title="背景知识"></a>背景知识</h3><p>证书（Certificate）是HTTPS的核心，但是其实证书并不是一个单一的东西，而是几种技术的综合 </p>
+<p>为了网络传输的安全，有很多种技术，最主要的是以下3种： </p>
+<p>1、加密/解密 </p>
+<p>避免消息明文传输，对消息进行加密。早期一般是用对称加密算法，现在一般都是不对称加密，最常见的算法就是RSA。在后面的介绍中，也会多次看到RSA这个词 </p>
+<p>2、消息摘要 </p>
+<p>这个技术主要是为了避免消息被篡改。消息摘要是把一段信息，通过某种算法，得出一串字符串。这个字符串就是消息的摘要。如果消息被篡改（发生了变化），那么摘要也一定会发生变化（一般是这样的。如果2个不同的消息生成的摘要是一样的，那么这就叫发生了碰撞） </p>
+<p>消息摘要的算法主要有MD5和SHA，在证书领域，一般都是用SHA（安全哈希算法） </p>
+<p>3、数字签名 </p>
+<p>数字签名是为了验证双方的身份，避免身份伪造 </p>
+<p>以上三个技术结合起来，就是在HTTPS中广泛应用的证书（certificate），证书本身携带了加密/解密的信息，并且可以标识自己的身份，也自带消息摘要 </p>
+<h3 id="创建CA（Certificate-Authority）"><a href="#创建CA（Certificate-Authority）" class="headerlink" title="创建CA（Certificate Authority）"></a>创建CA（Certificate Authority）</h3><p>这个CA，也叫“根证书” </p>
+<p>服务端做了一个证书，但是这是没有法律效力的，谁都可以自己做证书，就根本达不到安全的目的。所以就要有一个机构，负责来确认服务端的身份，然后统一的签发证书。这样才能有权威性 </p>
+<p>当浏览器通过HTTPS协议访问一个网站，网站首先会发过来一个自己的证书（certificate）。接下来浏览器就会到权威机构（CA），去验证一下这个证书是不是它签发的。如果是的话，就信任这个网站的证书，继续访问;如果不是的话，要怎么处理就依赖于实现了。一般的浏览器会弹出一个警告，让用户自己决定要不要继续访问。当然直接拒绝也是可以的 </p>
+<p>现在国际上有3大CA机构，如果是要自己做一个网站的话，如上所述，一般是需要请这些权威机构帮忙签发证书的。现在所有的主流浏览器，默认都安装了这些CA的根证书，所以如果网站的证书是这些权威机构签发的，浏览器就不会发出警告了。比如支付宝，它的证书是由VeriSign签发的，所以访问支付宝，浏览器不会发出警告 </p>
+<p><img src="http://www.zhangrenhua.com/back_images/j2ee-openssl-ca-demo.png" alt="Alt text"></p>
+<p>这里还有一个链条的关系，比如我有10个子网站，如果每个都要去找CA签发证书，就很麻烦。我可以找CA给我签发一个次级根证书，然后再用这个次级根证书给自己签发10个证书。那么只要客户的浏览器里有CA根证书就可以了，这10个证书都可以通过认证，不要求客户安装次级根证书，原文见下： </p>
+<p>如果是企业应用，那完全可以自己给自己当CA，因为可以要求目标用户（系统）安装自己的CA根证书，效果是一样的，还可以省下请权威CA签发证书的费用（互联网应用分发自己的CA到无数的互联网用户上，难度很大） </p>
+<p>下面就介绍如何创建自己的CA </p>
+<h3 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h3><p>在D盘创建几个子目录：</p>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">d:</span><span class="regexp">/ca/</span><span class="keyword">private</span></span><br><span class="line"><span class="string">d:</span><span class="regexp">/ca/</span>certificates</span><br></pre></td></tr></table></figure>
+
+<p>其中private放的是私钥和CSR（后面会介绍），certificates里放的就是证书了 </p>
+<h3 id="创建CA私钥"><a href="#创建CA私钥" class="headerlink" title="创建CA私钥"></a>创建CA私钥</h3><p>使用命令行进入d:/ca目录执行下面命令：</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openssl genrsa -aes256 -out private/ca<span class="selector-class">.key</span><span class="selector-class">.pem</span> <span class="number">2048</span></span><br></pre></td></tr></table></figure>
+
+<p>这是会提示输入密码（如：123456），后面的命令也有会提示输入密码的，都设置为一样就好了。</p>
+<p>最后的参数是RSA密钥的长度，默认是512。2048其实长了一点，老的浏览器稍后会不支持，不过现在的主流浏览器都是支持的，所以问题不大 </p>
+<p>注意：<font color="red">必须使用管理员进入命令行，否则后面执行会报错。笔者就在这上面吃过亏</font></p>
+<p>用这个命令，可以看一下刚才创建的这个私钥的信息 </p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openssl rsa -noout -text -<span class="keyword">in</span> private/ca<span class="selector-class">.key</span><span class="selector-class">.pem</span></span><br></pre></td></tr></table></figure>
+
+<p>另外，最后的.pem扩展名，是表示该私钥用PEM编码。实际上私钥和证书都是用PEM编码的，PEM只是一种编码格式，不需要太在意。tomcat可以直接处理这种编码格式，但是浏览器和JAVA都不行，所以在需要的时候，会把编码从PEM改成PKCS，后面会介绍。只要知道证书和私钥都有编码，只是编码是PEM还是PKCS的区别而已。就像”华哥哥”可以用UTF-8编码，也可以用GBK编码一样，内容是不变的 </p>
+<h3 id="创建CA签名请求"><a href="#创建CA签名请求" class="headerlink" title="创建CA签名请求"></a>创建CA签名请求</h3><figure class="highlight processing"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openssl req -<span class="keyword">new</span> -<span class="built_in">key</span> <span class="keyword">private</span>/ca.<span class="built_in">key</span>.pem -out <span class="keyword">private</span>/ca.csr -subj <span class="string">"/C=CN/ST=SZ/L=SZ/O=hua/OU=hua/CN=*.hua.com"</span></span><br></pre></td></tr></table></figure>
+
+<p>这里要注意的是，如果不用-subj参数，那么就会在命令行交互输入签发目标的身份识别信息，这叫DN（Distinguished Name）。其中别的都不要紧，最重要的是CN那一行，因为我这里是根证书，所以我设置为*.hua.com，这样我后面用这个CA签发的<a href="http://www.hua.com、game.hua.com、news.hua.com……，全都是有效的" target="_blank" rel="noopener">www.hua.com、game.hua.com、news.hua.com……，全都是有效的</a> </p>
+<p>生成的签名请求文件，是ca.csr</p>
+<h3 id="自己签发CA根证书"><a href="#自己签发CA根证书" class="headerlink" title="自己签发CA根证书"></a>自己签发CA根证书</h3><figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openssl x509 -req -days <span class="number">3650</span> -sha1 -extensions v3_ca -signkey private/ca<span class="selector-class">.key</span><span class="selector-class">.pem</span> -<span class="keyword">in</span> private/ca<span class="selector-class">.csr</span> -out certificates/ca.cer</span><br></pre></td></tr></table></figure>
+
+<p>这里参数很复杂，可以用openssl x509 -help自己研究一下 </p>
+<p><font color="red">生成的ca.cer，就是最终的根证书了！这个文件非常重要，因为后续的服务端证书、客户端证书，都是用这个CA签发的，也要把它分发给客户，让他们导入到自己的浏览器或者系统中 </font></p>
+<p>注意：<font color="red">这里使用的是sha1加密算法，在chrome高版本中已经会提示加密算法不安全，建议使用sha2（SHA-256/SHA-512）。但是xp系统上不支持sha2，所以笔者这次还是使用sha1</font><br>参考：<a href="http://www.infoq.com/cn/news/2014/09/chrome_SHA1" target="_blank" rel="noopener">Chrome为SHA-1设置倒计时</a></p>
+<h3 id="把根证书从PEM编码转为PKCS编码"><a href="#把根证书从PEM编码转为PKCS编码" class="headerlink" title="把根证书从PEM编码转为PKCS编码"></a>把根证书从PEM编码转为PKCS编码</h3><p>这步其实不是必选的，但是前面说过，JAVA环境是不能直接用PEM编码的证书的，很多浏览器也不行，所以有时候也需要转一下编码 </p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openssl pkcs12 -export -cacerts -inkey private/ca<span class="selector-class">.key</span><span class="selector-class">.pem</span> -<span class="keyword">in</span> certificates/ca<span class="selector-class">.cer</span> -out certificates/ca.p12</span><br></pre></td></tr></table></figure>
+
+<p>得到的ca.p12就是转码后的CA根证书，在不能直接用ca.cer的时候，就用ca.p12代替 </p>
+<h3 id="签发服务端证书"><a href="#签发服务端证书" class="headerlink" title="签发服务端证书"></a>签发服务端证书</h3><p>现在CA根证书和私钥都有了，就可以开始签发服务端证书了（签发请求ca.csr是过程文件，有了cer就不再需要它了，要删掉也可以）。下面的命令和签发CA证书时都差不多，但是参数上有区别 </p>
+<p>1、创建服务端私钥 </p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openssl genrsa -aes256 -out private/server<span class="selector-class">.key</span><span class="selector-class">.pem</span> <span class="number">2048</span></span><br></pre></td></tr></table></figure>
+
+<p>2、创建服务端证书签发请求</p>
+<figure class="highlight axapta"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openssl req -<span class="keyword">new</span> -key <span class="keyword">private</span>/<span class="keyword">server</span>.key.pem -out <span class="keyword">private</span>/<span class="keyword">server</span>.csr -subj <span class="string">"/C=CN/ST=SZ/L=SZ/O=hua/OU=hua/CN=www.hua.com"</span></span><br></pre></td></tr></table></figure>
+
+<p>和ca.csr的区别在于，这里的CN不是*.hua.com，而是<a href="http://www.hua.com，因为我现在是在为www.hua.com申请证书" target="_blank" rel="noopener">www.hua.com，因为我现在是在为www.hua.com申请证书</a> </p>
+<p>由于在本地测试，所以需要修改hosts文件，让<a href="http://www.hua.com指向本机（如忘记配置，可能导致浏览器警告）：" target="_blank" rel="noopener">www.hua.com指向本机（如忘记配置，可能导致浏览器警告）：</a><br><img src="http://www.zhangrenhua.com/back_images/j2ee-tomcat-hosts.png" alt="Alt text"></p>
+<p>3、利用CA根证书，签发服务端证书 </p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openssl x509 -req -days <span class="number">3650</span> -sha1 -extensions v3_req -CA certificates/ca<span class="selector-class">.cer</span> -CAkey private/ca<span class="selector-class">.key</span><span class="selector-class">.pem</span> -CAserial ca<span class="selector-class">.srl</span> -CAcreateserial -<span class="keyword">in</span> private/server<span class="selector-class">.csr</span> -out certificates/server.cer</span><br></pre></td></tr></table></figure>
+
+<p>这里和前面自己签发CA证书时，参数区别就比较大了，最后得到的server.cer，就是服务端证书 </p>
+<h3 id="测试单向认证"><a href="#测试单向认证" class="headerlink" title="测试单向认证"></a>测试单向认证</h3><p>有了服务端证书就可以配置单向认证了</p>
+<p>将刚才生成的证书文件复制到tomcat的conf目录下（server.key.pem、server.cer）</p>
+<p>修改tomcat/conf目录下的server.xml文件，笔者tomcat安装目录为D:\apache-tomcat-9.0.0.M4：</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">&lt;!-- 单向认证 --&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">Connector</span> <span class="attr">port</span>=<span class="string">"443"</span> <span class="attr">protocol</span>=<span class="string">"org.apache.coyote.http11.Http11AprProtocol"</span></span></span><br><span class="line"><span class="tag">           <span class="attr">maxThreads</span>=<span class="string">"150"</span> <span class="attr">SSLEnabled</span>=<span class="string">"true"</span> &gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">UpgradeProtocol</span> <span class="attr">className</span>=<span class="string">"org.apache.coyote.http2.Http2Protocol"</span> /&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">SSLHostConfig</span> <span class="attr">honorCipherOrder</span>=<span class="string">"false"</span> &gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">Certificate</span> <span class="attr">certificateKeyFile</span>=<span class="string">"conf/server.key.pem"</span></span></span><br><span class="line"><span class="tag">                     <span class="attr">certificateFile</span>=<span class="string">"conf/server.cer"</span></span></span><br><span class="line"><span class="tag">                     <span class="attr">type</span>=<span class="string">"RSA"</span> /&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">SSLHostConfig</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">Connector</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>在Service标签下添加入上配置：<br><img src="http://www.zhangrenhua.com/back_images/j2ee-tomcat-https-single.png" alt="Alt text"></p>
+<p><code>certificateKeyFile</code>：证书key路径<br><code>certificateFile</code>：证书路径<br><code>&lt;UpgradeProtocol className=&quot;org.apache.coyote.http2.Http2Protocol&quot; /&gt;</code>:添加这行即代表使用HTTP2.0协议，chrome浏览器可以安装<a href="https://chrome.google.com/webstore/detail/http2-and-spdy-indicator/mpbpobfflnpcgagjijhmgnchggcjblin" target="_blank" rel="noopener">HTTP/2 and SPDY indicator</a>插件查看协议版本</p>
+<h4 id="启动tomcat"><a href="#启动tomcat" class="headerlink" title="启动tomcat"></a>启动tomcat</h4><p>进入tomcat/bin目录，双击startup.bat，，会要求输入一个密码然后回车（笔者密码为：123456）：<br><img src="http://www.zhangrenhua.com/back_images/j2ee-tomcat-https-single-start.png" alt="Alt text"></p>
+<p>接下来用<a href="https://www.hua.com来访问，浏览器报警：" target="_blank" rel="noopener">https://www.hua.com来访问，浏览器报警：</a><br><img src="http://www.zhangrenhua.com/back_images/j2ee-tomcat-https-single.action.png" alt="Alt text"></p>
+<p>可以看到这个证书是由*.hua.com这个CA颁发的，浏览器不认识，所以不信任由这个CA签发的所有证书。接下来就需要把ca.cer导入浏览器。这里直接导入server.cer也是可以的，但是后面如果又创建一个网站比如说www2.hua.com，那么又不行了。所以最好的办法是直接导入CA根证书，那么后续只要是用这个根证书签发的证书，浏览器都会信任 </p>
+<h4 id="导入证书"><a href="#导入证书" class="headerlink" title="导入证书"></a>导入证书</h4><p>进入到D:\ca\certificates目录，双击ca.p12，点击下一步，输入密码，：<br><img src="http://www.zhangrenhua.com/back_images/j2ee-tomcat-https-ca-install.png" alt="Alt text"></p>
+<p>在此双击ca.p12，将证书安装到“受信任的根证书颁发机构”：<br><img src="http://www.zhangrenhua.com/back_images/j2ee-tomcat-https-ca-install1.png" alt="Alt text"></p>
+<p>接下来用<a href="https://www.hua.com来访问，浏览器还会报警：" target="_blank" rel="noopener">https://www.hua.com来访问，浏览器还会报警：</a><br><img src="http://www.zhangrenhua.com/back_images/j2ee-tomcat-https-single.action1.png" alt="Alt text"></p>
+<p>这是因为我使用的是SHA-1证书，前面提到过，建议升级。到此单向认证+http2.0+apr测试成功。</p>
+<h3 id="测试双向认证"><a href="#测试双向认证" class="headerlink" title="测试双向认证"></a>测试双向认证</h3><p>如果要配置服务器只允许合法的用户访问，就需要配置双向认证 </p>
+<p>配置为双向认证之后，除了服务端要发证书给客户端之外，客户端也要发客户端证书到服务端，服务端认证通过，才允许访问</p>
+<p>这里要说明一下，客户端证书是怎么来的 </p>
+<p>有2种方式：</p>
+<p>第一种，客户端也自己CA，然后签发证书给自己。把客户端的CA根证书发过来，配置成SSLCACertificateFile。这在互联网应用里基本是不可能的，安全和管理都是问题。但是在企业应用里，还是比较常见的，双方互相交换CA根证书 </p>
+<p>第二种，就用刚才服务端的CA根证书，签发一个客户端证书，发给用户，用户每次用这个证书来发请求，像银行，支付宝等等，用的是这种方式 </p>
+<p>当然理论上其实还有一种办法，就是客户自己去找权威CA签证书，但是这个是不可能的，因为很麻烦，找CA签也非常贵 </p>
+<p>本文用的是第2种方法。其实都是一样的。关键还是在CA根证书上，所以前面也说过了，CA根证书非常重要 </p>
+<h4 id="签发客户端证书"><a href="#签发客户端证书" class="headerlink" title="签发客户端证书"></a>签发客户端证书</h4><p>1、创建客户端私钥 </p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openssl genrsa -aes256 -out private/client<span class="selector-class">.key</span><span class="selector-class">.pem</span> <span class="number">2048</span></span><br></pre></td></tr></table></figure>
+
+<p>2、创建客户端证书签发请求 </p>
+<figure class="highlight axapta"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openssl req -<span class="keyword">new</span> -key <span class="keyword">private</span>/<span class="keyword">client</span>.key.pem -out <span class="keyword">private</span>/<span class="keyword">client</span>.csr -subj <span class="string">"/C=CN/ST=SZ/L=SZ/O=hua/OU=hua/CN=hua"</span></span><br></pre></td></tr></table></figure>
+
+<p>这里的不同在于，这里的CN不是*.hua.com，也不是<a href="http://www.hua.com，随便填一个就好了，或者干脆叫user都没问题，反正是一个客户端证书" target="_blank" rel="noopener">www.hua.com，随便填一个就好了，或者干脆叫user都没问题，反正是一个客户端证书</a> </p>
+<p>3、利用CA根证书，签发客户端证书</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openssl x509 -req -days <span class="number">3650</span> -sha1 -extensions v3_req -CA certificates/ca<span class="selector-class">.cer</span> -CAkey private/ca<span class="selector-class">.key</span><span class="selector-class">.pem</span> -CAserial ca<span class="selector-class">.srl</span> -CAcreateserial -<span class="keyword">in</span> private/client<span class="selector-class">.csr</span> -out certificates/client.cer</span><br></pre></td></tr></table></figure>
+
+<p>这里和签发server.cer基本是一样的 </p>
+<p>4、把客户端证书转换成p12格式</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openssl pkcs12 -export -clcerts -inkey private/client<span class="selector-class">.key</span><span class="selector-class">.pem</span> -<span class="keyword">in</span> certificates/client<span class="selector-class">.cer</span> -out certificates/client.p12</span><br></pre></td></tr></table></figure>
+
+<p>这步是必须的，因为稍后就需要把客户端证书导入到浏览器里，但是一般浏览器都不能直接使用PEM编码的证书 </p>
+<h4 id="测试双向认证-1"><a href="#测试双向认证-1" class="headerlink" title="测试双向认证"></a>测试双向认证</h4><p>将刚才生成的证书文件复制到tomcat的conf目录下（ca.cer）</p>
+<p>修改tomcat/conf目录下的server.xml文件，笔者tomcat安装目录为D:\apache-tomcat-9.0.0.M4：</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">&lt;!-- 双向认证 --&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">Connector</span> <span class="attr">port</span>=<span class="string">"443"</span> <span class="attr">protocol</span>=<span class="string">"org.apache.coyote.http11.Http11AprProtocol"</span></span></span><br><span class="line"><span class="tag">           <span class="attr">maxThreads</span>=<span class="string">"150"</span> <span class="attr">SSLEnabled</span>=<span class="string">"true"</span> &gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">UpgradeProtocol</span> <span class="attr">className</span>=<span class="string">"org.apache.coyote.http2.Http2Protocol"</span> /&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">SSLHostConfig</span> <span class="attr">honorCipherOrder</span>=<span class="string">"false"</span> </span></span><br><span class="line"><span class="tag">        <span class="attr">certificateVerification</span>=<span class="string">"require"</span></span></span><br><span class="line"><span class="tag">        <span class="attr">certificateVerificationDepth</span>=<span class="string">"10"</span></span></span><br><span class="line"><span class="tag">        <span class="attr">caCertificateFile</span>=<span class="string">"conf/ca.cer"</span> &gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">Certificate</span> <span class="attr">certificateKeyFile</span>=<span class="string">"conf/server.key.pem"</span></span></span><br><span class="line"><span class="tag">                     <span class="attr">certificateFile</span>=<span class="string">"conf/server.cer"</span></span></span><br><span class="line"><span class="tag">                     <span class="attr">type</span>=<span class="string">"RSA"</span> /&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">SSLHostConfig</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">Connector</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>添加下面三个参数，其他不变。<br><code>certificateVerification</code>：设置客户端必须发送证书<br><code>certificateVerificationDepth</code>：证书链深度<br><code>caCertificateFile</code>：验证客户端证书文件</p>
+<h4 id="导入证书-1"><a href="#导入证书-1" class="headerlink" title="导入证书"></a>导入证书</h4><p>进入到D:\ca\certificates目录，双击client.p12，点击下一步，输入密码，：<br><img src="http://www.zhangrenhua.com/back_images/j2ee-tomcat-https-ca-install.png" alt="Alt text"></p>
+<p>在此双击client.p12，将证书安装到“受信任的根证书颁发机构”：<br><img src="http://www.zhangrenhua.com/back_images/j2ee-tomcat-https-ca-install1.png" alt="Alt text"></p>
+<p>如果根据上面步骤验证了单向认证，可以先在个人证书里把“颁发给”等于“*.hua”的证书删除掉，保留下面的“hua”证书就行。（不删掉也没关系，只不过会提示有两个证书）：<br><img src="http://www.zhangrenhua.com/back_images/j2ee-tomcat-https-ca-list.png" alt="Alt text"></p>
+<p>启动tomcat，还是得输入密码。</p>
+<h4 id="浏览器验证"><a href="#浏览器验证" class="headerlink" title="浏览器验证"></a>浏览器验证</h4><p>Chrome浏览器输入，<code>https://www.hua.com/</code>，提示选择证书，点击确定即可：<br><img src="http://www.zhangrenhua.com/back_images/j2ee-tomcat-https-ca-chrome-test.png" alt="Alt text"></p>
+<p>进入之后Chrome还是会有警告，还是加密算法是SHA-1的问题，建议后学者更新算法SHA-2。</p>
+<p>怎么验证HTTP2.0？根据前面所说安装<a href="https://chrome.google.com/webstore/detail/http2-and-spdy-indicator/mpbpobfflnpcgagjijhmgnchggcjblin" target="_blank" rel="noopener">HTTP/2 and SPDY indicator</a>插件即可查看，如果是HTTP2.0插件就会显示蓝色闪电标识：<br><img src="http://www.zhangrenhua.com/back_images/j2ee-tomcat-http2-test.png" alt="Alt text"></p>
+<p>IE浏览器输入，<code>https://www.hua.com/</code>，提示选择证书，点击确定即可：<br><img src="http://www.zhangrenhua.com/back_images/j2ee-tomcat-https-ca-ie-test.png" alt="Alt text"></p>
+<p>注意：IE是没有提示加密算法不安全的哦。</p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>网上找了很多资料，发现都不是太详细，尤其在参数配置这块，基本找不到APR配置的。最终笔者在apache官网找到上面配置。</p>
+<ul>
+<li><a href="https://tomcat.apache.org/tomcat-9.0-doc/config/http.html#SSL_Support_-_SSLHostConfig" target="_blank" rel="noopener">https://tomcat.apache.org/tomcat-9.0-doc/config/http.html#SSL_Support_-_SSLHostConfig</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/j2ee/" rel="tag"># j2ee</a>
+          
+            <a href="/tags/tomcat/" rel="tag"># tomcat</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/04/19/hadoop-spark-dataload/" rel="next" title="Spark数据加载 To (HDFS/Hive)">
+                <i class="fa fa-chevron-left"></i> Spark数据加载 To (HDFS/Hive)
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/05/26/Tesseract-OCR图片识别/" rel="prev" title="Tesseract-OCR图片识别 + tess4j">
+                Tesseract-OCR图片识别 + tess4j <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+<span class="jiathis_txt">分享到：</span>
+<a class="jiathis_button_fav">收藏夹</a>
+<a class="jiathis_button_copy">复制网址</a>
+<a class="jiathis_button_email">邮件</a>
+<a class="jiathis_button_weixin">微信</a>
+<a class="jiathis_button_qzone">QQ空间</a>
+<a class="jiathis_button_tqq">腾讯微博</a>
+<a class="jiathis_button_douban">豆瓣</a>
+<a class="jiathis_button_share">一键分享</a>
+
+<a href="http://www.jiathis.com/share?uid=2140465" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank">更多</a>
+<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+var jiathis_config={
+  data_track_clickback:true,
+  summary:"",
+  shortUrl:false,
+  hideMore:false
+}
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  <p>热评文章</p>
+  <div class="ds-top-threads" data-range="weekly" data-num-items="4"></div>
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div class="ds-thread" data-thread-key="2016/05/04/Openssl、Tomcat9(Http2 APR)、Https单双向认证/" data-title="Openssl、Tomcat9(Http2 APR)、Https单/双向认证" data-url="http://www.zhangrenhua.com/2016/05/04/Openssl、Tomcat9(Http2 APR)、Https单双向认证/">
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="http://www.zhangrenhua.com/back_images/avatar.jpg" alt="张仁华">
+            
+              <p class="site-author-name" itemprop="name">张仁华</p>
+              <p class="site-description motion-element" itemprop="description">记录软件生涯中的点点滴滴</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">76</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">17</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/zhangrenhua/" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://weibo.com/huaHBrother" target="_blank" title="Weibo">
+                      
+                        <i class="fa fa-fw fa-globe"></i>Weibo</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://douban.com/people/huaHBrother" target="_blank" title="douban">
+                      
+                        <i class="fa fa-fw fa-globe"></i>douban</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://zhihu.com/people/huaHBrother" target="_blank" title="zhihu">
+                      
+                        <i class="fa fa-fw fa-globe"></i>zhihu</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#软件版本"><span class="nav-number">2.</span> <span class="nav-text">软件版本</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#软件安装"><span class="nav-number">3.</span> <span class="nav-text">软件安装</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#OpenSSL"><span class="nav-number">3.0.1.</span> <span class="nav-text">OpenSSL</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#jdk"><span class="nav-number">3.1.</span> <span class="nav-text">jdk</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#tomcat"><span class="nav-number">3.2.</span> <span class="nav-text">tomcat</span></a></li></ol><li class="nav-item nav-level-2"><a class="nav-link" href="#OpenSSL生成CA证书"><span class="nav-number">4.</span> <span class="nav-text">OpenSSL生成CA证书</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#环境准备"><span class="nav-number">4.1.</span> <span class="nav-text">环境准备</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#使用场景"><span class="nav-number">4.2.</span> <span class="nav-text">使用场景</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#背景知识"><span class="nav-number">4.3.</span> <span class="nav-text">背景知识</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#创建CA（Certificate-Authority）"><span class="nav-number">4.4.</span> <span class="nav-text">创建CA（Certificate Authority）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#准备工作"><span class="nav-number">4.5.</span> <span class="nav-text">准备工作</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#创建CA私钥"><span class="nav-number">4.6.</span> <span class="nav-text">创建CA私钥</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#创建CA签名请求"><span class="nav-number">4.7.</span> <span class="nav-text">创建CA签名请求</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#自己签发CA根证书"><span class="nav-number">4.8.</span> <span class="nav-text">自己签发CA根证书</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#把根证书从PEM编码转为PKCS编码"><span class="nav-number">4.9.</span> <span class="nav-text">把根证书从PEM编码转为PKCS编码</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#签发服务端证书"><span class="nav-number">4.10.</span> <span class="nav-text">签发服务端证书</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#测试单向认证"><span class="nav-number">4.11.</span> <span class="nav-text">测试单向认证</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#启动tomcat"><span class="nav-number">4.11.1.</span> <span class="nav-text">启动tomcat</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#导入证书"><span class="nav-number">4.11.2.</span> <span class="nav-text">导入证书</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#测试双向认证"><span class="nav-number">4.12.</span> <span class="nav-text">测试双向认证</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#签发客户端证书"><span class="nav-number">4.12.1.</span> <span class="nav-text">签发客户端证书</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#测试双向认证-1"><span class="nav-number">4.12.2.</span> <span class="nav-text">测试双向认证</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#导入证书-1"><span class="nav-number">4.12.3.</span> <span class="nav-text">导入证书</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#浏览器验证"><span class="nav-number">4.12.4.</span> <span class="nav-text">浏览器验证</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">5.</span> <span class="nav-text">参考资料</span></a></li></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">张仁华</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"iissnan-notes"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

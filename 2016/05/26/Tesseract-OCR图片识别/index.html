@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="google-site-verification" content="zUNgN8yGBtBZ8194JTl7PXh7YvztVw494zGKJ_8qH00">
+
+
+
+
+
+
+
+
+  <meta name="baidu-site-verification" content="kqLgluU8lc">
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/favicon.ico?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="爬虫,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="hua的博客" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="最近在公司有个爬虫需求，爬取的网站上有图片验证码，不过样式比较简单。在网上找到一些图片识别的OCR框架，最后选择Tesseract。tesseact其实全称是tesseract-ocr，是个自动识别字符的程序，项目网址是：http://code.google.com/p/tesseract-ocr/。虽然其主流平台是三大系统（Win/Linux/Mac OS），但在android和iphone上也">
+<meta name="keywords" content="爬虫">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Tesseract-OCR图片识别 + tess4j">
+<meta property="og:url" content="http://www.zhangrenhua.com/2016/05/26/Tesseract-OCR图片识别/index.html">
+<meta property="og:site_name" content="hua的博客">
+<meta property="og:description" content="最近在公司有个爬虫需求，爬取的网站上有图片验证码，不过样式比较简单。在网上找到一些图片识别的OCR框架，最后选择Tesseract。tesseact其实全称是tesseract-ocr，是个自动识别字符的程序，项目网址是：http://code.google.com/p/tesseract-ocr/。虽然其主流平台是三大系统（Win/Linux/Mac OS），但在android和iphone上也">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://zhixing.court.gov.cn/search/security/jcaptcha.jpg?84">
+<meta property="og:updated_time" content="2019-07-11T06:42:53.988Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Tesseract-OCR图片识别 + tess4j">
+<meta name="twitter:description" content="最近在公司有个爬虫需求，爬取的网站上有图片验证码，不过样式比较简单。在网上找到一些图片识别的OCR框架，最后选择Tesseract。tesseact其实全称是tesseract-ocr，是个自动识别字符的程序，项目网址是：http://code.google.com/p/tesseract-ocr/。虽然其主流平台是三大系统（Win/Linux/Mac OS），但在android和iphone上也">
+<meta name="twitter:image" content="http://zhixing.court.gov.cn/search/security/jcaptcha.jpg?84">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.zhangrenhua.com/2016/05/26/Tesseract-OCR图片识别/">
+
+
+
+
+
+  <title>Tesseract-OCR图片识别 + tess4j | hua的博客</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-69647002-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?954f429681a4cd6dee6095ddaa2aac9a";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">hua的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">关注技术和人文的原创IT博客</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-schedule">
+          <a href="/schedule/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            日程表
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sitemap">
+          <a href="/sitemap.xml" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            站点地图
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="st-search-show-outputs">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <form class="site-search-form">
+  <input type="text" id="st-search-input" class="st-search-input st-default-search-input">
+</form>
+
+<script type="text/javascript">
+  (function(w,d,t,u,n,s,e){w['SwiftypeObject']=n;w[n]=w[n]||function(){
+    (w[n].q=w[n].q||[]).push(arguments);};s=d.createElement(t);
+    e=d.getElementsByTagName(t)[0];s.async=1;s.src=u;e.parentNode.insertBefore(s,e);
+  })(window,document,'script','//s.swiftypecdn.com/install/v2/st.js','_st');
+
+  _st('install', 'BAacTgC1f_bLy6kngppZ','2.0.0');
+</script>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.zhangrenhua.com/2016/05/26/Tesseract-OCR图片识别/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="张仁华">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="http://www.zhangrenhua.com/back_images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hua的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Tesseract-OCR图片识别 + tess4j</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-05-26T16:19:49+08:00">
+                2016-05-26
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/ocr/" itemprop="url" rel="index">
+                    <span itemprop="name">ocr</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2016/05/26/Tesseract-OCR图片识别/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2016/05/26/Tesseract-OCR图片识别/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  最近在公司有个爬虫需求，爬取的网站上有图片验证码，不过样式比较简单。在网上找到一些图片识别的OCR框架，最后选择Tesseract。<br><br>tesseact其实全称是tesseract-ocr，是个自动识别字符的程序，项目网址是：http://code.google.com/p/tesseract-ocr/。虽然其主流平台是三大系统（Win/Linux/Mac OS），但在android和iphone上也是可以跑的。<br><br>tesseract支持多种语言 - 你只需下载对应的训练过的语言文件即可，并且可以通过config文件来调整行为：比如只识别数字，比如只识别指定的words或者指定的pattern。另外提一下，tesseract只支持字符识别，不支持条形码(barcode)识别。<br><br>tess4j（http://tess4j.sourceforge.net/）是一个从Java角度使用JNA封闭的针对 Tesseract ORC 的开源项目,使用  Apache License, v2.0 协议.支持TIFF, JPEG, GIF, PNG, and BMP image formats,Multi-page TIFF images,PDF document format.(支持Tiff是一个很大的亮点)。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>最近在公司有个爬虫需求，爬取的网站上有图片验证码，不过样式比较简单。在网上找到一些图片识别的OCR框架，最后选择Tesseract。</p>
+<p>tesseact其实全称是tesseract-ocr，是个自动识别字符的程序，项目网址是：<a href="http://code.google.com/p/tesseract-ocr/。虽然其主流平台是三大系统（Win/Linux/Mac" target="_blank" rel="noopener">http://code.google.com/p/tesseract-ocr/。虽然其主流平台是三大系统（Win/Linux/Mac</a> OS），但在android和iphone上也是可以跑的。</p>
+<p>tesseract支持多种语言 - 你只需下载对应的训练过的语言文件即可，并且可以通过config文件来调整行为：比如只识别数字，比如只识别指定的words或者指定的pattern。另外提一下，tesseract只支持字符识别，不支持条形码(barcode)识别。</p>
+<p>tess4j（<a href="http://tess4j.sourceforge.net/）是一个从Java角度使用JNA封闭的针对" target="_blank" rel="noopener">http://tess4j.sourceforge.net/）是一个从Java角度使用JNA封闭的针对</a> Tesseract ORC 的开源项目,使用  Apache License, v2.0 协议.支持TIFF, JPEG, GIF, PNG, and BMP image formats,Multi-page TIFF images,PDF document format.(支持Tiff是一个很大的亮点)。</p>
+<h2 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h2><p>本次测试在windows上进行，所以先下载exe文件，并安装：<br><a href="http://www.zhangrenhua.com/back_images/tesseract-ocr-setup-3.02.02.exe">tesseract-ocr-setup-3.02.02.exe</a></p>
+<h3 id="验证安装"><a href="#验证安装" class="headerlink" title="验证安装"></a>验证安装</h3><p>将下面图片保存到D盘：<br><img src="http://zhixing.court.gov.cn/search/security/jcaptcha.jpg?84" alt="Alt text"></p>
+<p>进入cmd命令行，执行下面命令：</p>
+<figure class="highlight applescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">d:  <span class="comment">--进入d盘</span></span><br><span class="line">tesseract jcaptcha.jpg <span class="literal">result</span>  <span class="comment">--解析图片，结果输出到result.txt文件</span></span><br></pre></td></tr></table></figure>
+
+<p>打开d:/result.txt查看结果。</p>
+<h2 id="tess4j"><a href="#tess4j" class="headerlink" title="tess4j"></a>tess4j</h2><p>pom.xml：</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">project</span> <span class="attr">xmlns</span>=<span class="string">"http://maven.apache.org/POM/4.0.0"</span> <span class="attr">xmlns:xsi</span>=<span class="string">"http://www.w3.org/2001/XMLSchema-instance"</span> <span class="attr">xsi:schemaLocation</span>=<span class="string">"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">modelVersion</span>&gt;</span>4.0.0<span class="tag">&lt;/<span class="name">modelVersion</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>com.hua.tess4j<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>tess4j<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>0.0.1-SNAPSHOT<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="comment">&lt;!-- &lt;repositories&gt; --&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- &lt;repository&gt; --&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- &lt;id&gt;org.ghost4j.repository.releases&lt;/id&gt; --&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- &lt;name&gt;Ghost4J releases&lt;/name&gt; --&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- &lt;url&gt;http://repo.ghost4j.org/maven2/releases&lt;/url&gt; --&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- &lt;/repository&gt; --&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- needed for image-io --&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- &lt;repository&gt; --&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- &lt;releases /&gt; --&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- &lt;snapshots&gt; --&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- &lt;enabled&gt;false&lt;/enabled&gt; --&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- &lt;/snapshots&gt; --&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- &lt;id&gt;mygrid-repository&lt;/id&gt; --&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- &lt;name&gt;myGrid Repository&lt;/name&gt; --&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- &lt;url&gt;http://www.mygrid.org.uk/maven/repository&lt;/url&gt; --&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- &lt;/repository&gt; --&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- &lt;/repositories&gt; --&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependencies</span>&gt;</span></span><br><span class="line"></span><br><span class="line">        <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>junit<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>junit<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">version</span>&gt;</span>4.11<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">scope</span>&gt;</span>test<span class="tag">&lt;/<span class="name">scope</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">&lt;!-- http://mvnrepository.com/artifact/net.sourceforge.tess4j/tess4j --&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>net.sourceforge.tess4j<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>tess4j<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">version</span>&gt;</span>1.5.0<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependencies</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;<span class="name">build</span> /&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">project</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>测试代码：</p>
+<figure class="highlight actionscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta"><span class="meta-keyword">import</span> static org.junit.Assert.assertArrayEquals;</span></span><br><span class="line"><span class="meta"><span class="meta-keyword">import</span> static org.junit.Assert.assertEquals;</span></span><br><span class="line"></span><br><span class="line"><span class="meta"><span class="meta-keyword">import</span> java.awt.Rectangle;</span></span><br><span class="line"><span class="meta"><span class="meta-keyword">import</span> java.awt.image.BufferedImage;</span></span><br><span class="line"><span class="meta"><span class="meta-keyword">import</span> java.io.File;</span></span><br><span class="line"><span class="meta"><span class="meta-keyword">import</span> java.nio.IntBuffer;</span></span><br><span class="line"><span class="meta"><span class="meta-keyword">import</span> java.util.ArrayList;</span></span><br><span class="line"><span class="meta"><span class="meta-keyword">import</span> java.util.List;</span></span><br><span class="line"></span><br><span class="line"><span class="meta"><span class="meta-keyword">import</span> javax.imageio.IIOImage;</span></span><br><span class="line"><span class="meta"><span class="meta-keyword">import</span> javax.imageio.ImageIO;</span></span><br><span class="line"></span><br><span class="line"><span class="meta"><span class="meta-keyword">import</span> net.sourceforge.tess4j.TessAPI1;</span></span><br><span class="line"><span class="meta"><span class="meta-keyword">import</span> net.sourceforge.tess4j.Tesseract1;</span></span><br><span class="line"><span class="meta"><span class="meta-keyword">import</span> net.sourceforge.vietocr.ImageHelper;</span></span><br><span class="line"><span class="meta"><span class="meta-keyword">import</span> net.sourceforge.vietocr.ImageIOHelper;</span></span><br><span class="line"></span><br><span class="line"><span class="meta"><span class="meta-keyword">import</span> org.junit.After;</span></span><br><span class="line"><span class="meta"><span class="meta-keyword">import</span> org.junit.AfterClass;</span></span><br><span class="line"><span class="meta"><span class="meta-keyword">import</span> org.junit.Before;</span></span><br><span class="line"><span class="meta"><span class="meta-keyword">import</span> org.junit.BeforeClass;</span></span><br><span class="line"><span class="meta"><span class="meta-keyword">import</span> org.junit.Test;</span></span><br><span class="line"></span><br><span class="line"><span class="meta"><span class="meta-keyword">import</span> com.recognition.software.jdeskew.ImageDeskew;</span></span><br><span class="line"><span class="meta"><span class="meta-keyword">import</span> com.sun.jna.Pointer;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Tesseract1Test</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    Tesseract1 instance;</span><br><span class="line"></span><br><span class="line">    @Before</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> setUp() &#123;</span><br><span class="line">        instance = <span class="keyword">new</span> Tesseract1();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Test of doOCR method, of class Tesseract1.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    @Test</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> testDoOCR_File() throws Exception &#123;</span><br><span class="line">        System.out.println(<span class="string">"doOCR on a PNG image"</span>);</span><br><span class="line">        File imageFile = <span class="keyword">new</span> File(<span class="string">"d:/jcaptcha.jpg"</span>);</span><br><span class="line">        String result = instance.doOCR(imageFile);</span><br><span class="line">        System.out.println(result);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="提高识别率"><a href="#提高识别率" class="headerlink" title="提高识别率"></a>提高识别率</h3><p>instance.setPageSegMode(mode)，设置识别模式：</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">pagesegmode values are:</span><br><span class="line">0 = Orientation <span class="keyword">and</span><span class="built_in"> script </span>detection (OSD) only.</span><br><span class="line">1 = Automatic<span class="built_in"> page </span>segmentation with OSD.</span><br><span class="line">2 = Automatic<span class="built_in"> page </span>segmentation, but <span class="literal">no</span> OSD, <span class="keyword">or</span> OCR</span><br><span class="line">3 = Fully automatic<span class="built_in"> page </span>segmentation, but <span class="literal">no</span> OSD. (Default)</span><br><span class="line">4 = Assume a single column of text of variable sizes.</span><br><span class="line">5 = Assume a single uniform block of vertically aligned text.</span><br><span class="line">6 = Assume a single uniform block of text.</span><br><span class="line">7 = Treat the image as a single text line.</span><br><span class="line">8 = Treat the image as a single word.</span><br><span class="line">9 = Treat the image as a single word <span class="keyword">in</span> a circle.</span><br><span class="line">10 = Treat the image as a single character.</span><br><span class="line">-l lang <span class="keyword">and</span>/<span class="keyword">or</span> -psm pagesegmode must occur before anyconfigfile.</span><br></pre></td></tr></table></figure>
+
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>tesseract-OCR默认的识别率其实已经很高了，但是对于一些加了噪声的图片还需做一些手动处理，比如：可以手动训练数据，在后续如果有时间我会写出来。</p>
+<p>如果想要支持中文可以下载中文语言包，所有语言包下载链接：<br><a href="https://codeload.github.com/tesseract-ocr/tessdata/zip/master" target="_blank" rel="noopener">https://codeload.github.com/tesseract-ocr/tessdata/zip/master</a></p>
+<p>示例代码下载：<br><a href="http://www.zhangrenhua.com/back_images/tess4j.zip">tess4j.zip</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/爬虫/" rel="tag"># 爬虫</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/05/04/Openssl、Tomcat9(Http2 APR)、Https单双向认证/" rel="next" title="Openssl、Tomcat9(Http2 APR)、Https单/双向认证">
+                <i class="fa fa-chevron-left"></i> Openssl、Tomcat9(Http2 APR)、Https单/双向认证
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/06/01/crawler-法院公开信息/" rel="prev" title="法院公开信息爬取">
+                法院公开信息爬取 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+<span class="jiathis_txt">分享到：</span>
+<a class="jiathis_button_fav">收藏夹</a>
+<a class="jiathis_button_copy">复制网址</a>
+<a class="jiathis_button_email">邮件</a>
+<a class="jiathis_button_weixin">微信</a>
+<a class="jiathis_button_qzone">QQ空间</a>
+<a class="jiathis_button_tqq">腾讯微博</a>
+<a class="jiathis_button_douban">豆瓣</a>
+<a class="jiathis_button_share">一键分享</a>
+
+<a href="http://www.jiathis.com/share?uid=2140465" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank">更多</a>
+<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+var jiathis_config={
+  data_track_clickback:true,
+  summary:"",
+  shortUrl:false,
+  hideMore:false
+}
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  <p>热评文章</p>
+  <div class="ds-top-threads" data-range="weekly" data-num-items="4"></div>
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div class="ds-thread" data-thread-key="2016/05/26/Tesseract-OCR图片识别/" data-title="Tesseract-OCR图片识别 + tess4j" data-url="http://www.zhangrenhua.com/2016/05/26/Tesseract-OCR图片识别/">
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="http://www.zhangrenhua.com/back_images/avatar.jpg" alt="张仁华">
+            
+              <p class="site-author-name" itemprop="name">张仁华</p>
+              <p class="site-description motion-element" itemprop="description">记录软件生涯中的点点滴滴</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">76</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">17</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/zhangrenhua/" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://weibo.com/huaHBrother" target="_blank" title="Weibo">
+                      
+                        <i class="fa fa-fw fa-globe"></i>Weibo</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://douban.com/people/huaHBrother" target="_blank" title="douban">
+                      
+                        <i class="fa fa-fw fa-globe"></i>douban</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://zhihu.com/people/huaHBrother" target="_blank" title="zhihu">
+                      
+                        <i class="fa fa-fw fa-globe"></i>zhihu</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#安装"><span class="nav-number">2.</span> <span class="nav-text">安装</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#验证安装"><span class="nav-number">2.1.</span> <span class="nav-text">验证安装</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#tess4j"><span class="nav-number">3.</span> <span class="nav-text">tess4j</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#提高识别率"><span class="nav-number">3.1.</span> <span class="nav-text">提高识别率</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">张仁华</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"iissnan-notes"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

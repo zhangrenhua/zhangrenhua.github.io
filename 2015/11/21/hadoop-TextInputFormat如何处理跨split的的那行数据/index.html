@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="google-site-verification" content="zUNgN8yGBtBZ8194JTl7PXh7YvztVw494zGKJ_8qH00">
+
+
+
+
+
+
+
+
+  <meta name="baidu-site-verification" content="kqLgluU8lc">
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/favicon.ico?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="java,hadoop生态圈,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="hua的博客" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="刚接触hadoop，首先学习的必然是MapReduce编程。根据《hadoop权威指南》中的步骤走下去，必然是NCDC天气数据的统计分析了。当时我看着书籍里面的自定义Map只需要继承Mapper就能获取到一行一行的数据，我相信大多数人都会想为什么能获取到一行行的数据呢？为什么获取到的不是整个文件？或者是文件中的一部分？">
+<meta name="keywords" content="java,hadoop生态圈">
+<meta property="og:type" content="article">
+<meta property="og:title" content="TextInputFormat如何处理跨split的那行数据">
+<meta property="og:url" content="http://www.zhangrenhua.com/2015/11/21/hadoop-TextInputFormat如何处理跨split的的那行数据/index.html">
+<meta property="og:site_name" content="hua的博客">
+<meta property="og:description" content="刚接触hadoop，首先学习的必然是MapReduce编程。根据《hadoop权威指南》中的步骤走下去，必然是NCDC天气数据的统计分析了。当时我看着书籍里面的自定义Map只需要继承Mapper就能获取到一行一行的数据，我相信大多数人都会想为什么能获取到一行行的数据呢？为什么获取到的不是整个文件？或者是文件中的一部分？">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/hadoop-textinputformat-split.png">
+<meta property="og:updated_time" content="2019-07-11T06:43:13.739Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="TextInputFormat如何处理跨split的那行数据">
+<meta name="twitter:description" content="刚接触hadoop，首先学习的必然是MapReduce编程。根据《hadoop权威指南》中的步骤走下去，必然是NCDC天气数据的统计分析了。当时我看着书籍里面的自定义Map只需要继承Mapper就能获取到一行一行的数据，我相信大多数人都会想为什么能获取到一行行的数据呢？为什么获取到的不是整个文件？或者是文件中的一部分？">
+<meta name="twitter:image" content="http://www.zhangrenhua.com/back_images/hadoop-textinputformat-split.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.zhangrenhua.com/2015/11/21/hadoop-TextInputFormat如何处理跨split的的那行数据/">
+
+
+
+
+
+  <title>TextInputFormat如何处理跨split的那行数据 | hua的博客</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-69647002-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?954f429681a4cd6dee6095ddaa2aac9a";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">hua的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">关注技术和人文的原创IT博客</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-schedule">
+          <a href="/schedule/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            日程表
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sitemap">
+          <a href="/sitemap.xml" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            站点地图
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="st-search-show-outputs">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <form class="site-search-form">
+  <input type="text" id="st-search-input" class="st-search-input st-default-search-input">
+</form>
+
+<script type="text/javascript">
+  (function(w,d,t,u,n,s,e){w['SwiftypeObject']=n;w[n]=w[n]||function(){
+    (w[n].q=w[n].q||[]).push(arguments);};s=d.createElement(t);
+    e=d.getElementsByTagName(t)[0];s.async=1;s.src=u;e.parentNode.insertBefore(s,e);
+  })(window,document,'script','//s.swiftypecdn.com/install/v2/st.js','_st');
+
+  _st('install', 'BAacTgC1f_bLy6kngppZ','2.0.0');
+</script>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.zhangrenhua.com/2015/11/21/hadoop-TextInputFormat如何处理跨split的的那行数据/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="张仁华">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="http://www.zhangrenhua.com/back_images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hua的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">TextInputFormat如何处理跨split的那行数据</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2015-11-21T20:00:00+08:00">
+                2015-11-21
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/hadoop/" itemprop="url" rel="index">
+                    <span itemprop="name">hadoop</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2015/11/21/hadoop-TextInputFormat如何处理跨split的的那行数据/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2015/11/21/hadoop-TextInputFormat如何处理跨split的的那行数据/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  刚接触hadoop，首先学习的必然是MapReduce编程。根据《hadoop权威指南》中的步骤走下去，必然是NCDC天气数据的统计分析了。当时我看着书籍里面的自定义Map只需要继承Mapper就能获取到一行一行的数据，我相信大多数人都会想为什么能获取到一行行的数据呢？为什么获取到的不是整个文件？或者是文件中的一部分？
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>刚接触hadoop，首先学习的必然是MapReduce编程。根据《hadoop权威指南》中的步骤走下去，必然是NCDC天气数据的统计分析了。当时我看着书籍里面的自定义Map只需要继承Mapper就能获取到一行一行的数据，我相信大多数人都会想为什么能获取到一行行的数据呢？为什么获取到的不是整个文件？或者是文件中的一部分？</p>
+<p>于是，我通过继续阅读《hadoop权威指南》并在网上找资料终于搞懂了，原来是InputFormat搞得鬼。hadoop将数据给到map进行处理前会使用InputFormat对数据进行两方面的预处理：<br>1、对输入数据进行切分，生成一组split，一个split会分发给一个mapper进行处理；<br>2、针对每个split，再创建一个RecordReader读取Split内的数据，并按照&lt;key,value&gt;的形式组织成一条record传给map函数进行处理。</p>
+<p>其实说到这里问题就来了，注意hadoop在进行map之前会对数据进行split，而数据的split也是inputformat处理的，如果对split流程不懂的好可以去看我的另一博文<a href="/2015/11/27/hadoop-mapreduce%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B%E5%88%86%E6%9E%90/">《mapreduce执行流程分析》</a>。</p>
+<p>本文主要针对TextInputFormat处理细节进行讲解。在split的读取方面，它是将给到的Split按行读取，以行首字节在文件中的偏移做key，以行数据做value传给map函数处理，这部分的逻辑是由它所创建并使用的LineRecordReader封装和实现的。关于这部分逻辑，在一开始接触hadoop时会有一个常见的疑问：<br><img src="http://www.zhangrenhua.com/back_images/hadoop-textinputformat-split.png" alt="Alt text"></p>
+<p>如果一个行被切分到两个split里（这几乎是一定会发生的情况），TextInputFormat是如何处理的？如果是生硬地把一行切割到两个split里，是对数据的一种破坏，可能会影响数据分析的正确性(比如word count就是一个例子)。</p>
+<h2 id="数据行读取"><a href="#数据行读取" class="headerlink" title="数据行读取"></a>数据行读取</h2><p>当时我还在想HDFS文件系统是按块进行存储的，默认每块大小为128M。是不是HDFS文件系统是按行存储的？要不根据块进行split一行数据很有可能再个split上。后来经过网上找资料并阅读源码，终于理解了。下面我就简单地分析TextInputFormat是如何处理跨split的行数据的：</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">public <span class="class"><span class="keyword">class</span> <span class="title">TextInputFormat</span> <span class="keyword">extends</span> <span class="title">FileInputFormat&lt;LongWritable</span>, <span class="title">Text&gt;</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  public <span class="type">RecordReader</span>&lt;<span class="type">LongWritable</span>, <span class="type">Text</span>&gt; </span><br><span class="line">    createRecordReader(<span class="type">InputSplit</span> split,</span><br><span class="line">                       <span class="type">TaskAttemptContext</span> context) &#123;</span><br><span class="line">    <span class="type">String</span> delimiter = context.getConfiguration().get(</span><br><span class="line">        <span class="string">"textinputformat.record.delimiter"</span>);</span><br><span class="line">    byte[] recordDelimiterBytes = <span class="literal">null</span>;</span><br><span class="line">    <span class="keyword">if</span> (<span class="literal">null</span> != delimiter)</span><br><span class="line">      recordDelimiterBytes = delimiter.getBytes(<span class="type">Charsets</span>.<span class="type">UTF_8</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> <span class="type">LineRecordReader</span>(recordDelimiterBytes);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="keyword">protected</span> boolean isSplitable(<span class="type">JobContext</span> context, <span class="type">Path</span> file) &#123;</span><br><span class="line">    <span class="keyword">final</span> <span class="type">CompressionCodec</span> codec =</span><br><span class="line">      <span class="keyword">new</span> <span class="type">CompressionCodecFactory</span>(context.getConfiguration()).getCodec(file);</span><br><span class="line">    <span class="keyword">if</span> (<span class="literal">null</span> == codec) &#123;</span><br><span class="line">      <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> codec instanceof <span class="type">SplittableCompressionCodec</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>1、TextInputFormat中其实使用了LineRecordReader来进行数据的读取，LineRecordReader会创建一个org.apache.hadoop.util.LineReader实例，并依赖这个LineReader的readLine方法来读取一行记录，具体可参考LineRecordReader类的185行：</p>
+<figure class="highlight haxe"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">while</span> (getFilePosition() &lt;= end || <span class="keyword">in</span>.needAdditionalRecordAfterSplit()) &#123;</span><br><span class="line">  <span class="keyword">if</span> (pos == <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="keyword">new</span><span class="type">Size</span> = skipUtfByteOrderMark();</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">new</span><span class="type">Size</span> = <span class="keyword">in</span>.readLine(value, maxLineLength, maxBytesToConsume(pos));</span><br><span class="line">    pos += <span class="keyword">new</span><span class="type">Size</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> ((<span class="keyword">new</span><span class="type">Size</span> == <span class="number">0</span>) || (<span class="keyword">new</span><span class="type">Size</span> &lt; maxLineLength)) &#123;</span><br><span class="line">    <span class="keyword">break</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// line too long. try again</span></span><br><span class="line">  LOG.info(<span class="string">"Skipped line of size "</span> + <span class="keyword">new</span><span class="type">Size</span> + <span class="string">" at pos "</span> + </span><br><span class="line">           (pos - <span class="keyword">new</span><span class="type">Size</span>));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>那么关键的逻辑就在这个readLine方法里了,下面是我添加了中文注释的源码。这个方法主要的逻辑归纳起来是3点:<br>1、总是是从buffer里读取数据，如果buffer里的数据读完了，先加载下一批数据到buffer；<br>2、在buffer中查找“行尾”，将开始位置至行尾处的数据拷贝给str(也就是Value)，如果为遇到“行尾”，继续加载新的数据到buffer进行查找；<br>3、关键点在于：<font color="red">给到buffer的数据是直接从文件中读取的,完全不会考虑是否超过了split的界限,而是一直读取到当前行结束为止</font></p>
+<p>新版的api，readLine下面其实是有2个实现的：readDefaultLine方法按操作系统默认的换行符来处理，readCustomLine方法则是自定义的换行符。这里我们主要讲解readDefaultLine方法：</p>
+<figure class="highlight arduino"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">   * Read a line terminated by one of CR, LF, or CRLF.</span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">int</span> readDefaultLine(Text str, <span class="keyword">int</span> maxLineLength, <span class="keyword">int</span> maxBytesToConsume)</span><br><span class="line">  throws IOException &#123;</span><br><span class="line">    <span class="comment">/* We're reading data from in, but the head of the stream may be</span></span><br><span class="line"><span class="comment">     * already buffered in buffer, so we have several cases:</span></span><br><span class="line"><span class="comment">     * 1. No newline characters are in the buffer, so we need to copy</span></span><br><span class="line"><span class="comment">     *    everything and read another buffer from the stream.</span></span><br><span class="line"><span class="comment">     * 2. An unambiguously terminated line is in buffer, so we just</span></span><br><span class="line"><span class="comment">     *    copy to str.</span></span><br><span class="line"><span class="comment">     * 3. Ambiguously terminated line is in buffer, i.e. buffer ends</span></span><br><span class="line"><span class="comment">     *    in CR.  In this case we copy everything up to CR to str, but</span></span><br><span class="line"><span class="comment">     *    we also need to see what follows CR: if it's LF, then we</span></span><br><span class="line"><span class="comment">     *    need consume LF as well, so next call to readLine will read</span></span><br><span class="line"><span class="comment">     *    from after that.</span></span><br><span class="line"><span class="comment">     * We use a flag prevCharCR to signal if previous character was CR</span></span><br><span class="line"><span class="comment">     * and, if it happens to be at the end of the buffer, delay</span></span><br><span class="line"><span class="comment">     * consuming it until we have a chance to look at the char that</span></span><br><span class="line"><span class="comment">     * follows.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    str.<span class="built_in">clear</span>();</span><br><span class="line">    <span class="keyword">int</span> txtLength = <span class="number">0</span>; <span class="comment">//tracks str.getLength(), as an optimization</span></span><br><span class="line">    <span class="keyword">int</span> newlineLength = <span class="number">0</span>; <span class="comment">//length of terminating newline</span></span><br><span class="line">    <span class="keyword">boolean</span> prevCharCR = false; <span class="comment">//true of prev char was CR</span></span><br><span class="line">    <span class="keyword">long</span> bytesConsumed = <span class="number">0</span>;</span><br><span class="line">    <span class="built_in">do</span> &#123;</span><br><span class="line">      <span class="keyword">int</span> startPosn = bufferPosn; <span class="comment">//starting from where we left off the last time</span></span><br><span class="line"></span><br><span class="line">      <span class="comment">//如果buffer中的数据读完了，先加载一批数据到buffer里</span></span><br><span class="line">      <span class="built_in">if</span> (bufferPosn &gt;= bufferLength) &#123;</span><br><span class="line">        startPosn = bufferPosn = <span class="number">0</span>;</span><br><span class="line">        <span class="built_in">if</span> (prevCharCR) &#123;</span><br><span class="line">          ++bytesConsumed; <span class="comment">//account for CR from previous read</span></span><br><span class="line">        &#125;</span><br><span class="line">        bufferLength = in.<span class="built_in">read</span>(<span class="built_in">buffer</span>);</span><br><span class="line">        <span class="built_in">if</span> (bufferLength &lt;= <span class="number">0</span>) &#123;</span><br><span class="line">          <span class="built_in">break</span>; <span class="comment">// EOF</span></span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">     *注意：这里的逻辑有点复杂,由于不同操作系统对“行结束符“的定义不同：  </span></span><br><span class="line"><span class="comment">     *UNIX: '\n'  (LF)  </span></span><br><span class="line"><span class="comment">     *Mac:  '\r'  (CR)  </span></span><br><span class="line"><span class="comment">     *Windows: '\r\n'  (CR)(LF)  </span></span><br><span class="line"><span class="comment">     *为了准确判断一行的结尾，程序的判定逻辑是：</span></span><br><span class="line"><span class="comment">     *1.如果当前符号是LF，可以确定一定是到了行尾，但是需要参考一下前一个字符，因为如果前一个字符是CR，那就是windows文件，“行结束符的长度”  </span></span><br><span class="line"><span class="comment">     *(即变量：newlineLength,这个变量名起的有点糟糕)应该是2，否则就是UNIX文件，“行结束符的长度”为1。  </span></span><br><span class="line"><span class="comment">     *2.如果当前符号不是LF，看一下前一个符号是不是CR，如果是也可以确定一定上个字符就是行尾了，这是一个mac文件。  </span></span><br><span class="line"><span class="comment">     *3.如果当前符号是CR的话，还需要根据下一个字符是不是LF判断“行结束符的长度”，所以只是标记一下prevCharCR=true，供读取下个字符时参考。</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">      <span class="built_in">for</span> (; bufferPosn &lt; bufferLength; ++bufferPosn) &#123; <span class="comment">//search for newline</span></span><br><span class="line">        <span class="built_in">if</span> (<span class="built_in">buffer</span>[bufferPosn] == LF) &#123;</span><br><span class="line">          newlineLength = (prevCharCR) ? <span class="number">2</span> : <span class="number">1</span>;</span><br><span class="line">          ++bufferPosn; <span class="comment">// at next invocation proceed from following byte</span></span><br><span class="line">          <span class="built_in">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="built_in">if</span> (prevCharCR) &#123; <span class="comment">//CR + notLF, we are at notLF</span></span><br><span class="line">          newlineLength = <span class="number">1</span>;</span><br><span class="line">          <span class="built_in">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        prevCharCR = (<span class="built_in">buffer</span>[bufferPosn] == CR);</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">int</span> readLength = bufferPosn - startPosn;</span><br><span class="line">      <span class="built_in">if</span> (prevCharCR &amp;&amp; newlineLength == <span class="number">0</span>) &#123;</span><br><span class="line">        --readLength; <span class="comment">//CR at the end of the buffer</span></span><br><span class="line">      &#125;</span><br><span class="line">      bytesConsumed += readLength;</span><br><span class="line">      <span class="keyword">int</span> appendLength = readLength - newlineLength;</span><br><span class="line">      <span class="built_in">if</span> (appendLength &gt; maxLineLength - txtLength) &#123;</span><br><span class="line">        appendLength = maxLineLength - txtLength;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="built_in">if</span> (appendLength &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        str.append(<span class="built_in">buffer</span>, startPosn, appendLength);</span><br><span class="line">        txtLength += appendLength;</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      <span class="comment">//newlineLength == 0就意味着始终没有读到行尾，程序会继续通过文件输入流继续从文件里读取数据。</span></span><br><span class="line">    &#125; <span class="built_in">while</span> (newlineLength == <span class="number">0</span> &amp;&amp; bytesConsumed &lt; maxBytesToConsume);</span><br><span class="line"></span><br><span class="line">    <span class="built_in">if</span> (bytesConsumed &gt; (<span class="keyword">long</span>)Integer.MAX_VALUE) &#123;</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> IOException(<span class="string">"Too many bytes before newline: "</span> + bytesConsumed);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">return</span> (<span class="keyword">int</span>)bytesConsumed;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里有一个非常重要的地方：LineRecordReader的初始化函数（initialize）：<br>第85行：fileIn = fs.open(file);<br>我们看以看到：对于LineRecordReader：当它对取”一行“时，<font color="red">一定是读取到完整的行</font>，不会受filesplit的任何影响，因为它读取是filesplit所在的文件，而不是限定在filesplit的界限范围内。所以不会出现“断行”的问题！</p>
+<figure class="highlight processing"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> initialize(InputSplit genericSplit,</span><br><span class="line">                       TaskAttemptContext context) <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">  FileSplit <span class="built_in">split</span> = (FileSplit) genericSplit;</span><br><span class="line">  Configuration job = context.getConfiguration();</span><br><span class="line">  <span class="keyword">this</span>.maxLineLength = job.getInt(MAX_LINE_LENGTH, Integer.MAX_VALUE);</span><br><span class="line">  start = <span class="built_in">split</span>.getStart();</span><br><span class="line">  end = start + <span class="built_in">split</span>.getLength();</span><br><span class="line">  <span class="keyword">final</span> Path file = <span class="built_in">split</span>.getPath();</span><br><span class="line"></span><br><span class="line">  <span class="comment">// open the file and seek to the start of the split</span></span><br><span class="line">  <span class="keyword">final</span> FileSystem fs = file.getFileSystem(job);</span><br><span class="line">  fileIn = fs.<span class="built_in">open</span>(file);</span><br><span class="line"></span><br><span class="line">  ....</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="首行尾行处理"><a href="#首行尾行处理" class="headerlink" title="首行尾行处理"></a>首行尾行处理</h2><p>按照readLine的上述行为，在遇到跨split的行时，会到下一个split继续读取数据直至行尾，那么下一个split怎么判定开头的一行有没有被上一个split的LineRecordReader读取过从而避免漏读或重复读取开头一行呢？这方面LineRecordReader使用了一个简单而巧妙的方法：<br>既然无法断定每一个split开始的一行是独立的一行还是被切断的一行的一部分，那就跳过每个split的开始一行(当然要除第一个split之外)，从第二行开始读取，<font color="red">然后在到达split的结尾端时总是再多读一行</font>，这样数据既能接续起来又避开了断行带来的麻烦。以下是相关的源码：</p>
+<figure class="highlight maxima"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">public void initialize(InputSplit genericSplit,</span><br><span class="line">                       TaskAttemptContext <span class="built_in">context</span>) throws IOException &#123;</span><br><span class="line"></span><br><span class="line">  ....</span><br><span class="line"></span><br><span class="line">  // If this <span class="built_in">is</span> <span class="keyword">not</span> the <span class="built_in">first</span> <span class="built_in">split</span>, we always <span class="built_in">throw</span> away <span class="built_in">first</span> record</span><br><span class="line">  // because we always (except the <span class="built_in">last</span> <span class="built_in">split</span>) <span class="built_in">read</span> one extra line <span class="keyword">in</span></span><br><span class="line">  // next() <span class="built_in">method</span>.</span><br><span class="line">  <span class="keyword">if</span> (start != <span class="number">0</span>) &#123;</span><br><span class="line">    start += <span class="keyword">in</span>.readLine(<span class="built_in">new</span> Text(), <span class="number">0</span>, maxBytesToConsume(start));</span><br><span class="line">  &#125;</span><br><span class="line">  this.pos = start;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在LineRecordReader的初始化函数111到116行确定start位置时，明确注明：<font color="red">如果不是文件的开始位置则忽略掉该split的第一行数据</font></p>
+<figure class="highlight haxe"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> boolean nextKeyValue() throws IOException &#123;</span><br><span class="line">  <span class="keyword">if</span> (key == <span class="literal">null</span>) &#123;</span><br><span class="line">    key = <span class="keyword">new</span> <span class="type">LongWritable</span>();</span><br><span class="line">  &#125;</span><br><span class="line">  key.<span class="keyword">set</span>(pos);</span><br><span class="line">  <span class="keyword">if</span> (value == <span class="literal">null</span>) &#123;</span><br><span class="line">    value = <span class="keyword">new</span> <span class="type">Text</span>();</span><br><span class="line">  &#125;</span><br><span class="line">  int <span class="keyword">new</span><span class="type">Size</span> = <span class="number">0</span>;</span><br><span class="line">  <span class="comment">// We always read one extra line, which lies outside the upper</span></span><br><span class="line">  <span class="comment">// split limit i.e. (end - 1)</span></span><br><span class="line">  <span class="keyword">while</span> (getFilePosition() &lt;= end || <span class="keyword">in</span>.needAdditionalRecordAfterSplit()) &#123;</span><br><span class="line">    <span class="keyword">if</span> (pos == <span class="number">0</span>) &#123;</span><br><span class="line">      <span class="keyword">new</span><span class="type">Size</span> = skipUtfByteOrderMark();</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">new</span><span class="type">Size</span> = <span class="keyword">in</span>.readLine(value, maxLineLength, maxBytesToConsume(pos));</span><br><span class="line">      pos += <span class="keyword">new</span><span class="type">Size</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> ((<span class="keyword">new</span><span class="type">Size</span> == <span class="number">0</span>) || (<span class="keyword">new</span><span class="type">Size</span> &lt; maxLineLength)) &#123;</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// line too long. try again</span></span><br><span class="line">    LOG.info(<span class="string">"Skipped line of size "</span> + <span class="keyword">new</span><span class="type">Size</span> + <span class="string">" at pos "</span> + </span><br><span class="line">             (pos - <span class="keyword">new</span><span class="type">Size</span>));</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">new</span><span class="type">Size</span> == <span class="number">0</span>) &#123;</span><br><span class="line">    key = <span class="literal">null</span>;</span><br><span class="line">    value = <span class="literal">null</span>;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> long getFilePosition() throws IOException &#123;</span><br><span class="line">  long retVal;</span><br><span class="line">  <span class="keyword">if</span> (isCompressedInput &amp;&amp; <span class="literal">null</span> != filePosition) &#123;</span><br><span class="line">    retVal = filePosition.getPos();</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    retVal = pos;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> retVal;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>相应地，在LineRecordReader判断是否还有下一行的方法:LineRecordReader.nextKeyValue()179到181行中，while使用的判定条件是：<br>当前位置小于或等于split的结尾位置，也就说：<br><font color="red">当当前以处于split的结尾位置上时，while依然会执行一次，这一次读到显然已经是下一个split的开始行了！</font></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>至此，跨split的行读取的逻辑就完备了。如果引申地来看，这是map-reduce前期数据切分的一个普遍性问题，即不管我们用什么方式切分和读取一份大数据中的小部分，包括我们在实现自己的InputFormat时,都会面临在切分处数据时的连续性解析问题。对此我们应该深刻地认识到：split最直接的现实作用是取出大数据中的一小部分给mapper处理，但这只是一种“逻辑”上的，“宏观”上的切分，在“微观”上，在split的首尾切分处，为了确保数据连续性，跨越split接续并拼接数据也是完全正当和合理的。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/java/" rel="tag"># java</a>
+          
+            <a href="/tags/hadoop生态圈/" rel="tag"># hadoop生态圈</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2015/11/20/hadoop-常用压缩算法/" rel="next" title="hadoop常用压缩算法">
+                <i class="fa fa-chevron-left"></i> hadoop常用压缩算法
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2015/11/22/hadoop-readme/" rel="prev" title="hadoop及其生态圈介绍">
+                hadoop及其生态圈介绍 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+<span class="jiathis_txt">分享到：</span>
+<a class="jiathis_button_fav">收藏夹</a>
+<a class="jiathis_button_copy">复制网址</a>
+<a class="jiathis_button_email">邮件</a>
+<a class="jiathis_button_weixin">微信</a>
+<a class="jiathis_button_qzone">QQ空间</a>
+<a class="jiathis_button_tqq">腾讯微博</a>
+<a class="jiathis_button_douban">豆瓣</a>
+<a class="jiathis_button_share">一键分享</a>
+
+<a href="http://www.jiathis.com/share?uid=2140465" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank">更多</a>
+<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+var jiathis_config={
+  data_track_clickback:true,
+  summary:"",
+  shortUrl:false,
+  hideMore:false
+}
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  <p>热评文章</p>
+  <div class="ds-top-threads" data-range="weekly" data-num-items="4"></div>
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div class="ds-thread" data-thread-key="2015/11/21/hadoop-TextInputFormat如何处理跨split的的那行数据/" data-title="TextInputFormat如何处理跨split的那行数据" data-url="http://www.zhangrenhua.com/2015/11/21/hadoop-TextInputFormat如何处理跨split的的那行数据/">
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="http://www.zhangrenhua.com/back_images/avatar.jpg" alt="张仁华">
+            
+              <p class="site-author-name" itemprop="name">张仁华</p>
+              <p class="site-description motion-element" itemprop="description">记录软件生涯中的点点滴滴</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">76</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">17</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/zhangrenhua/" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://weibo.com/huaHBrother" target="_blank" title="Weibo">
+                      
+                        <i class="fa fa-fw fa-globe"></i>Weibo</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://douban.com/people/huaHBrother" target="_blank" title="douban">
+                      
+                        <i class="fa fa-fw fa-globe"></i>douban</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://zhihu.com/people/huaHBrother" target="_blank" title="zhihu">
+                      
+                        <i class="fa fa-fw fa-globe"></i>zhihu</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#数据行读取"><span class="nav-number">2.</span> <span class="nav-text">数据行读取</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#首行尾行处理"><span class="nav-number">3.</span> <span class="nav-text">首行尾行处理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">张仁华</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"iissnan-notes"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

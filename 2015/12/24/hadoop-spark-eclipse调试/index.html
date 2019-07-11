@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="google-site-verification" content="zUNgN8yGBtBZ8194JTl7PXh7YvztVw494zGKJ_8qH00">
+
+
+
+
+
+
+
+
+  <meta name="baidu-site-verification" content="kqLgluU8lc">
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/favicon.ico?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="hadoop生态圈,spark,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="hua的博客" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="以前使用java自带的远程端口调试Spark，感觉很累。今天突然心血来潮，决定要在eclipse上运行spark，但是在网络上面找不到这样的文章，几乎都是eclipse debug远程调试的。下面我将eclipse本地运行Spark与eclipse远程调试两种方式记录下来。">
+<meta name="keywords" content="hadoop生态圈,spark">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Spark Eclipse本地运行以及远程debug调试">
+<meta property="og:url" content="http://www.zhangrenhua.com/2015/12/24/hadoop-spark-eclipse调试/index.html">
+<meta property="og:site_name" content="hua的博客">
+<meta property="og:description" content="以前使用java自带的远程端口调试Spark，感觉很累。今天突然心血来潮，决定要在eclipse上运行spark，但是在网络上面找不到这样的文章，几乎都是eclipse debug远程调试的。下面我将eclipse本地运行Spark与eclipse远程调试两种方式记录下来。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/hadoop-spark-debug-jgt.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/hadoop-spark-debug-upt.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/hadoop-spark-debug-uplt.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/hadoop-spark-debug-eclipse.png">
+<meta property="og:updated_time" content="2019-07-11T06:43:13.735Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Spark Eclipse本地运行以及远程debug调试">
+<meta name="twitter:description" content="以前使用java自带的远程端口调试Spark，感觉很累。今天突然心血来潮，决定要在eclipse上运行spark，但是在网络上面找不到这样的文章，几乎都是eclipse debug远程调试的。下面我将eclipse本地运行Spark与eclipse远程调试两种方式记录下来。">
+<meta name="twitter:image" content="http://www.zhangrenhua.com/back_images/hadoop-spark-debug-jgt.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.zhangrenhua.com/2015/12/24/hadoop-spark-eclipse调试/">
+
+
+
+
+
+  <title>Spark Eclipse本地运行以及远程debug调试 | hua的博客</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-69647002-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?954f429681a4cd6dee6095ddaa2aac9a";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">hua的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">关注技术和人文的原创IT博客</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-schedule">
+          <a href="/schedule/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            日程表
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sitemap">
+          <a href="/sitemap.xml" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            站点地图
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="st-search-show-outputs">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <form class="site-search-form">
+  <input type="text" id="st-search-input" class="st-search-input st-default-search-input">
+</form>
+
+<script type="text/javascript">
+  (function(w,d,t,u,n,s,e){w['SwiftypeObject']=n;w[n]=w[n]||function(){
+    (w[n].q=w[n].q||[]).push(arguments);};s=d.createElement(t);
+    e=d.getElementsByTagName(t)[0];s.async=1;s.src=u;e.parentNode.insertBefore(s,e);
+  })(window,document,'script','//s.swiftypecdn.com/install/v2/st.js','_st');
+
+  _st('install', 'BAacTgC1f_bLy6kngppZ','2.0.0');
+</script>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.zhangrenhua.com/2015/12/24/hadoop-spark-eclipse调试/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="张仁华">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="http://www.zhangrenhua.com/back_images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hua的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Spark Eclipse本地运行以及远程debug调试</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2015-12-24T14:54:20+08:00">
+                2015-12-24
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/spark/" itemprop="url" rel="index">
+                    <span itemprop="name">spark</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2015/12/24/hadoop-spark-eclipse调试/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2015/12/24/hadoop-spark-eclipse调试/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  以前使用java自带的远程端口调试Spark，感觉很累。今天突然心血来潮，决定要在eclipse上运行spark，但是在网络上面找不到这样的文章，几乎都是eclipse debug远程调试的。下面我将eclipse本地运行Spark与eclipse远程调试两种方式记录下来。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>以前使用java自带的远程端口调试Spark，感觉很累。今天突然心血来潮，决定要在eclipse上运行spark，但是在网络上面找不到这样的文章，几乎都是eclipse debug远程调试的。下面我将eclipse本地运行Spark与eclipse远程调试两种方式记录下来。</p>
+<h2 id="本地运行Spark"><a href="#本地运行Spark" class="headerlink" title="本地运行Spark"></a>本地运行Spark</h2><p>本地模式运行Spark其实就是将启动模式设置为local即可，与IDE无关，使用eclipse、intellij、netbeans都可以。初学者和验证性程序可以使用此方法。</p>
+<h3 id="数据文件准备"><a href="#数据文件准备" class="headerlink" title="数据文件准备"></a>数据文件准备</h3><p>data.txt：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">张仁华，你好</span><br></pre></td></tr></table></figure>
+
+<p>将data.txt文件放入到D盘下，记得文件要UTF-8编码格式的哦（否则会乱码）。</p>
+<h3 id="jar包引用"><a href="#jar包引用" class="headerlink" title="jar包引用"></a>jar包引用</h3><figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="selector-tag">spark-assembly-1</span><span class="selector-class">.4</span><span class="selector-class">.1-hadoop2</span><span class="selector-class">.4</span><span class="selector-class">.0</span><span class="selector-class">.jar</span></span><br></pre></td></tr></table></figure>
+
+<p>本人使用Spark1.4.1作为测试例子，根据实际情况来选择你自己版本的jar文件。</p>
+<h3 id="示例代码"><a href="#示例代码" class="headerlink" title="示例代码"></a>示例代码</h3><p>Demo.java：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.util.ArrayList;</span><br><span class="line"><span class="keyword">import</span> java.util.List;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.conf.Configuration;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.io.LongWritable;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.io.Text;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.mapreduce.lib.input.TextInputFormat;</span><br><span class="line"><span class="keyword">import</span> org.apache.spark.SparkConf;</span><br><span class="line"><span class="keyword">import</span> org.apache.spark.api.java.JavaPairRDD;</span><br><span class="line"><span class="keyword">import</span> org.apache.spark.api.java.JavaRDD;</span><br><span class="line"><span class="keyword">import</span> org.apache.spark.api.java.JavaSparkContext;</span><br><span class="line"><span class="keyword">import</span> org.apache.spark.api.java.function.Function;</span><br><span class="line"><span class="keyword">import</span> org.apache.spark.sql.DataFrame;</span><br><span class="line"><span class="keyword">import</span> org.apache.spark.sql.Row;</span><br><span class="line"><span class="keyword">import</span> org.apache.spark.sql.RowFactory;</span><br><span class="line"><span class="keyword">import</span> org.apache.spark.sql.SQLContext;</span><br><span class="line"><span class="keyword">import</span> org.apache.spark.sql.types.DataTypes;</span><br><span class="line"><span class="keyword">import</span> org.apache.spark.sql.types.StructField;</span><br><span class="line"><span class="keyword">import</span> org.apache.spark.sql.types.StructType;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Demo</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> void main(<span class="type">String</span>[] args) &#123;</span><br><span class="line">        <span class="type">SparkConf</span> sparkConf = new <span class="type">SparkConf</span>();</span><br><span class="line">        sparkConf.setMaster(<span class="string">"local[2]"</span>).setAppName(<span class="string">"demo"</span>);</span><br><span class="line">        <span class="keyword">try</span> (<span class="type">JavaSparkContext</span> ctx = new <span class="type">JavaSparkContext</span>(sparkConf);) &#123;</span><br><span class="line">            <span class="type">SQLContext</span> sql = new <span class="type">SQLContext</span>(ctx.sc());</span><br><span class="line"></span><br><span class="line">            <span class="type">String</span> input = <span class="string">"d:/data.txt"</span>;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 使用ctx读取文件</span></span><br><span class="line">            <span class="type">JavaRDD</span>&lt;<span class="type">String</span>&gt; textFile = ctx.textFile(input);</span><br><span class="line">            <span class="type">System</span>.out.<span class="built_in">println</span>(<span class="string">"textFile:"</span> + textFile.collect());</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 使用hadoop API读取文件</span></span><br><span class="line">            <span class="type">JavaPairRDD</span>&lt;<span class="type">LongWritable</span>, <span class="type">Text</span>&gt; newAPIHadoopFile = ctx.newAPIHadoopFile(input, <span class="type">TextInputFormat</span>.<span class="keyword">class</span>,</span><br><span class="line">                    <span class="type">LongWritable</span>.<span class="keyword">class</span>, <span class="type">Text</span>.<span class="keyword">class</span>, new <span class="type">Configuration</span>());</span><br><span class="line">            <span class="type">System</span>.out.<span class="built_in">println</span>(<span class="string">"hadoop api:"</span> + newAPIHadoopFile.<span class="built_in">count</span>());</span><br><span class="line"></span><br><span class="line">            <span class="comment">/**</span></span><br><span class="line"><span class="comment">             * 使用sqlContext 来操作DataFrame</span></span><br><span class="line"><span class="comment">             */</span></span><br><span class="line">            <span class="comment">// Generate the schema based on the string of schema</span></span><br><span class="line">            <span class="type">List</span>&lt;<span class="type">StructField</span>&gt; fields = new <span class="type">ArrayList</span>&lt;<span class="type">StructField</span>&gt;();</span><br><span class="line">            fields.add(<span class="type">DataTypes</span>.createStructField(<span class="string">"txt"</span>, <span class="type">DataTypes</span>.<span class="type">StringType</span>, <span class="literal">true</span>));</span><br><span class="line">            <span class="type">StructType</span> schema = <span class="type">DataTypes</span>.createStructType(fields);</span><br><span class="line"></span><br><span class="line">            <span class="type">DataFrame</span> df = sql.createDataFrame(textFile.<span class="built_in">map</span>(new <span class="type">Function</span>&lt;<span class="type">String</span>, <span class="type">Row</span>&gt;() &#123;</span><br><span class="line"></span><br><span class="line">                <span class="comment">/**</span></span><br><span class="line"><span class="comment">                 * </span></span><br><span class="line"><span class="comment">                 */</span></span><br><span class="line">                <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> long serialVersionUID = -7045738234651396459L;</span><br><span class="line"></span><br><span class="line">                @<span class="type">Override</span></span><br><span class="line">                <span class="keyword">public</span> <span class="type">Row</span> call(<span class="type">String</span> arg0) <span class="keyword">throws</span> <span class="type">Exception</span> &#123;</span><br><span class="line">                    <span class="keyword">return</span> <span class="type">RowFactory</span>.create(arg0);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;), schema);</span><br><span class="line">            sql.registerDataFrameAsTable(df, <span class="string">"tmp"</span>);</span><br><span class="line"></span><br><span class="line">            <span class="type">DataFrame</span> query = sql.sql(<span class="string">"select * from tmp"</span>);</span><br><span class="line">            <span class="type">List</span>&lt;<span class="type">Row</span>&gt; collectAsList = query.collectAsList();</span><br><span class="line">            <span class="keyword">for</span> (<span class="type">Row</span> row : collectAsList) &#123;</span><br><span class="line">                <span class="type">System</span>.out.<span class="built_in">println</span>(row.getString(<span class="number">0</span>));</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>本地运行必须设置为local模式，local[x] x代表使用cpu的核个数。<br><code>sparkConf.setMaster(&quot;local[2]&quot;)</code></p>
+<h3 id="传递给spark的master-url可以有如下几种："><a href="#传递给spark的master-url可以有如下几种：" class="headerlink" title="传递给spark的master url可以有如下几种："></a>传递给spark的master url可以有如下几种：</h3><p><strong>local</strong> 本地单线程<br><strong>local[K]</strong> 本地多线程（指定K个内核）<br><strong>local[*]</strong> 本地多线程（指定所有可用内核）<br><strong>spark://HOST:PORT</strong>  连接到指定的 Spark standalone cluster master，需要指定端口。<br><strong>mesos://HOST:PORT</strong>  连接到指定的  Mesos 集群，需要指定端口。<br><strong>yarn-client</strong> 客户端模式 连接到 YARN 集群。需要配置 HADOOP_CONF_DIR。<br><strong>yarn-cluster</strong> 集群模式 连接到 YARN 集群。需要配置 HADOOP_CONF_DIR。</p>
+<h3 id="项目结构"><a href="#项目结构" class="headerlink" title="项目结构"></a>项目结构</h3><p><img src="http://www.zhangrenhua.com/back_images/hadoop-spark-debug-jgt.png" alt="Alt text"></p>
+<h3 id="运行结果"><a href="#运行结果" class="headerlink" title="运行结果"></a>运行结果</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br></pre></td><td class="code"><pre><span class="line">Using Spark's default log4j profile: org/apache/spark/log4j-defaults.properties</span><br><span class="line">15/12/24 20:21:42 INFO SparkContext: Running Spark version 1.4.1</span><br><span class="line">15/12/24 20:21:43 INFO SecurityManager: Changing view acls to: hua</span><br><span class="line">15/12/24 20:21:43 INFO SecurityManager: Changing modify acls to: hua</span><br><span class="line">15/12/24 20:21:43 INFO SecurityManager: SecurityManager: authentication disabled; ui acls disabled; users <span class="keyword">with</span> <span class="keyword">view</span> permissions: <span class="keyword">Set</span>(hua); users <span class="keyword">with</span> <span class="keyword">modify</span> permissions: <span class="keyword">Set</span>(hua)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">43</span> INFO Slf4jLogger: Slf4jLogger started</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">43</span> INFO Remoting: <span class="keyword">Starting</span> remoting</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">43</span> INFO Remoting: Remoting started; listening on addresses :[akka.tcp://sparkDriver@192.168.10.102:58083]</span><br><span class="line">15/12/24 20:21:43 INFO Utils: Successfully started service 'sparkDriver' on port 58083.</span><br><span class="line">15/12/24 20:21:43 INFO SparkEnv: Registering MapOutputTracker</span><br><span class="line">15/12/24 20:21:43 INFO SparkEnv: Registering BlockManagerMaster</span><br><span class="line">15/12/24 20:21:43 INFO DiskBlockManager: Created local directory at C:\Users\hua\AppData\Local\Temp\spark-4d6396b2-f348-41a4-b2cd-2e88ea8513f6\blockmgr-45825136-42e1-4ecb-8ef7-416de1892d24</span><br><span class="line">15/12/24 20:21:43 INFO MemoryStore: MemoryStore started <span class="keyword">with</span> <span class="keyword">capacity</span> <span class="number">1952.6</span> MB</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">43</span> INFO HttpFileServer: <span class="keyword">HTTP</span> <span class="keyword">File</span> <span class="keyword">server</span> <span class="keyword">directory</span> <span class="keyword">is</span> C:\<span class="keyword">Users</span>\hua\AppData\<span class="keyword">Local</span>\Temp\spark<span class="number">-4</span>d6396b2-f348<span class="number">-41</span>a4-b2cd<span class="number">-2e88</span>ea8513f6\httpd<span class="number">-0</span>ad48254-d056<span class="number">-4619</span><span class="number">-8</span>c6c<span class="number">-185</span>b6f9358ca</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">43</span> INFO HttpServer: <span class="keyword">Starting</span> <span class="keyword">HTTP</span> <span class="keyword">Server</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">44</span> INFO Utils: Successfully started service <span class="string">'HTTP file server'</span> <span class="keyword">on</span> port <span class="number">58084.</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">44</span> INFO SparkEnv: Registering OutputCommitCoordinator</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">44</span> INFO Utils: Successfully started service <span class="string">'SparkUI'</span> <span class="keyword">on</span> port <span class="number">4040.</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">44</span> INFO SparkUI: Started SparkUI <span class="keyword">at</span> <span class="keyword">http</span>://<span class="number">192.168</span><span class="number">.10</span><span class="number">.102</span>:<span class="number">4040</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">44</span> INFO Executor: <span class="keyword">Starting</span> executor <span class="keyword">ID</span> driver <span class="keyword">on</span> host localhost</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">44</span> INFO Utils: Successfully started service <span class="string">'org.apache.spark.network.netty.NettyBlockTransferService'</span> <span class="keyword">on</span> port <span class="number">58121.</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">44</span> INFO NettyBlockTransferService: <span class="keyword">Server</span> created <span class="keyword">on</span> <span class="number">58121</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">44</span> INFO BlockManagerMaster: Trying <span class="keyword">to</span> <span class="keyword">register</span> BlockManager</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">44</span> INFO BlockManagerMasterEndpoint: Registering <span class="keyword">block</span> manager localhost:<span class="number">58121</span> <span class="keyword">with</span> <span class="number">1952.6</span> MB RAM, BlockManagerId(driver, localhost, <span class="number">58121</span>)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">44</span> INFO BlockManagerMaster: Registered BlockManager</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">44</span> INFO MemoryStore: ensureFreeSpace(<span class="number">143840</span>) called <span class="keyword">with</span> curMem=<span class="number">0</span>, maxMem=<span class="number">2047491440</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO MemoryStore: <span class="keyword">Block</span> broadcast_0 <span class="keyword">stored</span> <span class="keyword">as</span> <span class="keyword">values</span> <span class="keyword">in</span> <span class="keyword">memory</span> (estimated <span class="keyword">size</span> <span class="number">140.5</span> KB, free <span class="number">1952.5</span> MB)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO MemoryStore: ensureFreeSpace(<span class="number">12633</span>) called <span class="keyword">with</span> curMem=<span class="number">143840</span>, maxMem=<span class="number">2047491440</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO MemoryStore: <span class="keyword">Block</span> broadcast_0_piece0 <span class="keyword">stored</span> <span class="keyword">as</span> <span class="keyword">bytes</span> <span class="keyword">in</span> <span class="keyword">memory</span> (estimated <span class="keyword">size</span> <span class="number">12.3</span> KB, free <span class="number">1952.5</span> MB)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO BlockManagerInfo: Added broadcast_0_piece0 <span class="keyword">in</span> <span class="keyword">memory</span> <span class="keyword">on</span> localhost:<span class="number">58121</span> (<span class="keyword">size</span>: <span class="number">12.3</span> KB, free: <span class="number">1952.6</span> MB)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO SparkContext: Created broadcast <span class="number">0</span> <span class="keyword">from</span> textFile <span class="keyword">at</span> Demo.java:<span class="number">34</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO FileInputFormat: Total <span class="keyword">input</span> paths <span class="keyword">to</span> process : <span class="number">1</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO SparkContext: <span class="keyword">Starting</span> job: <span class="keyword">collect</span> <span class="keyword">at</span> Demo.java:<span class="number">35</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO DAGScheduler: Got job <span class="number">0</span> (<span class="keyword">collect</span> <span class="keyword">at</span> Demo.java:<span class="number">35</span>) <span class="keyword">with</span> <span class="number">2</span> <span class="keyword">output</span> <span class="keyword">partitions</span> (allowLocal=<span class="literal">false</span>)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO DAGScheduler: <span class="keyword">Final</span> stage: ResultStage <span class="number">0</span>(<span class="keyword">collect</span> <span class="keyword">at</span> Demo.java:<span class="number">35</span>)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO DAGScheduler: Parents <span class="keyword">of</span> <span class="keyword">final</span> stage: <span class="keyword">List</span>()</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO DAGScheduler: <span class="keyword">Missing</span> parents: <span class="keyword">List</span>()</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO DAGScheduler: Submitting ResultStage <span class="number">0</span> (MapPartitionsRDD[<span class="number">1</span>] <span class="keyword">at</span> textFile <span class="keyword">at</span> Demo.java:<span class="number">34</span>), which has <span class="keyword">no</span> <span class="keyword">missing</span> parents</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO MemoryStore: ensureFreeSpace(<span class="number">3112</span>) called <span class="keyword">with</span> curMem=<span class="number">156473</span>, maxMem=<span class="number">2047491440</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO MemoryStore: <span class="keyword">Block</span> broadcast_1 <span class="keyword">stored</span> <span class="keyword">as</span> <span class="keyword">values</span> <span class="keyword">in</span> <span class="keyword">memory</span> (estimated <span class="keyword">size</span> <span class="number">3.0</span> KB, free <span class="number">1952.5</span> MB)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO MemoryStore: ensureFreeSpace(<span class="number">1779</span>) called <span class="keyword">with</span> curMem=<span class="number">159585</span>, maxMem=<span class="number">2047491440</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO MemoryStore: <span class="keyword">Block</span> broadcast_1_piece0 <span class="keyword">stored</span> <span class="keyword">as</span> <span class="keyword">bytes</span> <span class="keyword">in</span> <span class="keyword">memory</span> (estimated <span class="keyword">size</span> <span class="number">1779.0</span> B, free <span class="number">1952.5</span> MB)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO BlockManagerInfo: Added broadcast_1_piece0 <span class="keyword">in</span> <span class="keyword">memory</span> <span class="keyword">on</span> localhost:<span class="number">58121</span> (<span class="keyword">size</span>: <span class="number">1779.0</span> B, free: <span class="number">1952.6</span> MB)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO SparkContext: Created broadcast <span class="number">1</span> <span class="keyword">from</span> broadcast <span class="keyword">at</span> DAGScheduler.scala:<span class="number">874</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO DAGScheduler: Submitting <span class="number">2</span> <span class="keyword">missing</span> tasks <span class="keyword">from</span> ResultStage <span class="number">0</span> (MapPartitionsRDD[<span class="number">1</span>] <span class="keyword">at</span> textFile <span class="keyword">at</span> Demo.java:<span class="number">34</span>)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO TaskSchedulerImpl: Adding task <span class="keyword">set</span> <span class="number">0.0</span> <span class="keyword">with</span> <span class="number">2</span> tasks</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO TaskSetManager: <span class="keyword">Starting</span> task <span class="number">0.0</span> <span class="keyword">in</span> stage <span class="number">0.0</span> (TID <span class="number">0</span>, localhost, PROCESS_LOCAL, <span class="number">1390</span> <span class="keyword">bytes</span>)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO TaskSetManager: <span class="keyword">Starting</span> task <span class="number">1.0</span> <span class="keyword">in</span> stage <span class="number">0.0</span> (TID <span class="number">1</span>, localhost, PROCESS_LOCAL, <span class="number">1390</span> <span class="keyword">bytes</span>)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO Executor: Running task <span class="number">0.0</span> <span class="keyword">in</span> stage <span class="number">0.0</span> (TID <span class="number">0</span>)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO Executor: Running task <span class="number">1.0</span> <span class="keyword">in</span> stage <span class="number">0.0</span> (TID <span class="number">1</span>)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO HadoopRDD: <span class="keyword">Input</span> <span class="keyword">split</span>: <span class="keyword">file</span>:/d:/data.txt:<span class="number">9</span>+<span class="number">9</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO HadoopRDD: <span class="keyword">Input</span> <span class="keyword">split</span>: <span class="keyword">file</span>:/d:/data.txt:<span class="number">0</span>+<span class="number">9</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO deprecation: mapred.tip.id <span class="keyword">is</span> deprecated. Instead, <span class="keyword">use</span> mapreduce.task.id</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO deprecation: mapred.task.id <span class="keyword">is</span> deprecated. Instead, <span class="keyword">use</span> mapreduce.task.attempt.id</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO deprecation: mapred.task.is.map <span class="keyword">is</span> deprecated. Instead, <span class="keyword">use</span> mapreduce.task.ismap</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO deprecation: mapred.task.partition <span class="keyword">is</span> deprecated. Instead, <span class="keyword">use</span> mapreduce.task.partition</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO deprecation: mapred.job.id <span class="keyword">is</span> deprecated. Instead, <span class="keyword">use</span> mapreduce.job.id</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO Executor: Finished task <span class="number">0.0</span> <span class="keyword">in</span> stage <span class="number">0.0</span> (TID <span class="number">0</span>). <span class="number">1813</span> <span class="keyword">bytes</span> <span class="keyword">result</span> sent <span class="keyword">to</span> driver</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO Executor: Finished task <span class="number">1.0</span> <span class="keyword">in</span> stage <span class="number">0.0</span> (TID <span class="number">1</span>). <span class="number">1792</span> <span class="keyword">bytes</span> <span class="keyword">result</span> sent <span class="keyword">to</span> driver</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO TaskSetManager: Finished task <span class="number">0.0</span> <span class="keyword">in</span> stage <span class="number">0.0</span> (TID <span class="number">0</span>) <span class="keyword">in</span> <span class="number">60</span> ms <span class="keyword">on</span> localhost (<span class="number">1</span>/<span class="number">2</span>)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO TaskSetManager: Finished task <span class="number">1.0</span> <span class="keyword">in</span> stage <span class="number">0.0</span> (TID <span class="number">1</span>) <span class="keyword">in</span> <span class="number">54</span> ms <span class="keyword">on</span> localhost (<span class="number">2</span>/<span class="number">2</span>)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO TaskSchedulerImpl: Removed TaskSet <span class="number">0.0</span>, whose tasks have <span class="keyword">all</span> completed, <span class="keyword">from</span> pool </span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO DAGScheduler: ResultStage <span class="number">0</span> (<span class="keyword">collect</span> <span class="keyword">at</span> Demo.java:<span class="number">35</span>) finished <span class="keyword">in</span> <span class="number">0.070</span> s</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO DAGScheduler: Job <span class="number">0</span> finished: <span class="keyword">collect</span> <span class="keyword">at</span> Demo.java:<span class="number">35</span>, took <span class="number">0.114840</span> s</span><br><span class="line">textFile:[张仁华，你好]</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO MemoryStore: ensureFreeSpace(<span class="number">182176</span>) called <span class="keyword">with</span> curMem=<span class="number">161364</span>, maxMem=<span class="number">2047491440</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO MemoryStore: <span class="keyword">Block</span> broadcast_2 <span class="keyword">stored</span> <span class="keyword">as</span> <span class="keyword">values</span> <span class="keyword">in</span> <span class="keyword">memory</span> (estimated <span class="keyword">size</span> <span class="number">177.9</span> KB, free <span class="number">1952.3</span> MB)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO MemoryStore: ensureFreeSpace(<span class="number">17237</span>) called <span class="keyword">with</span> curMem=<span class="number">343540</span>, maxMem=<span class="number">2047491440</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO MemoryStore: <span class="keyword">Block</span> broadcast_2_piece0 <span class="keyword">stored</span> <span class="keyword">as</span> <span class="keyword">bytes</span> <span class="keyword">in</span> <span class="keyword">memory</span> (estimated <span class="keyword">size</span> <span class="number">16.8</span> KB, free <span class="number">1952.3</span> MB)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO BlockManagerInfo: Added broadcast_2_piece0 <span class="keyword">in</span> <span class="keyword">memory</span> <span class="keyword">on</span> localhost:<span class="number">58121</span> (<span class="keyword">size</span>: <span class="number">16.8</span> KB, free: <span class="number">1952.6</span> MB)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO SparkContext: Created broadcast <span class="number">2</span> <span class="keyword">from</span> newAPIHadoopFile <span class="keyword">at</span> Demo.java:<span class="number">38</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO FileInputFormat: Total <span class="keyword">input</span> paths <span class="keyword">to</span> process : <span class="number">1</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO SparkContext: <span class="keyword">Starting</span> job: <span class="keyword">count</span> <span class="keyword">at</span> Demo.java:<span class="number">40</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO DAGScheduler: Got job <span class="number">1</span> (<span class="keyword">count</span> <span class="keyword">at</span> Demo.java:<span class="number">40</span>) <span class="keyword">with</span> <span class="number">1</span> <span class="keyword">output</span> <span class="keyword">partitions</span> (allowLocal=<span class="literal">false</span>)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO DAGScheduler: <span class="keyword">Final</span> stage: ResultStage <span class="number">1</span>(<span class="keyword">count</span> <span class="keyword">at</span> Demo.java:<span class="number">40</span>)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO DAGScheduler: Parents <span class="keyword">of</span> <span class="keyword">final</span> stage: <span class="keyword">List</span>()</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO DAGScheduler: <span class="keyword">Missing</span> parents: <span class="keyword">List</span>()</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO DAGScheduler: Submitting ResultStage <span class="number">1</span> (d:/data.txt NewHadoopRDD[<span class="number">2</span>] <span class="keyword">at</span> newAPIHadoopFile <span class="keyword">at</span> Demo.java:<span class="number">38</span>), which has <span class="keyword">no</span> <span class="keyword">missing</span> parents</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO MemoryStore: ensureFreeSpace(<span class="number">1696</span>) called <span class="keyword">with</span> curMem=<span class="number">360777</span>, maxMem=<span class="number">2047491440</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO MemoryStore: <span class="keyword">Block</span> broadcast_3 <span class="keyword">stored</span> <span class="keyword">as</span> <span class="keyword">values</span> <span class="keyword">in</span> <span class="keyword">memory</span> (estimated <span class="keyword">size</span> <span class="number">1696.0</span> B, free <span class="number">1952.3</span> MB)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO MemoryStore: ensureFreeSpace(<span class="number">1054</span>) called <span class="keyword">with</span> curMem=<span class="number">362473</span>, maxMem=<span class="number">2047491440</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO MemoryStore: <span class="keyword">Block</span> broadcast_3_piece0 <span class="keyword">stored</span> <span class="keyword">as</span> <span class="keyword">bytes</span> <span class="keyword">in</span> <span class="keyword">memory</span> (estimated <span class="keyword">size</span> <span class="number">1054.0</span> B, free <span class="number">1952.3</span> MB)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO BlockManagerInfo: Added broadcast_3_piece0 <span class="keyword">in</span> <span class="keyword">memory</span> <span class="keyword">on</span> localhost:<span class="number">58121</span> (<span class="keyword">size</span>: <span class="number">1054.0</span> B, free: <span class="number">1952.6</span> MB)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO SparkContext: Created broadcast <span class="number">3</span> <span class="keyword">from</span> broadcast <span class="keyword">at</span> DAGScheduler.scala:<span class="number">874</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO DAGScheduler: Submitting <span class="number">1</span> <span class="keyword">missing</span> tasks <span class="keyword">from</span> ResultStage <span class="number">1</span> (d:/data.txt NewHadoopRDD[<span class="number">2</span>] <span class="keyword">at</span> newAPIHadoopFile <span class="keyword">at</span> Demo.java:<span class="number">38</span>)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO TaskSchedulerImpl: Adding task <span class="keyword">set</span> <span class="number">1.0</span> <span class="keyword">with</span> <span class="number">1</span> tasks</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO TaskSetManager: <span class="keyword">Starting</span> task <span class="number">0.0</span> <span class="keyword">in</span> stage <span class="number">1.0</span> (TID <span class="number">2</span>, localhost, PROCESS_LOCAL, <span class="number">1422</span> <span class="keyword">bytes</span>)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO Executor: Running task <span class="number">0.0</span> <span class="keyword">in</span> stage <span class="number">1.0</span> (TID <span class="number">2</span>)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO NewHadoopRDD: <span class="keyword">Input</span> <span class="keyword">split</span>: <span class="keyword">file</span>:/d:/data.txt:<span class="number">0</span>+<span class="number">18</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO Executor: Finished task <span class="number">0.0</span> <span class="keyword">in</span> stage <span class="number">1.0</span> (TID <span class="number">2</span>). <span class="number">1830</span> <span class="keyword">bytes</span> <span class="keyword">result</span> sent <span class="keyword">to</span> driver</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO TaskSetManager: Finished task <span class="number">0.0</span> <span class="keyword">in</span> stage <span class="number">1.0</span> (TID <span class="number">2</span>) <span class="keyword">in</span> <span class="number">11</span> ms <span class="keyword">on</span> localhost (<span class="number">1</span>/<span class="number">1</span>)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO DAGScheduler: ResultStage <span class="number">1</span> (<span class="keyword">count</span> <span class="keyword">at</span> Demo.java:<span class="number">40</span>) finished <span class="keyword">in</span> <span class="number">0.012</span> s</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO TaskSchedulerImpl: Removed TaskSet <span class="number">1.0</span>, whose tasks have <span class="keyword">all</span> completed, <span class="keyword">from</span> pool </span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO DAGScheduler: Job <span class="number">1</span> finished: <span class="keyword">count</span> <span class="keyword">at</span> Demo.java:<span class="number">40</span>, took <span class="number">0.020939</span> s</span><br><span class="line">hadoop api:<span class="number">1</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO BlockManagerInfo: Removed broadcast_3_piece0 <span class="keyword">on</span> localhost:<span class="number">58121</span> <span class="keyword">in</span> <span class="keyword">memory</span> (<span class="keyword">size</span>: <span class="number">1054.0</span> B, free: <span class="number">1952.6</span> MB)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">45</span> INFO BlockManagerInfo: Removed broadcast_1_piece0 <span class="keyword">on</span> localhost:<span class="number">58121</span> <span class="keyword">in</span> <span class="keyword">memory</span> (<span class="keyword">size</span>: <span class="number">1779.0</span> B, free: <span class="number">1952.6</span> MB)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">46</span> INFO SparkContext: <span class="keyword">Starting</span> job: collectAsList <span class="keyword">at</span> Demo.java:<span class="number">65</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">46</span> INFO DAGScheduler: Got job <span class="number">2</span> (collectAsList <span class="keyword">at</span> Demo.java:<span class="number">65</span>) <span class="keyword">with</span> <span class="number">2</span> <span class="keyword">output</span> <span class="keyword">partitions</span> (allowLocal=<span class="literal">false</span>)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">46</span> INFO DAGScheduler: <span class="keyword">Final</span> stage: ResultStage <span class="number">2</span>(collectAsList <span class="keyword">at</span> Demo.java:<span class="number">65</span>)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">46</span> INFO DAGScheduler: Parents <span class="keyword">of</span> <span class="keyword">final</span> stage: <span class="keyword">List</span>()</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">46</span> INFO DAGScheduler: <span class="keyword">Missing</span> parents: <span class="keyword">List</span>()</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">46</span> INFO DAGScheduler: Submitting ResultStage <span class="number">2</span> (MapPartitionsRDD[<span class="number">5</span>] <span class="keyword">at</span> collectAsList <span class="keyword">at</span> Demo.java:<span class="number">65</span>), which has <span class="keyword">no</span> <span class="keyword">missing</span> parents</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">46</span> INFO MemoryStore: ensureFreeSpace(<span class="number">5128</span>) called <span class="keyword">with</span> curMem=<span class="number">355886</span>, maxMem=<span class="number">2047491440</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">46</span> INFO MemoryStore: <span class="keyword">Block</span> broadcast_4 <span class="keyword">stored</span> <span class="keyword">as</span> <span class="keyword">values</span> <span class="keyword">in</span> <span class="keyword">memory</span> (estimated <span class="keyword">size</span> <span class="number">5.0</span> KB, free <span class="number">1952.3</span> MB)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">46</span> INFO MemoryStore: ensureFreeSpace(<span class="number">2786</span>) called <span class="keyword">with</span> curMem=<span class="number">361014</span>, maxMem=<span class="number">2047491440</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">46</span> INFO MemoryStore: <span class="keyword">Block</span> broadcast_4_piece0 <span class="keyword">stored</span> <span class="keyword">as</span> <span class="keyword">bytes</span> <span class="keyword">in</span> <span class="keyword">memory</span> (estimated <span class="keyword">size</span> <span class="number">2.7</span> KB, free <span class="number">1952.3</span> MB)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">46</span> INFO BlockManagerInfo: Added broadcast_4_piece0 <span class="keyword">in</span> <span class="keyword">memory</span> <span class="keyword">on</span> localhost:<span class="number">58121</span> (<span class="keyword">size</span>: <span class="number">2.7</span> KB, free: <span class="number">1952.6</span> MB)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">46</span> INFO SparkContext: Created broadcast <span class="number">4</span> <span class="keyword">from</span> broadcast <span class="keyword">at</span> DAGScheduler.scala:<span class="number">874</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">46</span> INFO DAGScheduler: Submitting <span class="number">2</span> <span class="keyword">missing</span> tasks <span class="keyword">from</span> ResultStage <span class="number">2</span> (MapPartitionsRDD[<span class="number">5</span>] <span class="keyword">at</span> collectAsList <span class="keyword">at</span> Demo.java:<span class="number">65</span>)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">46</span> INFO TaskSchedulerImpl: Adding task <span class="keyword">set</span> <span class="number">2.0</span> <span class="keyword">with</span> <span class="number">2</span> tasks</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">46</span> INFO TaskSetManager: <span class="keyword">Starting</span> task <span class="number">0.0</span> <span class="keyword">in</span> stage <span class="number">2.0</span> (TID <span class="number">3</span>, localhost, PROCESS_LOCAL, <span class="number">1390</span> <span class="keyword">bytes</span>)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">46</span> INFO TaskSetManager: <span class="keyword">Starting</span> task <span class="number">1.0</span> <span class="keyword">in</span> stage <span class="number">2.0</span> (TID <span class="number">4</span>, localhost, PROCESS_LOCAL, <span class="number">1390</span> <span class="keyword">bytes</span>)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">46</span> INFO Executor: Running task <span class="number">0.0</span> <span class="keyword">in</span> stage <span class="number">2.0</span> (TID <span class="number">3</span>)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">46</span> INFO Executor: Running task <span class="number">1.0</span> <span class="keyword">in</span> stage <span class="number">2.0</span> (TID <span class="number">4</span>)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">46</span> INFO HadoopRDD: <span class="keyword">Input</span> <span class="keyword">split</span>: <span class="keyword">file</span>:/d:/data.txt:<span class="number">9</span>+<span class="number">9</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">46</span> INFO HadoopRDD: <span class="keyword">Input</span> <span class="keyword">split</span>: <span class="keyword">file</span>:/d:/data.txt:<span class="number">0</span>+<span class="number">9</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">46</span> INFO Executor: Finished task <span class="number">1.0</span> <span class="keyword">in</span> stage <span class="number">2.0</span> (TID <span class="number">4</span>). <span class="number">1800</span> <span class="keyword">bytes</span> <span class="keyword">result</span> sent <span class="keyword">to</span> driver</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">46</span> INFO TaskSetManager: Finished task <span class="number">1.0</span> <span class="keyword">in</span> stage <span class="number">2.0</span> (TID <span class="number">4</span>) <span class="keyword">in</span> <span class="number">8</span> ms <span class="keyword">on</span> localhost (<span class="number">1</span>/<span class="number">2</span>)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">46</span> INFO Executor: Finished task <span class="number">0.0</span> <span class="keyword">in</span> stage <span class="number">2.0</span> (TID <span class="number">3</span>). <span class="number">2775</span> <span class="keyword">bytes</span> <span class="keyword">result</span> sent <span class="keyword">to</span> driver</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">46</span> INFO TaskSetManager: Finished task <span class="number">0.0</span> <span class="keyword">in</span> stage <span class="number">2.0</span> (TID <span class="number">3</span>) <span class="keyword">in</span> <span class="number">12</span> ms <span class="keyword">on</span> localhost (<span class="number">2</span>/<span class="number">2</span>)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">46</span> INFO DAGScheduler: ResultStage <span class="number">2</span> (collectAsList <span class="keyword">at</span> Demo.java:<span class="number">65</span>) finished <span class="keyword">in</span> <span class="number">0.013</span> s</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">46</span> INFO TaskSchedulerImpl: Removed TaskSet <span class="number">2.0</span>, whose tasks have <span class="keyword">all</span> completed, <span class="keyword">from</span> pool </span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">46</span> INFO DAGScheduler: Job <span class="number">2</span> finished: collectAsList <span class="keyword">at</span> Demo.java:<span class="number">65</span>, took <span class="number">0.021384</span> s</span><br><span class="line">张仁华，你好</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">46</span> INFO SparkUI: Stopped Spark web UI <span class="keyword">at</span> <span class="keyword">http</span>://<span class="number">192.168</span><span class="number">.10</span><span class="number">.102</span>:<span class="number">4040</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">46</span> INFO DAGScheduler: Stopping DAGScheduler</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">46</span> INFO MapOutputTrackerMasterEndpoint: MapOutputTrackerMasterEndpoint stopped!</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">46</span> INFO Utils: <span class="keyword">path</span> = C:\<span class="keyword">Users</span>\hua\AppData\<span class="keyword">Local</span>\Temp\spark<span class="number">-4</span>d6396b2-f348<span class="number">-41</span>a4-b2cd<span class="number">-2e88</span>ea8513f6\blockmgr<span class="number">-45825136</span><span class="number">-42e1</span><span class="number">-4</span>ecb<span class="number">-8</span>ef7<span class="number">-416</span>de1892d24, already <span class="keyword">present</span> <span class="keyword">as</span> root <span class="keyword">for</span> deletion.</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">46</span> INFO MemoryStore: MemoryStore cleared</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">46</span> INFO BlockManager: BlockManager stopped</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">46</span> INFO BlockManagerMaster: BlockManagerMaster stopped</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">46</span> INFO OutputCommitCoordinator$OutputCommitCoordinatorEndpoint: OutputCommitCoordinator stopped!</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">46</span> INFO SparkContext: Successfully stopped SparkContext</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">46</span> INFO Utils: <span class="keyword">Shutdown</span> hook called</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">46</span> INFO Utils: Deleting <span class="keyword">directory</span> C:\<span class="keyword">Users</span>\hua\AppData\<span class="keyword">Local</span>\Temp\spark<span class="number">-4</span>d6396b2-f348<span class="number">-41</span>a4-b2cd<span class="number">-2e88</span>ea8513f6</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">46</span> INFO RemoteActorRefProvider$RemotingTerminator: Shutting down remote daemon.</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">24</span> <span class="number">20</span>:<span class="number">21</span>:<span class="number">46</span> INFO RemoteActorRefProvider$RemotingTerminator: Remote daemon shut down; proceeding <span class="keyword">with</span> flushing remote transports.</span><br></pre></td></tr></table></figure>
+
+<h2 id="Eclipse远程调试"><a href="#Eclipse远程调试" class="headerlink" title="Eclipse远程调试"></a>Eclipse远程调试</h2><p>Eclipse远程调试可以使用多种模式启动，如：local、yarn-client。其原理就是使用JVM自带的远程调试方法。</p>
+<h3 id="修改Spark-JVM启动参数"><a href="#修改Spark-JVM启动参数" class="headerlink" title="修改Spark JVM启动参数"></a>修改Spark JVM启动参数</h3><p><strong>这里对上面的几个参数进行说明：</strong><br><strong>-Xdebug</strong> 启用调试特性<br><strong>-Xrunjdwp</strong> 启用JDWP实现，包含若干子选项：<br>transport=dt_socket JPDA front-end和back-end之间的传输方法。dt_socket表示使用套接字传输。<br>address=8888 JVM在8888端口上监听请求，这个设定为一个不冲突的端口即可。<br>server=y y表示启动的JVM是被调试者。如果为n，则表示启动的JVM是调试器。<br>suspend=y y表示启动的JVM会暂停等待，直到调试器连接上才继续执行。suspend=n，则JVM不会暂停等待。</p>
+<h4 id="Spark1-4以前的版本修改"><a href="#Spark1-4以前的版本修改" class="headerlink" title="Spark1.4以前的版本修改"></a>Spark1.4以前的版本修改</h4><p>修改$SPARK_HOME/bin/spark-class，大约在128行左右加入下面代码：</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">JAVA_OPTS</span>=<span class="string">"-XX:MaxPermSize=128m -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8888 $JAVA_OPTS"</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="http://www.zhangrenhua.com/back_images/hadoop-spark-debug-upt.png" alt="Alt text"></p>
+<h4 id="Spark1-4或者更新的版本"><a href="#Spark1-4或者更新的版本" class="headerlink" title="Spark1.4或者更新的版本"></a>Spark1.4或者更新的版本</h4><p>修改$SPARK_HOME/bin/spark-class，大约在倒数5行左右修改原来的代码：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">done</span> &lt; &lt;(<span class="string">"<span class="variable">$RUNNER</span>"</span> -cp <span class="string">"<span class="variable">$LAUNCH_CLASSPATH</span>"</span> org.apache.spark.launcher.Main -Xdebug -Xrunjdwp:transport=dt_socket,server=y,<span class="built_in">suspend</span>=y,address=8888 <span class="string">"<span class="variable">$@</span>"</span>)</span><br></pre></td></tr></table></figure>
+
+<p><img src="http://www.zhangrenhua.com/back_images/hadoop-spark-debug-uplt.png" alt="Alt text"></p>
+<h3 id="spark-submit启动"><a href="#spark-submit启动" class="headerlink" title="spark-submit启动"></a>spark-submit启动</h3><p>启动Spark Application的时候我们可以在终端看到监听启动的信息，并且会卡住直到Eclipse启动调试(必须使用yarn-client or local模式启动)：</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">spark-submit --class spark<span class="selector-class">.Demo</span> --master yarn-client /home/hadoop/apptest/spark-demo<span class="selector-class">.jar</span> /tmp/data<span class="selector-class">.txt</span> --executor-memory <span class="number">1024</span>m</span><br></pre></td></tr></table></figure>
+
+<h3 id="在Eclipse设置远程调试的IP和Port"><a href="#在Eclipse设置远程调试的IP和Port" class="headerlink" title="在Eclipse设置远程调试的IP和Port"></a>在Eclipse设置远程调试的IP和Port</h3><p>点击左上角：Run -&gt; Debug Configurations，新建一个Remote Java Application启动配置</p>
+<p><img src="http://www.zhangrenhua.com/back_images/hadoop-spark-debug-eclipse.png" alt="Alt text"></p>
+<p><strong>Project：</strong>选择Spark工程<br><strong>Host：</strong>远程Spark启动的机器ip<br><strong>Port：</strong>Spark监听端口，如：8888</p>
+<p>配置好后点击debug，运行即可断点联调。运行的jar文件必须要和Eclipse上的源码保持一致，如有疑问直接回复。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/hadoop生态圈/" rel="tag"># hadoop生态圈</a>
+          
+            <a href="/tags/spark/" rel="tag"># spark</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2015/12/23/hadoop-Yarn-调度器/" rel="next" title="Yarn ResourceManager调度器">
+                <i class="fa fa-chevron-left"></i> Yarn ResourceManager调度器
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2015/12/30/hadoop-Yarn任务提交流程/" rel="prev" title="Yarn任务提交流程">
+                Yarn任务提交流程 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+<span class="jiathis_txt">分享到：</span>
+<a class="jiathis_button_fav">收藏夹</a>
+<a class="jiathis_button_copy">复制网址</a>
+<a class="jiathis_button_email">邮件</a>
+<a class="jiathis_button_weixin">微信</a>
+<a class="jiathis_button_qzone">QQ空间</a>
+<a class="jiathis_button_tqq">腾讯微博</a>
+<a class="jiathis_button_douban">豆瓣</a>
+<a class="jiathis_button_share">一键分享</a>
+
+<a href="http://www.jiathis.com/share?uid=2140465" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank">更多</a>
+<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+var jiathis_config={
+  data_track_clickback:true,
+  summary:"",
+  shortUrl:false,
+  hideMore:false
+}
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  <p>热评文章</p>
+  <div class="ds-top-threads" data-range="weekly" data-num-items="4"></div>
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div class="ds-thread" data-thread-key="2015/12/24/hadoop-spark-eclipse调试/" data-title="Spark Eclipse本地运行以及远程debug调试" data-url="http://www.zhangrenhua.com/2015/12/24/hadoop-spark-eclipse调试/">
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="http://www.zhangrenhua.com/back_images/avatar.jpg" alt="张仁华">
+            
+              <p class="site-author-name" itemprop="name">张仁华</p>
+              <p class="site-description motion-element" itemprop="description">记录软件生涯中的点点滴滴</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">76</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">17</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/zhangrenhua/" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://weibo.com/huaHBrother" target="_blank" title="Weibo">
+                      
+                        <i class="fa fa-fw fa-globe"></i>Weibo</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://douban.com/people/huaHBrother" target="_blank" title="douban">
+                      
+                        <i class="fa fa-fw fa-globe"></i>douban</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://zhihu.com/people/huaHBrother" target="_blank" title="zhihu">
+                      
+                        <i class="fa fa-fw fa-globe"></i>zhihu</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#本地运行Spark"><span class="nav-number">2.</span> <span class="nav-text">本地运行Spark</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#数据文件准备"><span class="nav-number">2.1.</span> <span class="nav-text">数据文件准备</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#jar包引用"><span class="nav-number">2.2.</span> <span class="nav-text">jar包引用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#示例代码"><span class="nav-number">2.3.</span> <span class="nav-text">示例代码</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#传递给spark的master-url可以有如下几种："><span class="nav-number">2.4.</span> <span class="nav-text">传递给spark的master url可以有如下几种：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#项目结构"><span class="nav-number">2.5.</span> <span class="nav-text">项目结构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#运行结果"><span class="nav-number">2.6.</span> <span class="nav-text">运行结果</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Eclipse远程调试"><span class="nav-number">3.</span> <span class="nav-text">Eclipse远程调试</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#修改Spark-JVM启动参数"><span class="nav-number">3.1.</span> <span class="nav-text">修改Spark JVM启动参数</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Spark1-4以前的版本修改"><span class="nav-number">3.1.1.</span> <span class="nav-text">Spark1.4以前的版本修改</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Spark1-4或者更新的版本"><span class="nav-number">3.1.2.</span> <span class="nav-text">Spark1.4或者更新的版本</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#spark-submit启动"><span class="nav-number">3.2.</span> <span class="nav-text">spark-submit启动</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#在Eclipse设置远程调试的IP和Port"><span class="nav-number">3.3.</span> <span class="nav-text">在Eclipse设置远程调试的IP和Port</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">张仁华</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"iissnan-notes"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

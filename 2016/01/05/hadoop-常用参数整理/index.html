@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="google-site-verification" content="zUNgN8yGBtBZ8194JTl7PXh7YvztVw494zGKJ_8qH00">
+
+
+
+
+
+
+
+
+  <meta name="baidu-site-verification" content="kqLgluU8lc">
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/favicon.ico?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="java,hadoop生态圈,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="hua的博客" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="最近整理了一些常用的`Hadoop`集群相关配置参数，并对相关参数进行调优，其中有一些参数能影响到集群的性能等问题，需谨慎使用。本来想在这里把`Hbase`参数也带上的，由于`Hbase`参数调优细节太多，所以单独抽了出来，在未来的几天内我会补上。">
+<meta name="keywords" content="java,hadoop生态圈">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Hadoop常用参数整理（HDFS&#x2F;Yarn&#x2F;MapReduce&#x2F;GC）">
+<meta property="og:url" content="http://www.zhangrenhua.com/2016/01/05/hadoop-常用参数整理/index.html">
+<meta property="og:site_name" content="hua的博客">
+<meta property="og:description" content="最近整理了一些常用的`Hadoop`集群相关配置参数，并对相关参数进行调优，其中有一些参数能影响到集群的性能等问题，需谨慎使用。本来想在这里把`Hbase`参数也带上的，由于`Hbase`参数调优细节太多，所以单独抽了出来，在未来的几天内我会补上。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2016-01-09T05:32:07.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Hadoop常用参数整理（HDFS&#x2F;Yarn&#x2F;MapReduce&#x2F;GC）">
+<meta name="twitter:description" content="最近整理了一些常用的`Hadoop`集群相关配置参数，并对相关参数进行调优，其中有一些参数能影响到集群的性能等问题，需谨慎使用。本来想在这里把`Hbase`参数也带上的，由于`Hbase`参数调优细节太多，所以单独抽了出来，在未来的几天内我会补上。">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.zhangrenhua.com/2016/01/05/hadoop-常用参数整理/">
+
+
+
+
+
+  <title>Hadoop常用参数整理（HDFS/Yarn/MapReduce/GC） | hua的博客</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-69647002-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?954f429681a4cd6dee6095ddaa2aac9a";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">hua的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">关注技术和人文的原创IT博客</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-schedule">
+          <a href="/schedule/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            日程表
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sitemap">
+          <a href="/sitemap.xml" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            站点地图
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="st-search-show-outputs">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <form class="site-search-form">
+  <input type="text" id="st-search-input" class="st-search-input st-default-search-input">
+</form>
+
+<script type="text/javascript">
+  (function(w,d,t,u,n,s,e){w['SwiftypeObject']=n;w[n]=w[n]||function(){
+    (w[n].q=w[n].q||[]).push(arguments);};s=d.createElement(t);
+    e=d.getElementsByTagName(t)[0];s.async=1;s.src=u;e.parentNode.insertBefore(s,e);
+  })(window,document,'script','//s.swiftypecdn.com/install/v2/st.js','_st');
+
+  _st('install', 'BAacTgC1f_bLy6kngppZ','2.0.0');
+</script>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.zhangrenhua.com/2016/01/05/hadoop-常用参数整理/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="张仁华">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="http://www.zhangrenhua.com/back_images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hua的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Hadoop常用参数整理（HDFS/Yarn/MapReduce/GC）</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-01-05T19:22:09+08:00">
+                2016-01-05
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/hadoop/" itemprop="url" rel="index">
+                    <span itemprop="name">hadoop</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2016/01/05/hadoop-常用参数整理/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2016/01/05/hadoop-常用参数整理/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  最近整理了一些常用的`Hadoop`集群相关配置参数，并对相关参数进行调优，其中有一些参数能影响到集群的性能等问题，需谨慎使用。本来想在这里把`Hbase`参数也带上的，由于`Hbase`参数调优细节太多，所以单独抽了出来，在未来的几天内我会补上。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>最近整理了一些常用的<code>Hadoop</code>集群相关配置参数，并对相关参数进行调优，其中有一些参数能影响到集群的性能等问题，需谨慎使用。本来想在这里把<code>Hbase</code>参数也带上的，由于<code>Hbase</code>参数调优细节太多，所以单独抽了出来，在未来的几天内我会补上。</p>
+<h2 id="HDFS"><a href="#HDFS" class="headerlink" title="HDFS"></a>HDFS</h2><p>Hadoop HDFS组件的相关参数说明，本文没有说明某个参数对应哪个配置文件（笔者使用商业版集群，所以就没有一一去找）：</p>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数默认值</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>dfs.block.size,dfs.blocksize</td>
+<td>134217728</td>
+<td>以字节计算的新建 HDFS 文件默认块大小。请注意该值也用作 HBase 区域服务器 HLog 块大小。</td>
+</tr>
+<tr>
+<td>dfs.replication</td>
+<td>3</td>
+<td>HDFS文件的数据块复制份数。</td>
+</tr>
+<tr>
+<td>dfs.webhdfs.enabled</td>
+<td>TRUE</td>
+<td>启用 WebHDFS 界面，启动50070端口。</td>
+</tr>
+<tr>
+<td>dfs.permissions</td>
+<td>TRUE</td>
+<td>HDFS文件权限检查。</td>
+</tr>
+<tr>
+<td>dfs.datanode.failed.volumes.tolerated</td>
+<td>0</td>
+<td>能够导致DN挂掉的坏硬盘最大数，默认0就是只要有1个硬盘坏了，DN就会shutdown。</td>
+</tr>
+<tr>
+<td>dfs.data.dir,dfs.datanode.data.dir</td>
+<td>xxx,xxx</td>
+<td>DataNode数据保存路径，可以写多块硬盘，逗号分隔</td>
+</tr>
+<tr>
+<td>dfs.name.dir,dfs.namenode.name.dir</td>
+<td>xxx,xxx</td>
+<td>NameNode本地元数据存储目录，可以写多块硬盘，逗号分隔</td>
+</tr>
+<tr>
+<td>fs.trash.interval</td>
+<td>1</td>
+<td>垃圾桶检查频度（分钟）。要禁用垃圾桶功能，请输入0。</td>
+</tr>
+<tr>
+<td>dfs.safemode.min.datanodes</td>
+<td>0</td>
+<td>指定在名称节点存在 safemode 前必须活动的 DataNodes 数量。输入小于或等于 0 的值，以在决定启动期间是否保留 safemode 时将活动的 DataNodes 数量考虑在内。值大于群集中 DataNodes 的数量时将永久保留 safemode。</td>
+</tr>
+<tr>
+<td>dfs.client.read.shortcircuit</td>
+<td>TRUE</td>
+<td>启用 HDFS short circuit read。该操作允许客户端直接利用 DataNode 读取 HDFS 文件块。这样可以提升本地化的分布式客户端的性能</td>
+</tr>
+<tr>
+<td>dfs.datanode.handler.count</td>
+<td>3</td>
+<td>DataNode 服务器线程数。默认为3,较大集群,可适当调大些,比如8。</td>
+</tr>
+<tr>
+<td>dfs.datanode.max.xcievers, dfs.datanode.max.transfer.threads</td>
+<td>256</td>
+<td>指定在 DataNode 内外传输数据使用的最大线程数，datanode在进行文件传输时最大线程数</td>
+</tr>
+<tr>
+<td>dfs.balance.bandwidthPerSec, dfs.datanode.balance.bandwidthPerSec</td>
+<td>1048576</td>
+<td>每个 DataNode 可用于平衡的最大带宽。单位为字节/秒。</td>
+</tr>
+</tbody></table>
+<p>上面参数中可能有2个名称，前面一个是老版本1.x的后面的是新版本2.x的。</p>
+<h3 id="参数建议"><a href="#参数建议" class="headerlink" title="参数建议"></a>参数建议</h3><p><strong>dfs.data.dir, dfs.datanode.data.dir</strong></p>
+<p>DataNode 存储 HDFS 块数据的本地文件系统中的目录逗号分隔列表。值通常为 /data/N/dfs/dn for N = 1, 2, 3…，应使用 noatime 选项装载这些目录并使用 JBOD 配置磁盘。不推荐使用 RAID。</p>
+<p><strong>dfs.name.dir, dfs.namenode.name.dir</strong></p>
+<p>NameNode本地元数据存储目录,<font color="red">如果这个参数设置为多个目录，那么这些目录下都保存着元信息的多个备份。</font></p>
+<p><strong>dfs.client.read.shortcircuit</strong></p>
+<p>启用 HDFS short circuit read。该操作允许客户端直接利用 DataNode 读取 HDFS 文件块。这样可以提升本地化的分布式客户端的性能</p>
+<p><strong>dfs.datanode.handler.count</strong></p>
+<p>DataNode 服务器线程数。默认为3,较大集群,可适当调大些,比如8</p>
+<p><strong>dfs.datanode.max.xcievers, dfs.datanode.max.transfer.threads</strong></p>
+<p>相当于linux下的打开文件最大数量，可适当调大些，比如4096。</p>
+<p><strong>dfs.balance.bandwidthPerSec, dfs.datanode.balance.bandwidthPerSec</strong></p>
+<p>balancer时，hdfs移动数据的速度，默认值为1M/S的速度。一般情况下设置为20M；设置的过大会影响当前job的运行。</p>
+<h3 id="进程内存设置"><a href="#进程内存设置" class="headerlink" title="进程内存设置"></a>进程内存设置</h3><p>以下是机器128G内存下的参数配置：</p>
+<p>DataNode 的 Java 堆栈大小：8G<br>Namenode 的 Java 堆栈大小：32GB，可以更大<br>dfs.datanode.max.locked.memory（DataNode 可用于缓存内存中的数据块的最大内存量。将其设置为零将禁用缓存。）：4G</p>
+<h2 id="Yarn"><a href="#Yarn" class="headerlink" title="Yarn"></a>Yarn</h2><p>Hadoop Yarn组件的相关参数说明，本文没有说明某个参数对应哪个配置文件（笔者使用商业版集群，所以就没有一一去找）：</p>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参考值</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>yarn.scheduler.minimum-allocation-mb</td>
+<td>1024</td>
+<td>容器可以请求的最小物理内存量（以 MiB 为单位）。如果使用 Capacity 或 FIFO scheduler（或任何 CDH 5 之前的 scheduler），内存请求数量将四舍五入为该数字最接近的倍数。</td>
+</tr>
+<tr>
+<td>yarn.scheduler.maximum-allocation-mb</td>
+<td>51200</td>
+<td>可为容器请求的最大物理内存数量（以 MiB 为单位）。</td>
+</tr>
+<tr>
+<td>yarn.nodemanager.resource.memory-mb</td>
+<td>51200</td>
+<td>可分配给容器的物理内存数量（以 MiB 为单位）。</td>
+</tr>
+<tr>
+<td>yarn.scheduler.fair.continuous-scheduling-enabled</td>
+<td>TRUE</td>
+<td>启用公平调度</td>
+</tr>
+<tr>
+<td>yarn.log-aggregation.retain-seconds</td>
+<td>604800</td>
+<td>保存汇聚日志时间，秒，超过会删除，-1表示不删除。 注意，设置的过小，将导致NN垃圾碎片。建议3-7天 = 7 * 86400 = 604800</td>
+</tr>
+<tr>
+<td>yarn.nodemanager.log.retain-seconds</td>
+<td>10800</td>
+<td>保留用户日志的时间（以秒为单位）。仅适用在日志聚合已禁用的情况下。</td>
+</tr>
+<tr>
+<td>yarn.app.mapreduce.am.job.client.port-range</td>
+<td></td>
+<td>MR AM能够绑定使用的端口范围。例如：50000-50050,50100-50200。 如果你先要全部的有用端口，可以留空（默认值null）。</td>
+</tr>
+</tbody></table>
+<p>关于Yarn组件主要介绍上面几个参数，参数配置需根据自己集群环境来决定。</p>
+<h3 id="参数建议-1"><a href="#参数建议-1" class="headerlink" title="参数建议"></a>参数建议</h3><p><strong>yarn.nodemanager.resource.memory-mb</strong></p>
+<p>表示该节点上YARN可使用的物理内存总量，默认是8192（MB），注意，如果你的节点内存资源不够8GB，则需要调减小这个值，而YARN不会智能的探测节点的物理内存总量</p>
+<p><strong>yarn.scheduler.maximum-allocation-mb</strong></p>
+<p>单个任务可申请的最多物理内存量，默认是8192（MB）。<br>默认情况下，YARN采用了线程监控的方法判断任务是否超量使用内存，一旦发现超量，则直接将其杀死。由于Cgroups对内存的控制缺乏灵活性（即任务任何时刻不能超过内存上限，如果超过，则直接将其杀死或者报OOM），而Java进程在创建瞬间内存将翻倍，之后骤降到正常值，这种情况下，采用线程监控的方式更加灵活（当发现进程树内存瞬间翻倍超过设定值时，可认为是正常现象，不会将任务杀死），因此YARN未提供Cgroups内存隔离机制。<br>可以使用如下命令在提交任务时动态设置：</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hadoop jar &lt;jarName&gt; -D mapreduce<span class="selector-class">.reduce</span><span class="selector-class">.memory</span><span class="selector-class">.mb</span>=<span class="number">5120</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="进程内存设置-1"><a href="#进程内存设置-1" class="headerlink" title="进程内存设置"></a>进程内存设置</h3><p>ResourceManager 的 Java 堆栈大小 24G<br>NodeManager 的 Java 堆栈大小 4096m</p>
+<h2 id="MapReduce"><a href="#MapReduce" class="headerlink" title="MapReduce"></a>MapReduce</h2><table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>默认值</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>yarn.app.mapreduce.am.resource.mb</td>
+<td>1536</td>
+<td>ApplicationMaster占用的内存量</td>
+</tr>
+<tr>
+<td>yarn.app.mapreduce.am.resource.cpu-vcores</td>
+<td>1</td>
+<td>MR ApplicationMaster占用的虚拟CPU个数</td>
+</tr>
+<tr>
+<td>mapreduce.am.max-attempts</td>
+<td>2</td>
+<td>MR ApplicationMaster最大失败尝试次数</td>
+</tr>
+<tr>
+<td>mapreduce.map.memory.mb</td>
+<td>1024</td>
+<td>为作业的每个 Map 任务分配的物理内存量 (MiB)</td>
+</tr>
+<tr>
+<td>mapreduce.map.cpu.vcores</td>
+<td>1</td>
+<td>为作业的每个 Map 任务分配的虚拟 CPU 内核数</td>
+</tr>
+<tr>
+<td>mapreduce.map.maxattempts</td>
+<td>4</td>
+<td>Map Task最大失败尝试次数</td>
+</tr>
+<tr>
+<td>mapreduce.reduce.memory.mb</td>
+<td>1024</td>
+<td>为作业的每个 Reduce 任务分配的物理内存量 (MiB)</td>
+</tr>
+<tr>
+<td>mapreduce.reduce.cpu.vcores</td>
+<td>1</td>
+<td>作业的每个 Reduce 任务的虚拟 CPU 内核数。</td>
+</tr>
+<tr>
+<td>mapreduce.reduce.maxattempts</td>
+<td>4</td>
+<td>Reduce Task最大失败尝试次数</td>
+</tr>
+<tr>
+<td>mapreduce.map.speculative</td>
+<td>FALSE</td>
+<td>是否对Map Task启用推测执行机制</td>
+</tr>
+<tr>
+<td>mapreduce.reduce.speculative</td>
+<td>FALSE</td>
+<td>是否对Reduce Task启用推测执行机制</td>
+</tr>
+<tr>
+<td>mapreduce.job.queuename</td>
+<td>default</td>
+<td>作业提交到的队列</td>
+</tr>
+<tr>
+<td>mapreduce.task.io.sort.mb</td>
+<td>100</td>
+<td>任务内部排序缓冲区大小</td>
+</tr>
+<tr>
+<td>mapreduce.map.sort.spill.percent</td>
+<td>0.8</td>
+<td>Map阶段溢写文件的阈值（排序缓冲区大小的百分比）</td>
+</tr>
+<tr>
+<td>mapreduce.reduce.shuffle.parallelcopies</td>
+<td>5</td>
+<td>Reduce Task启动的并发拷贝数据的线程数目</td>
+</tr>
+</tbody></table>
+<h3 id="参数建议-2"><a href="#参数建议-2" class="headerlink" title="参数建议"></a>参数建议</h3><p><strong>mapreduce.map.memory.mb</strong></p>
+<p>单个Map任务的最大内存可以根据实际业务情况来调整，比如有些任务很占内存，就应该调多一点。</p>
+<p><strong>mapreduce.reduce.memory.mb</strong></p>
+<p>单个Reduce任务的最大内存，同上。</p>
+<p><strong>mapreduce.task.io.sort.mb</strong></p>
+<p>Map端数据排序可用内存，如果内存充裕建议调大至256M或512M，可提升排序性能。</p>
+<h2 id="进程GC配置参考"><a href="#进程GC配置参考" class="headerlink" title="进程GC配置参考"></a>进程GC配置参考</h2><p>建议Hadoop进程的GC参数加上如下选项，很多商业版都默认加上了，这对JDK性能提升有很大帮助：</p>
+<ul>
+<li>-XX:CMSInitiatingOccupancyFraction=70  </li>
+<li>-XX:+HeapDumpOnOutOfMemoryError </li>
+<li>-XX:+UseConcMarkSweepGC </li>
+<li>-XX:-CMSConcurrentMTEnabled </li>
+<li>-XX:+CMSIncrementalMode </li>
+<li>-Djava.net.preferIPv4Stack=true</li>
+</ul>
+<p><strong>参数说明</strong></p>
+<p>-XX:CMSInitiatingOccupancyFraction=70，年老代使用了70%时回收内存</p>
+<p>-XX:+HeapDumpOnOutOfMemoryError，JVM会在遇到OutOfMemoryError时拍摄一个“堆转储快照”，并将其保存在一个文件中</p>
+<p>-XX:+UseConcMarkSweepGC，启用CMS</p>
+<p>-XX:-CMSConcurrentMTEnabled（-号代表否认）<br>    当该标志被启用时，并发的CMS阶段将以多线程执行(因此，多个GC线程会与所有的应用程序线程并行工作)。<br>    该标志已经默认开启，如果顺序执行更好，这取决于所使用的硬件，多线程执行可以通过-XX：-CMSConcurremntMTEnabled禁用。</p>
+<p>-XX:+CMSIncrementalMode. 在增量模式下，CMS 收集器在并发阶段，不会独占整个周期，<br>    而会周期性的暂停，唤醒应用线程。收集器把并发阶段工作，划分为片段，安排在次级(minor) 回收之间运行。<br>    这对需要低延迟，运行在少量CPU服务器上的应用很有用。</p>
+<p>-Djava.net.preferIPv4Stack=true，禁用IPv6</p>
+<p>后面我会写一篇Hbase参数调优以及GC优化的文章，里面会详细介绍Java GC。</p>
+<h2 id="参考文档"><a href="#参考文档" class="headerlink" title="参考文档"></a>参考文档</h2><ul>
+<li><a href="http://docs.hortonworks.com/HDPDocuments/HDP2/HDP-2.0.6.0/bk_installing_manually_book/content/rpm-chap1-11.html" target="_blank" rel="noopener">http://docs.hortonworks.com/HDPDocuments/HDP2/HDP-2.0.6.0/bk_installing_manually_book/content/rpm-chap1-11.html</a></li>
+</ul>
+<p>如有错误，还请提醒。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/java/" rel="tag"># java</a>
+          
+            <a href="/tags/hadoop生态圈/" rel="tag"># hadoop生态圈</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/01/01/Docker入门实战-SSH连接docker容器/" rel="next" title="Docker入门实战-SSH连接docker容器">
+                <i class="fa fa-chevron-left"></i> Docker入门实战-SSH连接docker容器
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/01/12/hadoop-hbase2015年发展回顾与未来展望/" rel="prev" title="转-Apache HBase 2015年发展回顾与未来展望">
+                转-Apache HBase 2015年发展回顾与未来展望 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+<span class="jiathis_txt">分享到：</span>
+<a class="jiathis_button_fav">收藏夹</a>
+<a class="jiathis_button_copy">复制网址</a>
+<a class="jiathis_button_email">邮件</a>
+<a class="jiathis_button_weixin">微信</a>
+<a class="jiathis_button_qzone">QQ空间</a>
+<a class="jiathis_button_tqq">腾讯微博</a>
+<a class="jiathis_button_douban">豆瓣</a>
+<a class="jiathis_button_share">一键分享</a>
+
+<a href="http://www.jiathis.com/share?uid=2140465" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank">更多</a>
+<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+var jiathis_config={
+  data_track_clickback:true,
+  summary:"",
+  shortUrl:false,
+  hideMore:false
+}
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  <p>热评文章</p>
+  <div class="ds-top-threads" data-range="weekly" data-num-items="4"></div>
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div class="ds-thread" data-thread-key="2016/01/05/hadoop-常用参数整理/" data-title="Hadoop常用参数整理（HDFS/Yarn/MapReduce/GC）" data-url="http://www.zhangrenhua.com/2016/01/05/hadoop-常用参数整理/">
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="http://www.zhangrenhua.com/back_images/avatar.jpg" alt="张仁华">
+            
+              <p class="site-author-name" itemprop="name">张仁华</p>
+              <p class="site-description motion-element" itemprop="description">记录软件生涯中的点点滴滴</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">76</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">17</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/zhangrenhua/" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://weibo.com/huaHBrother" target="_blank" title="Weibo">
+                      
+                        <i class="fa fa-fw fa-globe"></i>Weibo</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://douban.com/people/huaHBrother" target="_blank" title="douban">
+                      
+                        <i class="fa fa-fw fa-globe"></i>douban</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://zhihu.com/people/huaHBrother" target="_blank" title="zhihu">
+                      
+                        <i class="fa fa-fw fa-globe"></i>zhihu</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#HDFS"><span class="nav-number">2.</span> <span class="nav-text">HDFS</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#参数建议"><span class="nav-number">2.1.</span> <span class="nav-text">参数建议</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#进程内存设置"><span class="nav-number">2.2.</span> <span class="nav-text">进程内存设置</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Yarn"><span class="nav-number">3.</span> <span class="nav-text">Yarn</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#参数建议-1"><span class="nav-number">3.1.</span> <span class="nav-text">参数建议</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#进程内存设置-1"><span class="nav-number">3.2.</span> <span class="nav-text">进程内存设置</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#MapReduce"><span class="nav-number">4.</span> <span class="nav-text">MapReduce</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#参数建议-2"><span class="nav-number">4.1.</span> <span class="nav-text">参数建议</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#进程GC配置参考"><span class="nav-number">5.</span> <span class="nav-text">进程GC配置参考</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考文档"><span class="nav-number">6.</span> <span class="nav-text">参考文档</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">张仁华</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"iissnan-notes"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

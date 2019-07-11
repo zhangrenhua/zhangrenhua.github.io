@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="google-site-verification" content="zUNgN8yGBtBZ8194JTl7PXh7YvztVw494zGKJ_8qH00">
+
+
+
+
+
+
+
+
+  <meta name="baidu-site-verification" content="kqLgluU8lc">
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/favicon.ico?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="hadoop生态圈,spark streaming,streaming-loganalysis,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="hua的博客" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="忙于工作交接，忙于“吸毒”，导致一个多月没有更新博客了。也许是因为这边的工作环境原因吧！没有比较大一点的项目，没有大数据量，导致学习兴趣下降。逆水行舟不进则退，必须开始动起来，最近自己在规划一个apache日志实时处理，用于监控项目的负载情况和简单的网络攻击防御处理。采用spark streaming + kafka实时处理数据，保证数据的无丢失读取。上面所说的“吸毒”其实就是，守望先锋。。。流处">
+<meta name="keywords" content="hadoop生态圈,spark streaming,streaming-loganalysis">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Spark streaming数据无丢失读取kafka，以及源码分析">
+<meta property="og:url" content="http://www.zhangrenhua.com/2016/08/02/hadoop-spark-streaming数据无丢失读取kafka，以及源码分析/index.html">
+<meta property="og:site_name" content="hua的博客">
+<meta property="og:description" content="忙于工作交接，忙于“吸毒”，导致一个多月没有更新博客了。也许是因为这边的工作环境原因吧！没有比较大一点的项目，没有大数据量，导致学习兴趣下降。逆水行舟不进则退，必须开始动起来，最近自己在规划一个apache日志实时处理，用于监控项目的负载情况和简单的网络攻击防御处理。采用spark streaming + kafka实时处理数据，保证数据的无丢失读取。上面所说的“吸毒”其实就是，守望先锋。。。流处">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source1.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source2.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source3.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source4.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source5.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source6.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source7.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source8.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source9.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source10.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source11.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source12.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source13.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source14.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source15.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source17.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source16.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source18.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source19.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source20.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source21.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source22.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source23.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source26.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source24.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source25.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source27.png">
+<meta property="og:updated_time" content="2019-07-11T06:43:13.737Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Spark streaming数据无丢失读取kafka，以及源码分析">
+<meta name="twitter:description" content="忙于工作交接，忙于“吸毒”，导致一个多月没有更新博客了。也许是因为这边的工作环境原因吧！没有比较大一点的项目，没有大数据量，导致学习兴趣下降。逆水行舟不进则退，必须开始动起来，最近自己在规划一个apache日志实时处理，用于监控项目的负载情况和简单的网络攻击防御处理。采用spark streaming + kafka实时处理数据，保证数据的无丢失读取。上面所说的“吸毒”其实就是，守望先锋。。。流处">
+<meta name="twitter:image" content="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source1.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.zhangrenhua.com/2016/08/02/hadoop-spark-streaming数据无丢失读取kafka，以及源码分析/">
+
+
+
+
+
+  <title>Spark streaming数据无丢失读取kafka，以及源码分析 | hua的博客</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-69647002-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?954f429681a4cd6dee6095ddaa2aac9a";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">hua的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">关注技术和人文的原创IT博客</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-schedule">
+          <a href="/schedule/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            日程表
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sitemap">
+          <a href="/sitemap.xml" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            站点地图
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="st-search-show-outputs">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <form class="site-search-form">
+  <input type="text" id="st-search-input" class="st-search-input st-default-search-input">
+</form>
+
+<script type="text/javascript">
+  (function(w,d,t,u,n,s,e){w['SwiftypeObject']=n;w[n]=w[n]||function(){
+    (w[n].q=w[n].q||[]).push(arguments);};s=d.createElement(t);
+    e=d.getElementsByTagName(t)[0];s.async=1;s.src=u;e.parentNode.insertBefore(s,e);
+  })(window,document,'script','//s.swiftypecdn.com/install/v2/st.js','_st');
+
+  _st('install', 'BAacTgC1f_bLy6kngppZ','2.0.0');
+</script>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.zhangrenhua.com/2016/08/02/hadoop-spark-streaming数据无丢失读取kafka，以及源码分析/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="张仁华">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="http://www.zhangrenhua.com/back_images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hua的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Spark streaming数据无丢失读取kafka，以及源码分析</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-08-02T16:06:10+08:00">
+                2016-08-02
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/spark/" itemprop="url" rel="index">
+                    <span itemprop="name">spark</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2016/08/02/hadoop-spark-streaming数据无丢失读取kafka，以及源码分析/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2016/08/02/hadoop-spark-streaming数据无丢失读取kafka，以及源码分析/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  忙于工作交接，忙于“吸毒”，导致一个多月没有更新博客了。也许是因为这边的工作环境原因吧！没有比较大一点的项目，没有大数据量，导致学习兴趣下降。逆水行舟不进则退，必须开始动起来，最近自己在规划一个apache日志实时处理，用于监控项目的负载情况和简单的网络攻击防御处理。<br>采用spark streaming + kafka实时处理数据，保证数据的无丢失读取。<br>上面所说的“吸毒”其实就是，守望先锋。。。<br><h2 id="_2"><a name="user-content-_2" href="#_2" class="headeranchor-link" aria-hidden="true"><span class="headeranchor"></span></a>流处理的概念</h2>先解释下流处理中的一些概念：<br>- At most once 每条数据最多被处理一次<br>- At least once 每条数据最少被处理一次<br>- Exactly once 每条数据只会被处理一次<br><br>kafka streaming中怎么能满足上面的其中一点呢？请看下面分析与总结。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>忙于工作交接，忙于“吸毒”，导致一个多月没有更新博客了。也许是因为这边的工作环境原因吧！没有比较大一点的项目，没有大数据量，导致学习兴趣下降。逆水行舟不进则退，必须开始动起来，最近自己在规划一个apache日志实时处理，用于监控项目的负载情况和简单的网络攻击防御处理。</p>
+<p>采用spark streaming + kafka实时处理数据，保证数据的无丢失读取。<br>上面所说的“吸毒”其实就是，守望先锋。。。</p>
+<h2 id="流处理的概念"><a href="#流处理的概念" class="headerlink" title="流处理的概念"></a>流处理的概念</h2><p>先解释下流处理中的一些概念：</p>
+<ul>
+<li>At most once 每条数据最多被处理一次</li>
+<li>At least once 每条数据最少被处理一次</li>
+<li>Exactly once 每条数据只会被处理一次</li>
+</ul>
+<p>kafka streaming中怎么能满足上面的其中一点呢？请看下面分析与总结。</p>
+<h2 id="kafka-streaming创建的几种方式"><a href="#kafka-streaming创建的几种方式" class="headerlink" title="kafka streaming创建的几种方式"></a>kafka streaming创建的几种方式</h2><h3 id="createStream（Receiver）"><a href="#createStream（Receiver）" class="headerlink" title="createStream（Receiver）"></a>createStream（Receiver）</h3><p>利用<code>KafkaUtils.createStream</code>就能创建一个Receiver方式的kafka streaming。</p>
+<h4 id="源码分析"><a href="#源码分析" class="headerlink" title="源码分析"></a>源码分析</h4><p>查看<code>KafkaUtils</code> 84行左右，当调用createStream的时候其实是创建了一个<code>KafkaInputDStream</code>对象:<br><img src="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source1.png" alt="KafkaUtils source"></p>
+<p>查看<code>KafkaInputDStream</code>类，有个<code>getReceiver</code>方法，改方法是获取一个kafka数据接收器，根据<code>useReliableReceiver</code>参数来决定使用哪个接收器：<br><img src="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source2.png" alt="KafkaInputDStream source"></p>
+<p>这里先来讲<code>KafkaReceiver</code>接收器，在<code>KafkaInputDStream</code>中的<code>KafkaReceiver</code>类中，可以看出，这是一个简单的kafka消息接收器，采用<code>ConsumerConnector</code>来接收数据：<br><img src="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source3.png" alt="KafkaInputDStream source"></p>
+<p>上面这个类，就是简单的数据接收器，下面就来具体讲下<code>ReliableKafkaReceiver</code>接收器，从名字可以看出它是一个可靠的接收器，为什么呢？那就从开始阅读源码吧：<br><img src="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source4.png" alt="ReliableKafkaReceiver source"></p>
+<p>从上面类的注释中可以看出，<br>1、它默认是关闭的，设置<code>spark.streaming.receiver.writeaheadlog.enable=true</code> 即可启用。<br>2、根据topic的偏移量来接收数据，并更新偏移信息。<br>3、只有当数据可靠地存储时，偏移量才会被更新，所以kafkareceiver潜在的数据丢失问题可以消除（等会验证）。<br>4、ReliableKafkaReceiver已将<code>auto.commit.enable</code>参数设置为false，外面设置为true不会生效，并会打印警告日志。</p>
+<p>ReliableKafkaReceiver类，其实也是采用<code>ConsumerConnector</code>来获取数据，但是有一点不同的，就是ReliableKafkaReceiver是自动维护topic的偏移信息的，通过zkClient来手动的提交偏移量：<br><img src="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source5.png" alt="ReliableKafkaReceiver source"></p>
+<p>查看streaming数据获取的启动方法<code>onStart</code>，该方法主要做了以下处理：<br>1、<code>topicPartitionOffsetMap</code>，初始化主题对应的Partition的偏移量<br>2、<code>blockOffsetMap</code>，初始化块对应的偏移量<br>3、<code>blockGenerator</code>，初始化块的处理器<br>4、<code>props.setProperty(AUTO_OFFSET_COMMIT, &quot;false&quot;)</code>，强制设置<code>auto.commit.enable</code>为false<br>5、<code>consumerConnector</code>，初始化消息读取器<br>6、<code>zkClient</code>，初始化zkClient，用户读写kafka偏移信息<br><img src="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source6.png" alt="ReliableKafkaReceiver source"></p>
+<p>根据topic数据量来创建线程池，启动MessageHandler线程来获取数据：<br><img src="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source7.png" alt="ReliableKafkaReceiver source"></p>
+<p>一直接收数据，并调用<code>storeMessageAndMetadata</code>方法来存储数据：<br><img src="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source8.png" alt="ReliableKafkaReceiver source"></p>
+<p><code>storeMessageAndMetadata</code>方法中通过调用<code>blockGenerator.addDataWithCallback(data, metadata)</code>来添加数据：<br><img src="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source9.png" alt="ReliableKafkaReceiver source"></p>
+<p><code>addDataWithCallback</code>方法中其实是调用<br><img src="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source10.png" alt="ReliableKafkaReceiver source"></p>
+<p>调用<code>waitToPush</code>控制接收速度，并将数据添加到<code>currentBuffer</code>中，然后调用GeneratedBlockHandler的<code>onAddData</code>方法将偏移量信息更新到<code>topicPartitionOffsetMap</code>中：<br><img src="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source11.png" alt="ReliableKafkaReceiver source"></p>
+<p>现在数据放入<code>currentBuffer</code>了，数据接收的偏移量也更新了，那么数据什么时候被读取？数据偏移量又是什么时候提交呢？请看BlockGenerator类的<code>start</code>方法，此方法做了三件事情：<br>1、将状态设置为active<br>2、启动<code>blockIntervalTimer</code>线程<br>3、启动<code>blockPushingThread</code>线程<br><img src="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source12.png" alt="BlockGenerator source"></p>
+<p><code>blockIntervalTimer</code>对象RecurringTimer类，该类其实就是每隔一段时间调用GeneratorState类的<code>updateCurrentBuffer</code>方法，<code>updateCurrentBuffer</code>方法是将当前从kafka接收到的数据<code>currentBuffer</code>放到一个block中，重置<code>currentBuffer</code>数据，并将block阻塞put到<code>blocksForPushing</code>中：<br><img src="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source13.png" alt="BlockGenerator source"></p>
+<p>当一个block被创建是调用<code>listener.onGenerateBlock(blockId)</code>更新偏移量：<br><img src="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source14.png" alt="ReliableKafkaReceiver source"><br><img src="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source15.png" alt="ReliableKafkaReceiver source"></p>
+<p>这个线程的频度控制是有参数<code>spark.streaming.blockInterval</code>控制的：<br><img src="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source17.png" alt="ReliableKafkaReceiver source"></p>
+<p><code>blockPushingThread</code>线程调用<code>keepPushingBlocks</code>方法，<br><img src="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source16.png" alt="ReliableKafkaReceiver source"></p>
+<p>该方法主要从<code>blocksForPushing</code>中获取block，然后调用<code>pushBlock</code>：<br><img src="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source18.png" alt="ReliableKafkaReceiver source"></p>
+<p><code>pushBlock</code>方法则调用GeneratedBlockHandler的<code>onPushBlock</code>方法，<code>onPushBlock</code>方法这调用<code>storeBlockAndCommitOffset</code>进行数据推送，重试次数为3，如果3次推送失败，则停止接收。调用<code>store</code>函数来将block数据推入spark内存中：<br><img src="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source19.png" alt="ReliableKafkaReceiver source"></p>
+<h4 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h4><p>使用<code>createStream</code>方法来创建kafka数据流，有两种数据接收的实现<code>KafkaReceiver</code>和<code>ReliableKafkaReceiver</code>。<br>KafkaReceiver是一个简单的数据读取类，根据用户传入参数创建ConsumerConnector对象，并读取数据。<br>ReliableKafkaReceiver是一个可靠的数据读取类，根据用户传入参数创建ConsumerConnector对象，但是该类是手动维护kafka数据读取的偏移信息的，只有当数据包装成block或则传入spark内存中时，才会提交偏移信息，这样有效的保证了数据的安全性。</p>
+<p><strong>两者的区别</strong></p>
+<p>1、两者都是通过ConsumerConnector的方式来读取数据，在数据读取方面无区别<br>2、KafkaReceiver每读取一条数据后，就将数据存入spark内存中，而ReliableKafkaReceiver是将数据缓存到一个数组中，通过后台线程处理成block再往spark内存中写<br>3、ReliableKafkaReceiver手动维护偏移信息</p>
+<p>ReliableKafkaReceiver将数据放入缓存，通过重试机制保证写入到spark内存中才会更新偏移信息，而KafkaReceiver不能保证。</p>
+<p>其实两者都会存在数据丢失的问题，就算放入spark内存中，当spark work进程被中断后，还是会有数据丢失的问题存在。、</p>
+<p>那怎样才能保证数据无丢失？？请看下面章节。</p>
+<h3 id="createDirectStream（Direct）"><a href="#createDirectStream（Direct）" class="headerlink" title="createDirectStream（Direct）"></a>createDirectStream（Direct）</h3><p>创建数据流，根据topic的分区个数，对每个分区启用一个线程进行数据读取，效率高。返回的RDD中带有偏移信息（offset），但是不保存偏移信息，需要我们人工的去处理。</p>
+<h4 id="源码分析-1"><a href="#源码分析-1" class="headerlink" title="源码分析"></a>源码分析</h4><p>利用KafkaUtils.createDirectStream来创建数据流，主要新增两个参数,<br><code>fromOffsets</code>：topic下partition的偏移信息<br><code>messageHandler</code>：消息处理器<br>创建DirectKafkaInputDStream对象：<br><img src="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source20.png" alt="DirectKafkaInputDStream source"></p>
+<p>DirectKafkaInputDStream，在进行运算的时候会调用<code>compute</code>方法，此方法主要目的创建并返回KafkaRDD对象，真正的数据处理也在KafkaRDD中，使用Kafka Direct方式没有缓存，数据是一批批获取，<br>DirectKafkaInputDStream继承InputDStream，最大重试次数为1，来确保语义一致性：<br><img src="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source21.png" alt="DirectKafkaInputDStream source"></p>
+<p>KafkaRDD类中的<code>getPartitions</code>方法，从传入的偏移量信息中获取到每个Topic的Partition的Leader信息，host和port，然后实例化KafkaRDDPartition对象，<br>KafkaRDDPartition继承Partition，封装了Partition的信息，如topic，偏移from和until，Broker的host和port信息。<br><img src="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source22.png" alt="KafkaRDD source"></p>
+<p><code>compute</code>方法，如果偏移量from和util相等，则直接返回空的Iterator (偏移量相等则表示无数据)，不等则实例化KafkaRDDIterator对象:<br><img src="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source23.png" alt="KafkaRDD source"></p>
+<p><code>clamp</code>方法。从maxMessagesPerPartition中获取。从配置文件中获取spark.streaming.kafka.maxRatePerPartition，比较maxRateLimitPerPartition和(limit / numPartitions)的值，并取最小值。其中sescPerBatch为传入的Duration的值，得到每一个BatchDuration处理的最大Offset值，当前的偏移量与允许每个Partition最大的消息处理量和该Partition当前的Offset值，这两个的最小值，作为untilOffsets。<br><img src="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source26.png" alt="KafkaRDDIterator source"></p>
+<p>KafkaRDDIterator继承NextIterator，具有iterator的特性，有getNext和hasNext方法，可以对数据迭代操作并计算。KafkaRDDIterator内部，以传入的KafkaParams参数构造了一个和Kafka集合交互的KafkaCluster对象，处理Partition的Leader发生变化时的具体处理办法，重写了getNext方法。</p>
+<p>162行，如果TaskContext中之前没有失败过，即attemptNumber为0，则直接以KafkaRDDPartition中的host和port信息来连接Kafka，返回SimpleConsumer(Kafak的简单消费者，备注Kafka中还有高级消费者的API)；如果之前失败过，则找到该Partition新的Leader Broker信息，然后再进行连接。<br><img src="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source24.png" alt="KafkaRDDIterator source"></p>
+<p>如果迭代器iter为空或者没有数据，则调用consumer发送FetchRequestBuilder给Broker，获取到一批数据。接下来再次判断iter是否有数据，如果没有则表示以读取到指定的untilOffset了。如果iter有数据，也会对offset和untilOffset进行比较，如果当前消费的offset大于等于untilOffset，则返回。如果当消费的offset小于untilOffset，则更新当前请求的Offset值，并调用messageHandler来处理当前的数据。其中messageHandler就是用户传入的对读取到的数据具体操作的函数。<br><img src="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source25.png" alt="KafkaRDDIterator source"></p>
+<p>Spark Streaming可以根据输入的数据流量和当前的处理流量进行比较。动态资源分配调整，可以通过spark.streaming.backpressure.enabled来设置：<br><img src="http://www.zhangrenhua.com/back_images/spark-streaming-kafka-source27.png" alt="RateController source"></p>
+<h3 id="结论-1"><a href="#结论-1" class="headerlink" title="结论"></a>结论</h3><p>1、Kafka Direct底层采用SimpleConsumer对象来获取数据，根据传入的偏移信息来批次获取数据。<br>2、采用Kafka Direct方式，一批数据处理完，再去取一批数据。Kafka Direct可以办到语义一致性，确保数据消费。<br>3、kafka Receiver通过高级api，性能没有Direct多线程多分区并行读取高。</p>
+<p><strong>如何确保数据无丢失？</strong></p>
+<p>采用Direct的方式来读取kafka数据，可以指定offset，但是默认不会将当前已读取的位置存储到zookeeper。所以，如果不手动存储，那么，下次执行还是从默认的位置开始读取（或者指定的位置）</p>
+<p>当然，也可以将读取到数据的offset，人工的存储在数据库或者其它组件中，每次执行前都读取数据库，设置offset。</p>
+<p>还有一种方式，就是将当前已读取的位置更新到zookeeper中，这样，下次读取就会从新的位置开始。</p>
+<p>利用direct方式能很轻松的满足每条消息，最多被处理一次、最少被处理一次、只会被处理一次，当然最后的“只会被处理一次”还是有点困难的。</p>
+<p>下面通过示例代码来演示，kafka streaming数据无丢失读取，虽然不能保证数据只能被处理一次。</p>
+<p><font color="red">但是我们可以从代码逻辑方面处理，只有在将数据处理完成后再向zk中提交kafka偏移信息。就算程序发生异常退出，我们在批次每运行时都清理上次没有完成的状态即可。</font></p>
+<p>为什么我这里没有讲到使用checkpoint，因为checkpoint也不能完全保证数据不丢失，反而会降低streming的吞吐量。</p>
+<h2 id="示例代码"><a href="#示例代码" class="headerlink" title="示例代码"></a>示例代码</h2><h3 id="pom-xml"><a href="#pom-xml" class="headerlink" title="pom.xml"></a>pom.xml</h3><figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependencies</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>junit<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>junit<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">version</span>&gt;</span>4.1<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">scope</span>&gt;</span>test<span class="tag">&lt;/<span class="name">scope</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">&lt;!--spark--&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.spark<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spark-streaming_2.10<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">version</span>&gt;</span>1.6.1<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.spark<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spark-streaming-kafka_2.10<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">version</span>&gt;</span>1.6.1<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.spark<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spark-yarn_2.10<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">version</span>&gt;</span>1.6.1<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependencies</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="java代码"><a href="#java代码" class="headerlink" title="java代码"></a>java代码</h3><figure class="highlight dart"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> kafka.common.TopicAndPartition;</span><br><span class="line"><span class="keyword">import</span> kafka.message.MessageAndMetadata;</span><br><span class="line"><span class="keyword">import</span> kafka.serializer.StringDecoder;</span><br><span class="line"><span class="keyword">import</span> org.apache.spark.SparkConf;</span><br><span class="line"><span class="keyword">import</span> org.apache.spark.api.java.JavaRDD;</span><br><span class="line"><span class="keyword">import</span> org.apache.spark.api.java.function.<span class="built_in">Function</span>;</span><br><span class="line"><span class="keyword">import</span> org.apache.spark.api.java.function.VoidFunction;</span><br><span class="line"><span class="keyword">import</span> org.apache.spark.streaming.Durations;</span><br><span class="line"><span class="keyword">import</span> org.apache.spark.streaming.api.java.JavaInputDStream;</span><br><span class="line"><span class="keyword">import</span> org.apache.spark.streaming.api.java.JavaStreamingContext;</span><br><span class="line"><span class="keyword">import</span> org.apache.spark.streaming.kafka.HasOffsetRanges;</span><br><span class="line"><span class="keyword">import</span> org.apache.spark.streaming.kafka.KafkaCluster;</span><br><span class="line"><span class="keyword">import</span> org.apache.spark.streaming.kafka.KafkaUtils;</span><br><span class="line"><span class="keyword">import</span> org.apache.spark.streaming.kafka.OffsetRange;</span><br><span class="line"><span class="keyword">import</span> org.slf4j.Logger;</span><br><span class="line"><span class="keyword">import</span> org.slf4j.LoggerFactory;</span><br><span class="line"><span class="keyword">import</span> scala.Predef;</span><br><span class="line"><span class="keyword">import</span> scala.Tuple2;</span><br><span class="line"><span class="keyword">import</span> scala.collection.JavaConversions;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.Arrays;</span><br><span class="line"><span class="keyword">import</span> java.util.HashMap;</span><br><span class="line"><span class="keyword">import</span> java.util.HashSet;</span><br><span class="line"><span class="keyword">import</span> java.util.<span class="built_in">Map</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment"><span class="markdown">/**</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="bullet"> * </span>spark streaming使用direct方式读取kafka数据，并存储每个partition读取的offset</span></span></span><br><span class="line"><span class="comment"><span class="markdown"> */</span></span></span><br><span class="line">public <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">JavaDirectKafkaWordCount</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    private <span class="keyword">static</span> <span class="keyword">final</span> Logger LOG = LoggerFactory.getLogger(JavaDirectKafkaWordCount.<span class="keyword">class</span>);</span><br><span class="line"></span><br><span class="line">    public <span class="keyword">static</span> <span class="keyword">void</span> main(<span class="built_in">String</span>[] args) &#123;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (args.length &lt; <span class="number">2</span>) &#123;</span><br><span class="line">            System.err.println(<span class="string">"Usage: JavaDirectKafkaWordCount &lt;brokers&gt; &lt;topics&gt;\n"</span> +</span><br><span class="line">                    <span class="string">"  &lt;brokers&gt; is a list of one or more Kafka brokers\n"</span> +</span><br><span class="line">                    <span class="string">"  &lt;topics&gt; is a list of one or more kafka topics to consume from\n\n"</span>);</span><br><span class="line">            System.exit(<span class="number">1</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">//StreamingExamples.setStreamingLogLevels();</span></span><br><span class="line"></span><br><span class="line">        <span class="built_in">String</span> brokers = args[<span class="number">0</span>]; <span class="comment">// kafka brokers</span></span><br><span class="line">        <span class="built_in">String</span> topics = args[<span class="number">1</span>]; <span class="comment">// 主题</span></span><br><span class="line">        long seconds = <span class="number">10</span>; <span class="comment">// 批次时间（单位：秒）</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">// Create context with a 2 seconds batch interval</span></span><br><span class="line">        SparkConf sparkConf = <span class="keyword">new</span> SparkConf().setAppName(<span class="string">"JavaDirectKafkaWordCount"</span>);</span><br><span class="line">        JavaStreamingContext jssc = <span class="keyword">new</span> JavaStreamingContext(sparkConf, Durations.seconds(seconds));</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 设置kafkaParams</span></span><br><span class="line">        HashSet&lt;<span class="built_in">String</span>&gt; topicsSet = <span class="keyword">new</span> HashSet&lt;&gt;(Arrays.asList(topics.split(<span class="string">","</span>)));</span><br><span class="line">        HashMap&lt;<span class="built_in">String</span>, <span class="built_in">String</span>&gt; kafkaParams = <span class="keyword">new</span> HashMap&lt;&gt;();</span><br><span class="line">        kafkaParams.put(<span class="string">"metadata.broker.list"</span>, brokers);</span><br><span class="line">        <span class="keyword">final</span> <span class="built_in">String</span> groupId = kafkaParams.<span class="keyword">get</span>(<span class="string">"group.id"</span>);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 创建kafka管理对象</span></span><br><span class="line">        <span class="keyword">final</span> KafkaCluster kafkaCluster = getKafkaCluster(kafkaParams);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 初始化offsets</span></span><br><span class="line">        <span class="built_in">Map</span>&lt;TopicAndPartition, Long&gt; fromOffsets = fromOffsets(topicsSet, kafkaParams, groupId, kafkaCluster, <span class="keyword">null</span>);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 创建kafkaStream</span></span><br><span class="line">        JavaInputDStream&lt;<span class="built_in">String</span>&gt; stream = KafkaUtils.createDirectStream(jssc,</span><br><span class="line">                <span class="built_in">String</span>.<span class="keyword">class</span>, <span class="built_in">String</span>.<span class="keyword">class</span>, StringDecoder.<span class="keyword">class</span>,</span><br><span class="line">                StringDecoder.<span class="keyword">class</span>, <span class="built_in">String</span>.<span class="keyword">class</span>, kafkaParams,</span><br><span class="line">                fromOffsets,</span><br><span class="line">                <span class="keyword">new</span> <span class="built_in">Function</span>&lt;MessageAndMetadata&lt;<span class="built_in">String</span>, <span class="built_in">String</span>&gt;, <span class="built_in">String</span>&gt;() &#123;</span><br><span class="line">                    public <span class="built_in">String</span> call(MessageAndMetadata&lt;<span class="built_in">String</span>, <span class="built_in">String</span>&gt; v1)</span><br><span class="line">                            throws Exception &#123;</span><br><span class="line">                        <span class="keyword">return</span> v1.message();</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        <span class="comment">// print</span></span><br><span class="line">        stream.<span class="built_in">print</span>();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 存储offsets</span></span><br><span class="line">        storeConsumerOffsets(groupId, kafkaCluster, stream);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Start the computation</span></span><br><span class="line">        jssc.start();</span><br><span class="line">        jssc.awaitTermination();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment"><span class="markdown">/**</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="bullet">     * </span>@param groupId      消费者 组id</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="bullet">     * </span>@param kafkaCluster kafka管理对象</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="bullet">     * </span>@param stream       kafkaStreamRdd</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="code">     */</span></span></span></span><br><span class="line">    private <span class="keyword">static</span> &lt;T&gt; <span class="keyword">void</span> storeConsumerOffsets(<span class="keyword">final</span> <span class="built_in">String</span> groupId, <span class="keyword">final</span> KafkaCluster kafkaCluster, JavaInputDStream&lt;T&gt; stream) &#123;</span><br><span class="line"></span><br><span class="line">        long l = System.currentTimeMillis();</span><br><span class="line"></span><br><span class="line">        stream.foreachRDD(<span class="keyword">new</span> VoidFunction&lt;JavaRDD&lt;T&gt;&gt;() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            public <span class="keyword">void</span> call(JavaRDD&lt;T&gt; javaRDD) throws Exception &#123;</span><br><span class="line"></span><br><span class="line">                <span class="comment">// 根据group.id 存储每个partition消费的位置</span></span><br><span class="line">                OffsetRange[] offsets = ((HasOffsetRanges) javaRDD.rdd()).offsetRanges();</span><br><span class="line">                <span class="keyword">for</span> (OffsetRange o : offsets) &#123;</span><br><span class="line">                    <span class="comment">// 封装topic.partition 与 offset对应关系 java Map</span></span><br><span class="line">                    TopicAndPartition topicAndPartition = <span class="keyword">new</span> TopicAndPartition(o.topic(), o.partition());</span><br><span class="line">                    <span class="built_in">Map</span>&lt;TopicAndPartition, <span class="built_in">Object</span>&gt; topicAndPartitionObjectMap = <span class="keyword">new</span> HashMap&lt;&gt;();</span><br><span class="line">                    topicAndPartitionObjectMap.put(topicAndPartition, o.untilOffset());</span><br><span class="line"></span><br><span class="line">                    <span class="comment">// 转换java map to scala immutable.map</span></span><br><span class="line">                    scala.collection.immutable.<span class="built_in">Map</span>&lt;TopicAndPartition, <span class="built_in">Object</span>&gt; scalaTopicAndPartitionObjectMap =</span><br><span class="line">                            JavaConversions.mapAsScalaMap(topicAndPartitionObjectMap).toMap(<span class="keyword">new</span> Predef.$less$colon$less&lt;Tuple2&lt;TopicAndPartition, <span class="built_in">Object</span>&gt;, Tuple2&lt;TopicAndPartition, <span class="built_in">Object</span>&gt;&gt;() &#123;</span><br><span class="line">                                public Tuple2&lt;TopicAndPartition, <span class="built_in">Object</span>&gt; apply(Tuple2&lt;TopicAndPartition, <span class="built_in">Object</span>&gt; v1) &#123;</span><br><span class="line">                                    <span class="keyword">return</span> v1;</span><br><span class="line">                                &#125;</span><br><span class="line">                            &#125;);</span><br><span class="line"></span><br><span class="line">                    <span class="comment">// 更新offset到kafkaCluster</span></span><br><span class="line">                    kafkaCluster.setConsumerOffsets(groupId, scalaTopicAndPartitionObjectMap);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 记录处理时间</span></span><br><span class="line">        LOG.info(<span class="string">"storeConsumerOffsets time:"</span> + (System.currentTimeMillis() - l));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment"><span class="markdown">/**</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="bullet">     * </span>获取partition信息，并设置各分区的offsets</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="code">     *</span></span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="bullet">     * </span>@param topicsSet    所有topic</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="bullet">     * </span>@param kafkaParams  kafka参数配置</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="bullet">     * </span>@param groupId      消费者 组id</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="bullet">     * </span>@param kafkaCluster kafka管理对象</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="bullet">     * </span>@param offset       自定义offset</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="bullet">     * </span>@return offsets</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="code">     */</span></span></span></span><br><span class="line">    private <span class="keyword">static</span> <span class="built_in">Map</span>&lt;TopicAndPartition, Long&gt; fromOffsets(HashSet&lt;<span class="built_in">String</span>&gt; topicsSet, HashMap&lt;<span class="built_in">String</span>, <span class="built_in">String</span>&gt; kafkaParams, <span class="built_in">String</span> groupId, KafkaCluster kafkaCluster, Long offset) &#123;</span><br><span class="line"></span><br><span class="line">        long l = System.currentTimeMillis();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 所有partition offset</span></span><br><span class="line">        <span class="built_in">Map</span>&lt;TopicAndPartition, Long&gt; fromOffsets = <span class="keyword">new</span> HashMap&lt;&gt;();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// util.set 转 scala.set</span></span><br><span class="line">        scala.collection.immutable.<span class="built_in">Set</span>&lt;<span class="built_in">String</span>&gt; immutableTopics = JavaConversions</span><br><span class="line">                .asScalaSet(topicsSet)</span><br><span class="line">                .toSet();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 获取topic分区信息</span></span><br><span class="line">        scala.collection.immutable.<span class="built_in">Set</span>&lt;TopicAndPartition&gt; scalaTopicAndPartitionSet = kafkaCluster</span><br><span class="line">                .getPartitions(immutableTopics)</span><br><span class="line">                .right()</span><br><span class="line">                .<span class="keyword">get</span>();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (offset != <span class="keyword">null</span> || kafkaCluster.getConsumerOffsets(kafkaParams.<span class="keyword">get</span>(<span class="string">"group.id"</span>),</span><br><span class="line">                scalaTopicAndPartitionSet).isLeft()) &#123;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 等于空则设置为0</span></span><br><span class="line">            offset = (offset == <span class="keyword">null</span> ? <span class="number">0</span>L : offset);</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 设置每个分区的offset</span></span><br><span class="line">            scala.collection.<span class="built_in">Iterator</span>&lt;TopicAndPartition&gt; iterator = scalaTopicAndPartitionSet.iterator();</span><br><span class="line">            <span class="keyword">while</span> (iterator.hasNext()) &#123;</span><br><span class="line">                fromOffsets.put(iterator.next(), offset);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="comment">// 往后继续读取</span></span><br><span class="line">            scala.collection.<span class="built_in">Map</span>&lt;TopicAndPartition, <span class="built_in">Object</span>&gt; consumerOffsets = kafkaCluster</span><br><span class="line">                    .getConsumerOffsets(groupId,</span><br><span class="line">                            scalaTopicAndPartitionSet).right().<span class="keyword">get</span>();</span><br><span class="line"></span><br><span class="line">            scala.collection.<span class="built_in">Iterator</span>&lt;Tuple2&lt;TopicAndPartition, <span class="built_in">Object</span>&gt;&gt; iterator = consumerOffsets.iterator();</span><br><span class="line">            <span class="keyword">while</span> (iterator.hasNext()) &#123;</span><br><span class="line">                Tuple2&lt;TopicAndPartition, <span class="built_in">Object</span>&gt; next = iterator.next();</span><br><span class="line">                offset = (long) next._2();</span><br><span class="line">                fromOffsets.put(next._1(), offset);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 记录处理时间</span></span><br><span class="line">        LOG.info(<span class="string">"fromOffsets time:"</span> + (System.currentTimeMillis() - l));</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> fromOffsets;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment"><span class="markdown">/**</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="bullet">     * </span>将kafkaParams转换成scala map，用于创建kafkaCluster</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="code">     *</span></span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="bullet">     * </span>@param kafkaParams kafka参数配置</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="bullet">     * </span>@return kafkaCluster管理工具类</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="code">     */</span></span></span></span><br><span class="line">    private <span class="keyword">static</span> KafkaCluster getKafkaCluster(HashMap&lt;<span class="built_in">String</span>, <span class="built_in">String</span>&gt; kafkaParams) &#123;</span><br><span class="line">        <span class="comment">// 类型转换</span></span><br><span class="line">        scala.collection.immutable.<span class="built_in">Map</span>&lt;<span class="built_in">String</span>, <span class="built_in">String</span>&gt; immutableKafkaParam = JavaConversions</span><br><span class="line">                .mapAsScalaMap(kafkaParams)</span><br><span class="line">                .toMap(<span class="keyword">new</span> Predef.$less$colon$less&lt;Tuple2&lt;<span class="built_in">String</span>, <span class="built_in">String</span>&gt;, Tuple2&lt;<span class="built_in">String</span>, <span class="built_in">String</span>&gt;&gt;() &#123;</span><br><span class="line">                    public Tuple2&lt;<span class="built_in">String</span>, <span class="built_in">String</span>&gt; apply(</span><br><span class="line">                            Tuple2&lt;<span class="built_in">String</span>, <span class="built_in">String</span>&gt; v1) &#123;</span><br><span class="line">                        <span class="keyword">return</span> v1;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> KafkaCluster(immutableKafkaParam);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面程序只是一个简单的读取kafka数据并打印的示例，采用<code>KafkaUtils.createDirectStream</code>来创建streaming，直接从kafka的broker服务上读取数据，存储并设置<code>offset</code>。</p>
+<p>为了确保task不会重复执行请设置下面两个参数：<br><code>spark.task.maxFailures=1</code>，Task重试次数为1，即不重试<br><code>spark.speculation=false</code>，关闭推测执行</p>
+<h2 id="参考文档"><a href="#参考文档" class="headerlink" title="参考文档"></a>参考文档</h2><ul>
+<li><a href="http://spark.apache.org/docs/latest/streaming-kafka-integration.html" target="_blank" rel="noopener">http://spark.apache.org/docs/latest/streaming-kafka-integration.html</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/hadoop生态圈/" rel="tag"># hadoop生态圈</a>
+          
+            <a href="/tags/spark-streaming/" rel="tag"># spark streaming</a>
+          
+            <a href="/tags/streaming-loganalysis/" rel="tag"># streaming-loganalysis</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/06/23/Solr运维管理/" rel="next" title="Solr运维管理">
+                <i class="fa fa-chevron-left"></i> Solr运维管理
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/08/14/hadoop-Hive-OpenCSVSerde折行问题/" rel="prev" title="Hive-OpenCSVSerde折行问题">
+                Hive-OpenCSVSerde折行问题 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+<span class="jiathis_txt">分享到：</span>
+<a class="jiathis_button_fav">收藏夹</a>
+<a class="jiathis_button_copy">复制网址</a>
+<a class="jiathis_button_email">邮件</a>
+<a class="jiathis_button_weixin">微信</a>
+<a class="jiathis_button_qzone">QQ空间</a>
+<a class="jiathis_button_tqq">腾讯微博</a>
+<a class="jiathis_button_douban">豆瓣</a>
+<a class="jiathis_button_share">一键分享</a>
+
+<a href="http://www.jiathis.com/share?uid=2140465" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank">更多</a>
+<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+var jiathis_config={
+  data_track_clickback:true,
+  summary:"",
+  shortUrl:false,
+  hideMore:false
+}
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  <p>热评文章</p>
+  <div class="ds-top-threads" data-range="weekly" data-num-items="4"></div>
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div class="ds-thread" data-thread-key="2016/08/02/hadoop-spark-streaming数据无丢失读取kafka，以及源码分析/" data-title="Spark streaming数据无丢失读取kafka，以及源码分析" data-url="http://www.zhangrenhua.com/2016/08/02/hadoop-spark-streaming数据无丢失读取kafka，以及源码分析/">
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="http://www.zhangrenhua.com/back_images/avatar.jpg" alt="张仁华">
+            
+              <p class="site-author-name" itemprop="name">张仁华</p>
+              <p class="site-description motion-element" itemprop="description">记录软件生涯中的点点滴滴</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">76</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">17</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/zhangrenhua/" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://weibo.com/huaHBrother" target="_blank" title="Weibo">
+                      
+                        <i class="fa fa-fw fa-globe"></i>Weibo</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://douban.com/people/huaHBrother" target="_blank" title="douban">
+                      
+                        <i class="fa fa-fw fa-globe"></i>douban</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://zhihu.com/people/huaHBrother" target="_blank" title="zhihu">
+                      
+                        <i class="fa fa-fw fa-globe"></i>zhihu</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#流处理的概念"><span class="nav-number">2.</span> <span class="nav-text">流处理的概念</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#kafka-streaming创建的几种方式"><span class="nav-number">3.</span> <span class="nav-text">kafka streaming创建的几种方式</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#createStream（Receiver）"><span class="nav-number">3.1.</span> <span class="nav-text">createStream（Receiver）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#源码分析"><span class="nav-number">3.1.1.</span> <span class="nav-text">源码分析</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#结论"><span class="nav-number">3.1.2.</span> <span class="nav-text">结论</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#createDirectStream（Direct）"><span class="nav-number">3.2.</span> <span class="nav-text">createDirectStream（Direct）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#源码分析-1"><span class="nav-number">3.2.1.</span> <span class="nav-text">源码分析</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#结论-1"><span class="nav-number">3.3.</span> <span class="nav-text">结论</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#示例代码"><span class="nav-number">4.</span> <span class="nav-text">示例代码</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#pom-xml"><span class="nav-number">4.1.</span> <span class="nav-text">pom.xml</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#java代码"><span class="nav-number">4.2.</span> <span class="nav-text">java代码</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考文档"><span class="nav-number">5.</span> <span class="nav-text">参考文档</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">张仁华</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"iissnan-notes"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

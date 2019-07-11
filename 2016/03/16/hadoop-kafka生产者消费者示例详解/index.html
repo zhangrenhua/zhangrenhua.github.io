@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="google-site-verification" content="zUNgN8yGBtBZ8194JTl7PXh7YvztVw494zGKJ_8qH00">
+
+
+
+
+
+
+
+
+  <meta name="baidu-site-verification" content="kqLgluU8lc">
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/favicon.ico?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="java,hadoop生态圈,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="hua的博客" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="kafka生产者消费者示例，通过官方例子自定义高级查询，并对一些主要参数进行详细描述。">
+<meta name="keywords" content="java,hadoop生态圈">
+<meta property="og:type" content="article">
+<meta property="og:title" content="kafka生产者消费者示例详解">
+<meta property="og:url" content="http://www.zhangrenhua.com/2016/03/16/hadoop-kafka生产者消费者示例详解/index.html">
+<meta property="og:site_name" content="hua的博客">
+<meta property="og:description" content="kafka生产者消费者示例，通过官方例子自定义高级查询，并对一些主要参数进行详细描述。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2016-03-20T04:34:17.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="kafka生产者消费者示例详解">
+<meta name="twitter:description" content="kafka生产者消费者示例，通过官方例子自定义高级查询，并对一些主要参数进行详细描述。">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.zhangrenhua.com/2016/03/16/hadoop-kafka生产者消费者示例详解/">
+
+
+
+
+
+  <title>kafka生产者消费者示例详解 | hua的博客</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-69647002-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?954f429681a4cd6dee6095ddaa2aac9a";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">hua的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">关注技术和人文的原创IT博客</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-schedule">
+          <a href="/schedule/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            日程表
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sitemap">
+          <a href="/sitemap.xml" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            站点地图
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="st-search-show-outputs">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <form class="site-search-form">
+  <input type="text" id="st-search-input" class="st-search-input st-default-search-input">
+</form>
+
+<script type="text/javascript">
+  (function(w,d,t,u,n,s,e){w['SwiftypeObject']=n;w[n]=w[n]||function(){
+    (w[n].q=w[n].q||[]).push(arguments);};s=d.createElement(t);
+    e=d.getElementsByTagName(t)[0];s.async=1;s.src=u;e.parentNode.insertBefore(s,e);
+  })(window,document,'script','//s.swiftypecdn.com/install/v2/st.js','_st');
+
+  _st('install', 'BAacTgC1f_bLy6kngppZ','2.0.0');
+</script>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.zhangrenhua.com/2016/03/16/hadoop-kafka生产者消费者示例详解/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="张仁华">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="http://www.zhangrenhua.com/back_images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hua的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">kafka生产者消费者示例详解</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-03-16T20:04:29+08:00">
+                2016-03-16
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/hadoop/" itemprop="url" rel="index">
+                    <span itemprop="name">hadoop</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2016/03/16/hadoop-kafka生产者消费者示例详解/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2016/03/16/hadoop-kafka生产者消费者示例详解/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  kafka生产者消费者示例，通过官方例子自定义高级查询，并对一些主要参数进行详细描述。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>kafka生产者消费者示例，通过官方例子自定义高级查询，并对一些主要参数进行详细描述。</p>
+<h2 id="Producer"><a href="#Producer" class="headerlink" title="Producer"></a>Producer</h2><p>生产者：</p>
+<figure class="highlight arduino"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> kafka.javaapi.producer.Producer;</span><br><span class="line"><span class="keyword">import</span> kafka.producer.KeyedMessage;</span><br><span class="line"><span class="keyword">import</span> kafka.producer.ProducerConfig;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.Properties;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Created by hua on 2016/2/21.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> class KafkaProducer &#123;</span><br><span class="line">    <span class="keyword">private</span> final Producer&lt;<span class="keyword">String</span>, <span class="keyword">String</span>&gt; producer;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">String</span> topic;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">String</span> brokerList;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">String</span> acks;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> KafkaProducer(<span class="keyword">String</span> topic, <span class="keyword">String</span> brokerList, <span class="keyword">String</span> acks) &#123;</span><br><span class="line">        <span class="keyword">this</span>.topic = topic;</span><br><span class="line">        <span class="keyword">this</span>.brokerList = brokerList;</span><br><span class="line">        <span class="keyword">this</span>.acks = acks;</span><br><span class="line"></span><br><span class="line">        Properties props = <span class="keyword">new</span> Properties();</span><br><span class="line">        props.<span class="built_in">put</span>(<span class="string">"metadata.broker.list"</span>, brokerList);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 指定序列化处理类，默认为kafka.serializer.DefaultEncoder,即byte[]</span></span><br><span class="line">        props.<span class="built_in">put</span>(<span class="string">"serializer.class"</span>, <span class="string">"kafka.serializer.StringEncoder"</span>);</span><br><span class="line">        props.<span class="built_in">put</span>(<span class="string">"key.serializer.class"</span>, <span class="string">"kafka.serializer.StringEncoder"</span>);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 同步还是异步，默认aync同步，async异步。异步可以提高发送吞吐量，但是也可能导致丢失未发送过去的消息</span></span><br><span class="line">        props.<span class="built_in">put</span>(<span class="string">"producer.type"</span>, <span class="string">"sync"</span>);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 是否压缩，默认0表示不压缩，1表示用gzip压缩，2表示用snappy压缩。压缩后消息中会有头来指明消息压缩类型，故在消费者端消息解压是透明的无需指定。</span></span><br><span class="line">        props.<span class="built_in">put</span>(<span class="string">"compression.codec"</span>, <span class="string">"1"</span>);</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 设置Partition类, 对队列进行合理的划分(默认是Hash分区)</span></span><br><span class="line">        <span class="comment">//props.put("partitioner.class", "kafka.producer.DefaultPartitioner");</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">//request.required.acks</span></span><br><span class="line">        <span class="comment">// 0，这意味着，生产者从不等待一个确认从经纪人（相同的行为为0.7）。此选项提供了最低的延迟，但最弱的耐久性保证（一些数据将丢失，当服务器失败）。</span></span><br><span class="line">        <span class="comment">// 1，这意味着生产者得到一个确认后的领导者副本已收到的数据。此选项提供了更好的耐久性，因为客户端等待，直到服务器确认请求成功（只有消息被写入到现在的死亡的领导者，但尚未复制将被丢失）。</span></span><br><span class="line">        <span class="comment">//-1，这意味着，生产者得到一个确认后，所有的同步副本已收到的数据。此选项提供了最佳的耐久性，我们保证，没有任何消息会丢失，只要至少有一个在同步副本仍然。</span></span><br><span class="line">        props.<span class="built_in">put</span>(<span class="string">"request.required.acks"</span>, acks);</span><br><span class="line">        producer = <span class="keyword">new</span> Producer&lt;<span class="keyword">String</span>, <span class="keyword">String</span>&gt;(<span class="keyword">new</span> ProducerConfig(props));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> send(<span class="keyword">String</span> key, <span class="keyword">String</span> data) &#123;</span><br><span class="line">        System.out.<span class="built_in">println</span>(data);</span><br><span class="line">        <span class="comment">// send(List&lt;KeyedMessage&lt;K, V&gt;&gt; messages);</span></span><br><span class="line">        producer.send(<span class="keyword">new</span> KeyedMessage&lt;<span class="keyword">String</span>, <span class="keyword">String</span>&gt;(topic, key, data));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> main(<span class="keyword">String</span>[] args) &#123;</span><br><span class="line">        KafkaProducer producer = <span class="keyword">new</span> KafkaProducer(<span class="string">"test1"</span>, <span class="string">"hynamet02:9082"</span>, <span class="string">"-1"</span>);</span><br><span class="line">        producer.send(<span class="string">"0"</span>, <span class="string">"hello,world!"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Consumer"><a href="#Consumer" class="headerlink" title="Consumer"></a>Consumer</h2><p>消费者：</p>
+<figure class="highlight arduino"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> kafka.consumer.ConsumerConfig;</span><br><span class="line"><span class="keyword">import</span> kafka.consumer.ConsumerIterator;</span><br><span class="line"><span class="keyword">import</span> kafka.consumer.KafkaStream;</span><br><span class="line"><span class="keyword">import</span> kafka.javaapi.consumer.ConsumerConnector;</span><br><span class="line"><span class="keyword">import</span> kafka.message.MessageAndMetadata;</span><br><span class="line"><span class="keyword">import</span> kafka.serializer.StringDecoder;</span><br><span class="line"><span class="keyword">import</span> kafka.utils.VerifiableProperties;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.HashMap;</span><br><span class="line"><span class="keyword">import</span> java.util.List;</span><br><span class="line"><span class="keyword">import</span> java.util.Map;</span><br><span class="line"><span class="keyword">import</span> java.util.Properties;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Created by hua on 2016/2/21.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> class KafkaConsumer &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> final ConsumerConnector consumer;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> KafkaConsumer() &#123;</span><br><span class="line">        Properties props = <span class="keyword">new</span> Properties();</span><br><span class="line">        <span class="comment">//zookeeper 配置</span></span><br><span class="line">        props.<span class="built_in">put</span>(<span class="string">"zookeeper.connect"</span>, <span class="string">"hynamet01:2181"</span>);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// group 代表一个消费组</span></span><br><span class="line">        props.<span class="built_in">put</span>(<span class="string">"group.id"</span>, <span class="string">"hua-group"</span>);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 连接zk的session超时时间</span></span><br><span class="line">        props.<span class="built_in">put</span>(<span class="string">"zookeeper.session.timeout.ms"</span>, <span class="string">"4000"</span>);</span><br><span class="line">        <span class="comment">// 默认是会自动commit offset到zk的，</span></span><br><span class="line">        <span class="comment">// 如果要自己commit，设auto.commit.enable为false</span></span><br><span class="line">        props.<span class="built_in">put</span>(<span class="string">"auto.commit.interval.ms"</span>, <span class="string">"1000"</span>);</span><br><span class="line">        <span class="comment">// 往zookeeper上写offset的频率,如果offset出了返回，则 smallest: 自动设置reset到最小的offset. largest : 自动设置offset到最大的offset. 其它值不允许，会抛出异常</span></span><br><span class="line">        props.<span class="built_in">put</span>(<span class="string">"auto.offset.reset"</span>, <span class="string">"smallest"</span>);</span><br><span class="line">        props.<span class="built_in">put</span>(<span class="string">"zookeeper.sync.time.ms"</span>, <span class="string">"200"</span>);</span><br><span class="line">        <span class="comment">//序列化类</span></span><br><span class="line">        props.<span class="built_in">put</span>(<span class="string">"serializer.class"</span>, <span class="string">"kafka.serializer.StringEncoder"</span>);</span><br><span class="line"></span><br><span class="line">        ConsumerConfig <span class="built_in">config</span> = <span class="keyword">new</span> ConsumerConfig(props);</span><br><span class="line">        consumer = kafka.consumer.Consumer.createJavaConsumerConnector(<span class="built_in">config</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">void</span> consume() &#123;</span><br><span class="line">        Map&lt;<span class="keyword">String</span>, Integer&gt; topicCountMap = <span class="keyword">new</span> HashMap&lt;<span class="keyword">String</span>, Integer&gt;();</span><br><span class="line">        topicCountMap.<span class="built_in">put</span>(<span class="string">"test"</span>, <span class="keyword">new</span> Integer(<span class="number">1</span>));</span><br><span class="line"></span><br><span class="line">        StringDecoder keyDecoder = <span class="keyword">new</span> StringDecoder(<span class="keyword">new</span> VerifiableProperties());</span><br><span class="line">        StringDecoder valueDecoder = <span class="keyword">new</span> StringDecoder(<span class="keyword">new</span> VerifiableProperties());</span><br><span class="line"></span><br><span class="line">        Map&lt;<span class="keyword">String</span>, List&lt;KafkaStream&lt;<span class="keyword">String</span>, <span class="keyword">String</span>&gt;&gt;&gt; consumerMap =</span><br><span class="line">                consumer.createMessageStreams(topicCountMap, keyDecoder, valueDecoder);</span><br><span class="line">        KafkaStream&lt;<span class="keyword">String</span>, <span class="keyword">String</span>&gt; stream = consumerMap.<span class="built_in">get</span>(<span class="string">"test"</span>).<span class="built_in">get</span>(<span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">        ConsumerIterator&lt;<span class="keyword">String</span>, <span class="keyword">String</span>&gt; it = stream.iterator();</span><br><span class="line">        <span class="built_in">while</span> (it.hasNext()) &#123;</span><br><span class="line">            MessageAndMetadata&lt;<span class="keyword">String</span>, <span class="keyword">String</span>&gt; next = it.next();</span><br><span class="line">            System.out.<span class="built_in">println</span>(next.key() + <span class="string">"\t"</span> + next.message());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> main(<span class="keyword">String</span>[] args) &#123;</span><br><span class="line">        <span class="keyword">new</span> KafkaConsumer().consume();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>参数说明：<br><code>group.id</code>：一个消费组ID，每个消费组都有自己的消费偏移量，不支持多线程用同一group.id（一个行数据只会被一个线程读取）</p>
+<p><strong>分区、Offset、消费线程、group.id的关系</strong><br>1）一组（类）消息通常由某个topic来归类，我们可以把这组消息“分发”给若干个分区（partition），每个分区的消息各不相同；<br>2）每个分区都维护着他自己的偏移量（Offset），记录着该分区的消息此时被消费的位置；<br>3）一个消费线程可以对应若干个分区，但一个分区只能被具体某一个消费线程消费；<br>4）group.id用于标记某一个消费组，每一个消费组都会被记录他在某一个分区的Offset，即不同consumer group针对同一个分区，都有“各自”的偏移量。</p>
+<h2 id="自定义高级查询"><a href="#自定义高级查询" class="headerlink" title="自定义高级查询"></a>自定义高级查询</h2><p> Kafka JAVA客户端代码示例,使用场景：</p>
+<ul>
+<li>针对一个消息读取多次</li>
+<li>在一个process中，仅仅处理一个topic中的一组partitions</li>
+<li>使用事务，确保每个消息只被处理一次</li>
+</ul>
+<figure class="highlight processing"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br><span class="line">237</span><br><span class="line">238</span><br><span class="line">239</span><br><span class="line">240</span><br><span class="line">241</span><br><span class="line">242</span><br><span class="line">243</span><br><span class="line">244</span><br><span class="line">245</span><br><span class="line">246</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.hua.kafka;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> kafka.api.FetchRequest;</span><br><span class="line"><span class="keyword">import</span> kafka.api.FetchRequestBuilder;</span><br><span class="line"><span class="keyword">import</span> kafka.api.PartitionOffsetRequestInfo;</span><br><span class="line"><span class="keyword">import</span> kafka.common.ErrorMapping;</span><br><span class="line"><span class="keyword">import</span> kafka.common.TopicAndPartition;</span><br><span class="line"><span class="keyword">import</span> kafka.javaapi.*;</span><br><span class="line"><span class="keyword">import</span> kafka.javaapi.consumer.SimpleConsumer;</span><br><span class="line"><span class="keyword">import</span> kafka.message.MessageAndOffset;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.nio.ByteBuffer;</span><br><span class="line"><span class="keyword">import</span> java.util.*;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * </span></span><br><span class="line"><span class="comment"> * &lt;p/&gt;</span></span><br><span class="line"><span class="comment"> * Kafka JAVA客户端代码示例,使用场景：</span></span><br><span class="line"><span class="comment"> * 针对一个消息读取多次</span></span><br><span class="line"><span class="comment"> * 在一个process中，仅仅处理一个topic中的一组partitions</span></span><br><span class="line"><span class="comment"> * 使用事务，确保每个消息只被处理一次</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> class SimpleExample &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> main(<span class="keyword">String</span> args[]) &#123;</span><br><span class="line">        SimpleExample example = <span class="keyword">new</span> SimpleExample();</span><br><span class="line">        <span class="keyword">long</span> maxReads = <span class="number">20</span>;</span><br><span class="line">        <span class="keyword">String</span> topic = <span class="string">"test1"</span>;</span><br><span class="line">        <span class="built_in">int</span> partition = <span class="number">2</span>;</span><br><span class="line">        List&lt;<span class="keyword">String</span>&gt; seeds = <span class="keyword">new</span> ArrayList&lt;<span class="keyword">String</span>&gt;();</span><br><span class="line">        seeds.<span class="built_in">add</span>(<span class="string">"cdh-s1"</span>);</span><br><span class="line">        <span class="built_in">int</span> port = <span class="number">9092</span>;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            example.run(maxReads, topic, partition, seeds, port);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            System.out.<span class="built_in">println</span>(<span class="string">"Oops:"</span> + e);</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> List&lt;<span class="keyword">String</span>&gt; m_replicaBrokers = <span class="keyword">new</span> ArrayList&lt;<span class="keyword">String</span>&gt;();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> SimpleExample() &#123;</span><br><span class="line">        m_replicaBrokers = <span class="keyword">new</span> ArrayList&lt;<span class="keyword">String</span>&gt;();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> run(<span class="keyword">long</span> a_maxReads, <span class="keyword">String</span> a_topic, <span class="built_in">int</span> a_partition,</span><br><span class="line">                    List&lt;<span class="keyword">String</span>&gt; a_seedBrokers, <span class="built_in">int</span> a_port) <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="comment">// find the meta data about the topic and partition we are interested in</span></span><br><span class="line">        <span class="comment">//</span></span><br><span class="line">        PartitionMetadata metadata = findLeader(a_seedBrokers, a_port, a_topic,</span><br><span class="line">                a_partition);</span><br><span class="line">        <span class="keyword">if</span> (metadata == <span class="keyword">null</span>) &#123;</span><br><span class="line">            System.out</span><br><span class="line">                    .<span class="built_in">println</span>(<span class="string">"Can't find metadata for Topic and Partition. Exiting"</span>);</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (metadata.leader() == <span class="keyword">null</span>) &#123;</span><br><span class="line">            System.out</span><br><span class="line">                    .<span class="built_in">println</span>(<span class="string">"Can't find Leader for Topic and Partition. Exiting"</span>);</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">String</span> leadBroker = metadata.leader().host();</span><br><span class="line">        <span class="keyword">String</span> clientName = <span class="string">"Client_"</span> + a_topic + <span class="string">"_"</span> + a_partition;</span><br><span class="line"></span><br><span class="line">        SimpleConsumer consumer = <span class="keyword">new</span> SimpleConsumer(leadBroker, a_port,</span><br><span class="line">                <span class="number">100000</span>, <span class="number">64</span> * <span class="number">1024</span>, clientName);</span><br><span class="line">        <span class="keyword">long</span> readOffset = getLastOffset(consumer, a_topic, a_partition,</span><br><span class="line">                kafka.api.OffsetRequest.EarliestTime(), clientName);</span><br><span class="line"></span><br><span class="line">        <span class="built_in">int</span> numErrors = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">while</span> (a_maxReads &gt; <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">if</span> (consumer == <span class="keyword">null</span>) &#123;</span><br><span class="line">                consumer = <span class="keyword">new</span> SimpleConsumer(leadBroker, a_port, <span class="number">100000</span>,</span><br><span class="line">                        <span class="number">64</span> * <span class="number">1024</span>, clientName);</span><br><span class="line">            &#125;</span><br><span class="line">            FetchRequest req = <span class="keyword">new</span> FetchRequestBuilder().clientId(clientName)</span><br><span class="line">                    .addFetch(a_topic, a_partition, readOffset, <span class="number">100000</span>) <span class="comment">// Note:</span></span><br><span class="line">                    <span class="comment">// this</span></span><br><span class="line">                    <span class="comment">// fetchSize</span></span><br><span class="line">                    <span class="comment">// of</span></span><br><span class="line">                    <span class="comment">// 100000</span></span><br><span class="line">                    <span class="comment">// might</span></span><br><span class="line">                    <span class="comment">// need</span></span><br><span class="line">                    <span class="comment">// to be</span></span><br><span class="line">                    <span class="comment">// increased</span></span><br><span class="line">                    <span class="comment">// if</span></span><br><span class="line">                    <span class="comment">// large</span></span><br><span class="line">                    <span class="comment">// batches</span></span><br><span class="line">                    <span class="comment">// are</span></span><br><span class="line">                    <span class="comment">// written</span></span><br><span class="line">                    <span class="comment">// to</span></span><br><span class="line">                    <span class="comment">// Kafka</span></span><br><span class="line">                    .build();</span><br><span class="line">            FetchResponse fetchResponse = consumer.fetch(req);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (fetchResponse.hasError()) &#123;</span><br><span class="line">                numErrors++;</span><br><span class="line">                <span class="comment">// Something went wrong!</span></span><br><span class="line">                <span class="keyword">short</span> code = fetchResponse.errorCode(a_topic, a_partition);</span><br><span class="line">                System.out.<span class="built_in">println</span>(<span class="string">"Error fetching data from the Broker:"</span></span><br><span class="line">                        + leadBroker + <span class="string">" Reason: "</span> + code);</span><br><span class="line">                <span class="keyword">if</span> (numErrors &gt; <span class="number">5</span>)</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                <span class="keyword">if</span> (code == ErrorMapping.OffsetOutOfRangeCode()) &#123;</span><br><span class="line">                    <span class="comment">// We asked for an invalid offset. For simple case ask for</span></span><br><span class="line">                    <span class="comment">// the last element to reset</span></span><br><span class="line">                    readOffset = getLastOffset(consumer, a_topic, a_partition,</span><br><span class="line">                            kafka.api.OffsetRequest.LatestTime(), clientName);</span><br><span class="line">                    <span class="keyword">continue</span>;</span><br><span class="line">                &#125;</span><br><span class="line">                consumer.close();</span><br><span class="line">                consumer = <span class="keyword">null</span>;</span><br><span class="line">                leadBroker = findNewLeader(leadBroker, a_topic, a_partition,</span><br><span class="line">                        a_port);</span><br><span class="line">                <span class="keyword">continue</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            numErrors = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">long</span> numRead = <span class="number">0</span>;</span><br><span class="line">            <span class="keyword">for</span> (MessageAndOffset messageAndOffset : fetchResponse.messageSet(</span><br><span class="line">                    a_topic, a_partition)) &#123;</span><br><span class="line">                <span class="keyword">long</span> currentOffset = messageAndOffset.offset();</span><br><span class="line">                <span class="keyword">if</span> (currentOffset &lt; readOffset) &#123;</span><br><span class="line">                    System.out.<span class="built_in">println</span>(<span class="string">"Found an old offset: "</span> + currentOffset</span><br><span class="line">                            + <span class="string">" Expecting: "</span> + readOffset);</span><br><span class="line">                    <span class="keyword">continue</span>;</span><br><span class="line">                &#125;</span><br><span class="line">                readOffset = messageAndOffset.nextOffset();</span><br><span class="line">                ByteBuffer payload = messageAndOffset.message().payload();</span><br><span class="line"></span><br><span class="line">                <span class="built_in">byte</span>[] bytes = <span class="keyword">new</span> <span class="built_in">byte</span>[payload.limit()];</span><br><span class="line">                payload.<span class="built_in">get</span>(bytes);</span><br><span class="line">                System.out.<span class="built_in">println</span>(<span class="keyword">String</span>.valueOf(messageAndOffset.offset())</span><br><span class="line">                        + <span class="string">": "</span> + <span class="keyword">new</span> <span class="keyword">String</span>(bytes, <span class="string">"UTF-8"</span>));</span><br><span class="line">                numRead++;</span><br><span class="line">                a_maxReads--;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (numRead == <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="keyword">try</span> &#123;</span><br><span class="line">                    Thread.sleep(<span class="number">1000</span>);</span><br><span class="line">                &#125; <span class="keyword">catch</span> (InterruptedException ie) &#123;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (consumer != <span class="keyword">null</span>)</span><br><span class="line">            consumer.close();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">long</span> getLastOffset(SimpleConsumer consumer, <span class="keyword">String</span> topic,</span><br><span class="line">                                     <span class="built_in">int</span> partition, <span class="keyword">long</span> whichTime, <span class="keyword">String</span> clientName) &#123;</span><br><span class="line">        TopicAndPartition topicAndPartition = <span class="keyword">new</span> TopicAndPartition(topic,</span><br><span class="line">                partition);</span><br><span class="line">        Map&lt;TopicAndPartition, PartitionOffsetRequestInfo&gt; requestInfo = <span class="keyword">new</span> <span class="keyword">HashMap</span>&lt;TopicAndPartition, PartitionOffsetRequestInfo&gt;();</span><br><span class="line">        requestInfo.put(topicAndPartition, <span class="keyword">new</span> PartitionOffsetRequestInfo(</span><br><span class="line">                whichTime, <span class="number">1</span>));</span><br><span class="line">        kafka.javaapi.OffsetRequest request = <span class="keyword">new</span> kafka.javaapi.OffsetRequest(</span><br><span class="line">                requestInfo, kafka.api.OffsetRequest.CurrentVersion(),</span><br><span class="line">                clientName);</span><br><span class="line">        OffsetResponse response = consumer.getOffsetsBefore(request);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (response.hasError()) &#123;</span><br><span class="line">            System.out</span><br><span class="line">                    .<span class="built_in">println</span>(<span class="string">"Error fetching data Offset Data the Broker. Reason: "</span></span><br><span class="line">                            + response.errorCode(topic, partition));</span><br><span class="line">            <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">long</span>[] offsets = response.offsets(topic, partition);</span><br><span class="line">        <span class="keyword">return</span> offsets[<span class="number">0</span>];</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">String</span> findNewLeader(<span class="keyword">String</span> a_oldLeader, <span class="keyword">String</span> a_topic,</span><br><span class="line">                                 <span class="built_in">int</span> a_partition, <span class="built_in">int</span> a_port) <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="built_in">int</span> i = <span class="number">0</span>; i &lt; <span class="number">3</span>; i++) &#123;</span><br><span class="line">            <span class="built_in">boolean</span> goToSleep = <span class="keyword">false</span>;</span><br><span class="line">            PartitionMetadata metadata = findLeader(m_replicaBrokers, a_port,</span><br><span class="line">                    a_topic, a_partition);</span><br><span class="line">            <span class="keyword">if</span> (metadata == <span class="keyword">null</span>) &#123;</span><br><span class="line">                goToSleep = <span class="keyword">true</span>;</span><br><span class="line">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> (metadata.leader() == <span class="keyword">null</span>) &#123;</span><br><span class="line">                goToSleep = <span class="keyword">true</span>;</span><br><span class="line">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> (a_oldLeader.equalsIgnoreCase(metadata.leader().host())</span><br><span class="line">                    &amp;&amp; i == <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="comment">// first time through if the leader hasn't changed give</span></span><br><span class="line">                <span class="comment">// ZooKeeper a second to recover</span></span><br><span class="line">                <span class="comment">// second time, assume the broker did recover before failover,</span></span><br><span class="line">                <span class="comment">// or it was a non-Broker issue</span></span><br><span class="line">                <span class="comment">//</span></span><br><span class="line">                goToSleep = <span class="keyword">true</span>;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="keyword">return</span> metadata.leader().host();</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (goToSleep) &#123;</span><br><span class="line">                <span class="keyword">try</span> &#123;</span><br><span class="line">                    Thread.sleep(<span class="number">1000</span>);</span><br><span class="line">                &#125; <span class="keyword">catch</span> (InterruptedException ie) &#123;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        System.out</span><br><span class="line">                .<span class="built_in">println</span>(<span class="string">"Unable to find new leader after Broker failure. Exiting"</span>);</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> Exception(</span><br><span class="line">                <span class="string">"Unable to find new leader after Broker failure. Exiting"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> PartitionMetadata findLeader(List&lt;<span class="keyword">String</span>&gt; a_seedBrokers,</span><br><span class="line">                                         <span class="built_in">int</span> a_port, <span class="keyword">String</span> a_topic, <span class="built_in">int</span> a_partition) &#123;</span><br><span class="line">        PartitionMetadata returnMetaData = <span class="keyword">null</span>;</span><br><span class="line">        <span class="built_in">loop</span>:</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">String</span> seed : a_seedBrokers) &#123;</span><br><span class="line">            SimpleConsumer consumer = <span class="keyword">null</span>;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                consumer = <span class="keyword">new</span> SimpleConsumer(seed, a_port, <span class="number">100000</span>, <span class="number">64</span> * <span class="number">1024</span>,</span><br><span class="line">                        <span class="string">"leaderLookup"</span>);</span><br><span class="line">                List&lt;<span class="keyword">String</span>&gt; topics = Collections.singletonList(a_topic);</span><br><span class="line">                TopicMetadataRequest req = <span class="keyword">new</span> TopicMetadataRequest(topics);</span><br><span class="line">                kafka.javaapi.TopicMetadataResponse resp = consumer.send(req);</span><br><span class="line"></span><br><span class="line">                List&lt;TopicMetadata&gt; metaData = resp.topicsMetadata();</span><br><span class="line">                <span class="keyword">for</span> (TopicMetadata item : metaData) &#123;</span><br><span class="line">                    <span class="keyword">for</span> (PartitionMetadata part : item.partitionsMetadata()) &#123;</span><br><span class="line">                        <span class="keyword">if</span> (part.partitionId() == a_partition) &#123;</span><br><span class="line">                            returnMetaData = part;</span><br><span class="line">                            <span class="keyword">break</span> <span class="built_in">loop</span>;</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">                System.out.<span class="built_in">println</span>(<span class="string">"Error communicating with Broker ["</span> + seed</span><br><span class="line">                        + <span class="string">"] to find Leader for ["</span> + a_topic + <span class="string">", "</span></span><br><span class="line">                        + a_partition + <span class="string">"] Reason: "</span> + e);</span><br><span class="line">            &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">                <span class="keyword">if</span> (consumer != <span class="keyword">null</span>)</span><br><span class="line">                    consumer.close();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (returnMetaData != <span class="keyword">null</span>) &#123;</span><br><span class="line">            m_replicaBrokers.<span class="built_in">clear</span>();</span><br><span class="line">            <span class="keyword">for</span> (kafka.cluster.Broker replica : returnMetaData.replicas()) &#123;</span><br><span class="line">                m_replicaBrokers.<span class="built_in">add</span>(replica.host());</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> returnMetaData;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Maven依赖"><a href="#Maven依赖" class="headerlink" title="Maven依赖"></a>Maven依赖</h2><figure class="highlight dust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br></pre></td><td class="code"><pre><span class="line"><span class="xml"><span class="tag">&lt;<span class="name">repositories</span>&gt;</span></span></span><br><span class="line"><span class="xml">    <span class="tag">&lt;<span class="name">repository</span>&gt;</span></span></span><br><span class="line"><span class="xml">        <span class="tag">&lt;<span class="name">id</span>&gt;</span>cdh.repo<span class="tag">&lt;/<span class="name">id</span>&gt;</span></span></span><br><span class="line"><span class="xml">        <span class="tag">&lt;<span class="name">url</span>&gt;</span>https://repository.cloudera.com/artifactory/cloudera-repos<span class="tag">&lt;/<span class="name">url</span>&gt;</span></span></span><br><span class="line"><span class="xml">        <span class="tag">&lt;<span class="name">name</span>&gt;</span>Cloudera Repositories<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span></span><br><span class="line"><span class="xml">        <span class="tag">&lt;<span class="name">snapshots</span>&gt;</span></span></span><br><span class="line"><span class="xml">            <span class="tag">&lt;<span class="name">enabled</span>&gt;</span>false<span class="tag">&lt;/<span class="name">enabled</span>&gt;</span></span></span><br><span class="line"><span class="xml">        <span class="tag">&lt;/<span class="name">snapshots</span>&gt;</span></span></span><br><span class="line"><span class="xml">    <span class="tag">&lt;/<span class="name">repository</span>&gt;</span></span></span><br><span class="line"><span class="xml"></span></span><br><span class="line"><span class="xml">    <span class="tag">&lt;<span class="name">repository</span>&gt;</span></span></span><br><span class="line"><span class="xml">        <span class="tag">&lt;<span class="name">id</span>&gt;</span>cdh.snapshots.repo<span class="tag">&lt;/<span class="name">id</span>&gt;</span></span></span><br><span class="line"><span class="xml">        <span class="tag">&lt;<span class="name">url</span>&gt;</span>https://repository.cloudera.com/artifactory/libs-snapshot-local<span class="tag">&lt;/<span class="name">url</span>&gt;</span></span></span><br><span class="line"><span class="xml">        <span class="tag">&lt;<span class="name">name</span>&gt;</span>Cloudera Snapshots Repository<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span></span><br><span class="line"><span class="xml">        <span class="tag">&lt;<span class="name">snapshots</span>&gt;</span></span></span><br><span class="line"><span class="xml">            <span class="tag">&lt;<span class="name">enabled</span>&gt;</span>true<span class="tag">&lt;/<span class="name">enabled</span>&gt;</span></span></span><br><span class="line"><span class="xml">        <span class="tag">&lt;/<span class="name">snapshots</span>&gt;</span></span></span><br><span class="line"><span class="xml">        <span class="tag">&lt;<span class="name">releases</span>&gt;</span></span></span><br><span class="line"><span class="xml">            <span class="tag">&lt;<span class="name">enabled</span>&gt;</span>false<span class="tag">&lt;/<span class="name">enabled</span>&gt;</span></span></span><br><span class="line"><span class="xml">        <span class="tag">&lt;/<span class="name">releases</span>&gt;</span></span></span><br><span class="line"><span class="xml">    <span class="tag">&lt;/<span class="name">repository</span>&gt;</span></span></span><br><span class="line"><span class="xml">    <span class="tag">&lt;<span class="name">repository</span>&gt;</span></span></span><br><span class="line"><span class="xml">        <span class="tag">&lt;<span class="name">id</span>&gt;</span>repository.jboss.org-public<span class="tag">&lt;/<span class="name">id</span>&gt;</span></span></span><br><span class="line"><span class="xml">        <span class="tag">&lt;<span class="name">name</span>&gt;</span>JBoss.org Maven repository<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span></span><br><span class="line"><span class="xml">        <span class="tag">&lt;<span class="name">url</span>&gt;</span>https://repository.jboss.org/nexus/content/groups/public<span class="tag">&lt;/<span class="name">url</span>&gt;</span></span></span><br><span class="line"><span class="xml">    <span class="tag">&lt;/<span class="name">repository</span>&gt;</span></span></span><br><span class="line"><span class="xml"><span class="tag">&lt;/<span class="name">repositories</span>&gt;</span></span></span><br><span class="line"><span class="xml"></span></span><br><span class="line"><span class="xml"><span class="tag">&lt;<span class="name">properties</span>&gt;</span></span></span><br><span class="line"><span class="xml">    <span class="tag">&lt;<span class="name">kafka-version</span>&gt;</span>0.8.1.1<span class="tag">&lt;/<span class="name">kafka-version</span>&gt;</span></span></span><br><span class="line"><span class="xml">    <span class="tag">&lt;<span class="name">project.build.sourceEncoding</span>&gt;</span>UTF-8<span class="tag">&lt;/<span class="name">project.build.sourceEncoding</span>&gt;</span></span></span><br><span class="line"><span class="xml"><span class="tag">&lt;/<span class="name">properties</span>&gt;</span></span></span><br><span class="line"><span class="xml"></span></span><br><span class="line"><span class="xml"></span></span><br><span class="line"><span class="xml"><span class="tag">&lt;<span class="name">dependencies</span>&gt;</span></span></span><br><span class="line"><span class="xml">    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span></span><br><span class="line"><span class="xml">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.kafka<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span></span><br><span class="line"><span class="xml">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>kafka_2.10<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span></span><br><span class="line"><span class="xml">        <span class="tag">&lt;<span class="name">version</span>&gt;</span>$</span><span class="template-variable">&#123;kafka-version&#125;</span><span class="xml"><span class="tag">&lt;/<span class="name">version</span>&gt;</span></span></span><br><span class="line"><span class="xml">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span></span><br><span class="line"><span class="xml">    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span></span><br><span class="line"><span class="xml">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>junit<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span></span><br><span class="line"><span class="xml">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>junit<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span></span><br><span class="line"><span class="xml">        <span class="tag">&lt;<span class="name">version</span>&gt;</span>4.10<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span></span><br><span class="line"><span class="xml">        <span class="tag">&lt;<span class="name">scope</span>&gt;</span>test<span class="tag">&lt;/<span class="name">scope</span>&gt;</span></span></span><br><span class="line"><span class="xml">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span></span><br><span class="line"><span class="xml">    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span></span><br><span class="line"><span class="xml">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>log4j<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span></span><br><span class="line"><span class="xml">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>log4j<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span></span><br><span class="line"><span class="xml">        <span class="tag">&lt;<span class="name">version</span>&gt;</span>1.2.15<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span></span><br><span class="line"><span class="xml">        <span class="tag">&lt;<span class="name">exclusions</span>&gt;</span></span></span><br><span class="line"><span class="xml">            <span class="tag">&lt;<span class="name">exclusion</span>&gt;</span></span></span><br><span class="line"><span class="xml">                <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>com.sun.jmx<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span></span><br><span class="line"><span class="xml">                <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>jmxri<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span></span><br><span class="line"><span class="xml">            <span class="tag">&lt;/<span class="name">exclusion</span>&gt;</span></span></span><br><span class="line"><span class="xml">            <span class="tag">&lt;<span class="name">exclusion</span>&gt;</span></span></span><br><span class="line"><span class="xml">                <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>com.sun.jdmk<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span></span><br><span class="line"><span class="xml">                <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>jmxtools<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span></span><br><span class="line"><span class="xml">            <span class="tag">&lt;/<span class="name">exclusion</span>&gt;</span></span></span><br><span class="line"><span class="xml">            <span class="tag">&lt;<span class="name">exclusion</span>&gt;</span></span></span><br><span class="line"><span class="xml">                <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>javax.jms<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span></span><br><span class="line"><span class="xml">                <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>jms<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span></span><br><span class="line"><span class="xml">            <span class="tag">&lt;/<span class="name">exclusion</span>&gt;</span></span></span><br><span class="line"><span class="xml">        <span class="tag">&lt;/<span class="name">exclusions</span>&gt;</span></span></span><br><span class="line"><span class="xml">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span></span><br><span class="line"><span class="xml"><span class="tag">&lt;/<span class="name">dependencies</span>&gt;</span></span></span><br></pre></td></tr></table></figure>
+
+<p>在后续一段时间，我会把kafka针对topic多分区多线程生产与消费代码整理出来。</p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
+<li><a href="https://cwiki.apache.org/confluence/display/KAFKA/0.8.0+SimpleConsumer+Example" target="_blank" rel="noopener">https://cwiki.apache.org/confluence/display/KAFKA/0.8.0+SimpleConsumer+Example</a></li>
+<li><a href="http://kafka.apache.org/081/documentation.html" target="_blank" rel="noopener">http://kafka.apache.org/081/documentation.html</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/java/" rel="tag"># java</a>
+          
+            <a href="/tags/hadoop生态圈/" rel="tag"># hadoop生态圈</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/03/10/hadoop-kafka基本操作与参数详解/" rel="next" title="kafka基本操作与参数详解">
+                <i class="fa fa-chevron-left"></i> kafka基本操作与参数详解
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/04/19/hadoop-spark-dataload/" rel="prev" title="Spark数据加载 To (HDFS/Hive)">
+                Spark数据加载 To (HDFS/Hive) <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+<span class="jiathis_txt">分享到：</span>
+<a class="jiathis_button_fav">收藏夹</a>
+<a class="jiathis_button_copy">复制网址</a>
+<a class="jiathis_button_email">邮件</a>
+<a class="jiathis_button_weixin">微信</a>
+<a class="jiathis_button_qzone">QQ空间</a>
+<a class="jiathis_button_tqq">腾讯微博</a>
+<a class="jiathis_button_douban">豆瓣</a>
+<a class="jiathis_button_share">一键分享</a>
+
+<a href="http://www.jiathis.com/share?uid=2140465" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank">更多</a>
+<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+var jiathis_config={
+  data_track_clickback:true,
+  summary:"",
+  shortUrl:false,
+  hideMore:false
+}
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  <p>热评文章</p>
+  <div class="ds-top-threads" data-range="weekly" data-num-items="4"></div>
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div class="ds-thread" data-thread-key="2016/03/16/hadoop-kafka生产者消费者示例详解/" data-title="kafka生产者消费者示例详解" data-url="http://www.zhangrenhua.com/2016/03/16/hadoop-kafka生产者消费者示例详解/">
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="http://www.zhangrenhua.com/back_images/avatar.jpg" alt="张仁华">
+            
+              <p class="site-author-name" itemprop="name">张仁华</p>
+              <p class="site-description motion-element" itemprop="description">记录软件生涯中的点点滴滴</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">76</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">17</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/zhangrenhua/" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://weibo.com/huaHBrother" target="_blank" title="Weibo">
+                      
+                        <i class="fa fa-fw fa-globe"></i>Weibo</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://douban.com/people/huaHBrother" target="_blank" title="douban">
+                      
+                        <i class="fa fa-fw fa-globe"></i>douban</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://zhihu.com/people/huaHBrother" target="_blank" title="zhihu">
+                      
+                        <i class="fa fa-fw fa-globe"></i>zhihu</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Producer"><span class="nav-number">2.</span> <span class="nav-text">Producer</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Consumer"><span class="nav-number">3.</span> <span class="nav-text">Consumer</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#自定义高级查询"><span class="nav-number">4.</span> <span class="nav-text">自定义高级查询</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Maven依赖"><span class="nav-number">5.</span> <span class="nav-text">Maven依赖</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">6.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">张仁华</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"iissnan-notes"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

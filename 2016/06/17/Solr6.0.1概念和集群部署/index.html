@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="google-site-verification" content="zUNgN8yGBtBZ8194JTl7PXh7YvztVw494zGKJ_8qH00">
+
+
+
+
+
+
+
+
+  <meta name="baidu-site-verification" content="kqLgluU8lc">
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/favicon.ico?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="hadoop生态圈,solr,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="hua的博客" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="SolrCloud的特色功能集中式的配置信息使用ZK进行集中配置。启动时可以指定把Solr的相关配置文件上传Zookeeper，多机器共用。这些ZK中的配置不会再拿到本地缓存，Solr直接读取ZK中的配置信息。配置文件的变动，所有机器都可以感知到。另外，Solr的一些任务也是通过ZK作为媒介发布的。目的是为了容错。接收到任务，但在执行任务时崩溃的机器，在重启后，或者集群选出候选者时，可以再次执行这">
+<meta name="keywords" content="hadoop生态圈,solr">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Solr6.0.1概念和集群部署">
+<meta property="og:url" content="http://www.zhangrenhua.com/2016/06/17/Solr6.0.1概念和集群部署/index.html">
+<meta property="og:site_name" content="hua的博客">
+<meta property="og:description" content="SolrCloud的特色功能集中式的配置信息使用ZK进行集中配置。启动时可以指定把Solr的相关配置文件上传Zookeeper，多机器共用。这些ZK中的配置不会再拿到本地缓存，Solr直接读取ZK中的配置信息。配置文件的变动，所有机器都可以感知到。另外，Solr的一些任务也是通过ZK作为媒介发布的。目的是为了容错。接收到任务，但在执行任务时崩溃的机器，在重启后，或者集群选出候选者时，可以再次执行这">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/solr6.0.1-zk-ls.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/solr6.0.1-dashboard.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/solr6.0.1-collections-addCollection.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/solr6.0.1-collections-addCollection-cloud.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/solr6.0.1-collections-addCollection-cloud.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/solr6.0.1-collection-importdata.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/solr6.0.1-collection-querydata.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/solr6.0.1-collections-addCollection1.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/solr6.0.1-collections-addCollection2.png">
+<meta property="og:updated_time" content="2019-07-11T06:43:13.762Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Solr6.0.1概念和集群部署">
+<meta name="twitter:description" content="SolrCloud的特色功能集中式的配置信息使用ZK进行集中配置。启动时可以指定把Solr的相关配置文件上传Zookeeper，多机器共用。这些ZK中的配置不会再拿到本地缓存，Solr直接读取ZK中的配置信息。配置文件的变动，所有机器都可以感知到。另外，Solr的一些任务也是通过ZK作为媒介发布的。目的是为了容错。接收到任务，但在执行任务时崩溃的机器，在重启后，或者集群选出候选者时，可以再次执行这">
+<meta name="twitter:image" content="http://www.zhangrenhua.com/back_images/solr6.0.1-zk-ls.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.zhangrenhua.com/2016/06/17/Solr6.0.1概念和集群部署/">
+
+
+
+
+
+  <title>Solr6.0.1概念和集群部署 | hua的博客</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-69647002-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?954f429681a4cd6dee6095ddaa2aac9a";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">hua的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">关注技术和人文的原创IT博客</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-schedule">
+          <a href="/schedule/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            日程表
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sitemap">
+          <a href="/sitemap.xml" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            站点地图
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="st-search-show-outputs">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <form class="site-search-form">
+  <input type="text" id="st-search-input" class="st-search-input st-default-search-input">
+</form>
+
+<script type="text/javascript">
+  (function(w,d,t,u,n,s,e){w['SwiftypeObject']=n;w[n]=w[n]||function(){
+    (w[n].q=w[n].q||[]).push(arguments);};s=d.createElement(t);
+    e=d.getElementsByTagName(t)[0];s.async=1;s.src=u;e.parentNode.insertBefore(s,e);
+  })(window,document,'script','//s.swiftypecdn.com/install/v2/st.js','_st');
+
+  _st('install', 'BAacTgC1f_bLy6kngppZ','2.0.0');
+</script>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.zhangrenhua.com/2016/06/17/Solr6.0.1概念和集群部署/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="张仁华">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="http://www.zhangrenhua.com/back_images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hua的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Solr6.0.1概念和集群部署</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-06-17T23:04:26+08:00">
+                2016-06-17
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/solr/" itemprop="url" rel="index">
+                    <span itemprop="name">solr</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2016/06/17/Solr6.0.1概念和集群部署/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2016/06/17/Solr6.0.1概念和集群部署/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  <h3 id="solrcloud"><a name="user-content-solrcloud" href="#solrcloud" class="headeranchor-link" aria-hidden="true"><span class="headeranchor"></span></a>SolrCloud的特色功能</h3><p><strong>集中式的配置</strong><br>信息使用ZK进行集中配置。启动时可以指定把Solr的相关配置文件上传Zookeeper，多机器共用。这些ZK中的配置不会再拿到本地缓存，Solr直接读取ZK中的配置信息。配置文件的变动，所有机器都可以感知到。另外，Solr的一些任务也是通过ZK作为媒介发布的。目的是为了容错。接收到任务，但在执行任务时崩溃的机器，在重启后，或者集群选出候选者时，可以再次执行这个未完成的任务。</p><p><strong>自动容错</strong><br>SolrCloud对索引分片，并对每个分片创建多个Replication。每个Replication都可以对外提供服务。一个Replication挂掉不会影响索引服务。更强大的是，它还能自动的在其它机器上帮你把失败机器上的索引Replication重建并投入使用。</p><p><strong>近实时搜索</strong><br>立即推送式的replication（也支持慢推送）。可以在秒内检索到新加入索引。</p><p><strong>查询时自动负载均衡</strong><br>SolrCloud索引的多个Replication可以分布在多台机器上，均衡查询压力。如果查询压力大，可以通过扩展机器，增加Replication来减缓。<br>自动分发的索引和索引分片发送文档到任何节点，它都会转发到正确节点。</p><p><strong>事务日志</strong><br>事务日志确保更新无丢失，即使文档没有索引到磁盘。</p><p><strong>索引存储在HDFS上</strong><br>索引的大小通常在G和几十G，上百G的很少，这样的功能或许很难实用。但是，如果你有上亿数据来建索引的话，也是可以考虑一下的。我觉得这个功能最大的好处或许就是和下面这个“通过MR批量创建索引”联合实用。</p><p><strong>通过MR批量创建索引</strong><br>有了这个功能，你还担心创建索引慢吗？<br>强大的RESTful API通常你能想到的管理功能，都可以通过此API方式调用。这样写一些维护和管理脚本就方便多了。</p><p><strong>优秀的管理界面</strong><br>主要信息一目了然；可以清晰的以图形化方式看到SolrCloud的部署分布；当然还有不可或缺的Debug功能。</p>
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><h3 id="SolrCloud的特色功能"><a href="#SolrCloud的特色功能" class="headerlink" title="SolrCloud的特色功能"></a>SolrCloud的特色功能</h3><p><strong>集中式的配置</strong><br>信息使用ZK进行集中配置。启动时可以指定把Solr的相关配置文件上传Zookeeper，多机器共用。这些ZK中的配置不会再拿到本地缓存，Solr直接读取ZK中的配置信息。配置文件的变动，所有机器都可以感知到。另外，Solr的一些任务也是通过ZK作为媒介发布的。目的是为了容错。接收到任务，但在执行任务时崩溃的机器，在重启后，或者集群选出候选者时，可以再次执行这个未完成的任务。</p>
+<p><strong>自动容错</strong><br>SolrCloud对索引分片，并对每个分片创建多个Replication。每个Replication都可以对外提供服务。一个Replication挂掉不会影响索引服务。更强大的是，它还能自动的在其它机器上帮你把失败机器上的索引Replication重建并投入使用。</p>
+<p><strong>近实时搜索</strong><br>立即推送式的replication（也支持慢推送）。可以在秒内检索到新加入索引。</p>
+<p><strong>查询时自动负载均衡</strong><br>SolrCloud索引的多个Replication可以分布在多台机器上，均衡查询压力。如果查询压力大，可以通过扩展机器，增加Replication来减缓。<br>自动分发的索引和索引分片发送文档到任何节点，它都会转发到正确节点。</p>
+<p><strong>事务日志</strong><br>事务日志确保更新无丢失，即使文档没有索引到磁盘。</p>
+<p><strong>索引存储在HDFS上</strong><br>索引的大小通常在G和几十G，上百G的很少，这样的功能或许很难实用。但是，如果你有上亿数据来建索引的话，也是可以考虑一下的。我觉得这个功能最大的好处或许就是和下面这个“通过MR批量创建索引”联合实用。</p>
+<p><strong>通过MR批量创建索引</strong><br>有了这个功能，你还担心创建索引慢吗？<br>强大的RESTful API通常你能想到的管理功能，都可以通过此API方式调用。这样写一些维护和管理脚本就方便多了。</p>
+<p><strong>优秀的管理界面</strong><br>主要信息一目了然；可以清晰的以图形化方式看到SolrCloud的部署分布；当然还有不可或缺的Debug功能。</p>
+<p>solr6.0.1已经可以在界面管理集群的大部分功能了。</p>
+<h2 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h2><p><strong>Collection</strong><br>在SolrCloud集群中逻辑意义上的完整的索引。它常常被划分为一个或多个Shard，它们使用相同的Config Set。如果Shard数超过一个，它就是分布式索引，SolrCloud让你通过Collection名称引用它，而不需要关心分布式检索时需要使用的和Shard相关参数。</p>
+<p><strong>Config Set</strong><br> Solr Core提供服务必须的一组配置文件。每个config set有一个名字。最小需要包括solrconfig.xml (SolrConfigXml)和schema.xml (SchemaXml)，除此之外，依据这两个文件的配置内容，可能还需要包含其它文件。它存储在Zookeeper中。Config sets可以重新上传或者使用upconfig命令更新，使用Solr的启动参数bootstrap_confdir指定可以初始化或更新它。</p>
+<p><strong>Core</strong><br> 也就是Solr Core，一个Solr中包含一个或者多个Solr Core，每个Solr Core可以独立提供索引和查询功能，每个Solr Core对应一个索引或者Collection的Shard，Solr Core的提出是为了增加管理灵活性和共用资源。在SolrCloud中有个不同点是它使用的配置是在Zookeeper中的，传统的Solr core的配置文件是在磁盘上的配置目录中。</p>
+<p><strong>Leader</strong><br> 赢得选举的Shard replicas。每个Shard有多个Replicas，这几个Replicas需要选举来确定一个Leader。选举可以发生在任何时间，但是通常他们仅在某个Solr实例发生故障时才会触发。当索引documents时，SolrCloud会传递它们到此Shard对应的leader，leader再分发它们到全部Shard的replicas。</p>
+<p><strong>Replica</strong><br> Shard的一个拷贝。每个Replica存在于Solr的一个Core中。一个命名为“test”的collection以numShards=1创建，并且指定replicationFactor设置为2，这会产生2个replicas，也就是对应会有2个Core，每个在不同的机器或者Solr实例。一个会被命名为test_shard1_replica1，另一个命名为test_shard1_replica2。它们中的一个会被选举为Leader。</p>
+<p><strong>Shard</strong><br> Collection的逻辑分片。每个Shard被化成一个或者多个replicas，通过选举确定哪个是Leader。</p>
+<p><strong>Zookeeper</strong><br> Zookeeper提供分布式锁功能，对SolrCloud是必须的。它处理Leader选举。Solr可以以内嵌的Zookeeper运行，但是建议用独立的，并且最好有3个以上的主机。</p>
+<h2 id="新特性"><a href="#新特性" class="headerlink" title="新特性"></a>新特性</h2><p>Solr 6.0发布，新特性解析</p>
+<p>SOLR-8831: allow <em>version</em> field to be retrievable via docValues<br>docValues看来是越来越成熟了，之前使用给性能造成不小的影响，这个有待测试；</p>
+<p>继地理信息检索之后又一重大新特性，从描述上看是图数据结构检索。<br>SOLR-7543: Basic graph traversal query Example: {!graph from=”node_id” to=”edge_id”}id:doc_1</p>
+<p>虽然join在分布式模式下不建议使用，但无法避免很多时候还是需要；<br>SOLR-7584: Adds Inner and LeftOuter Joins to the Streaming API and Streaming Expressions<br>SOLR-8188: Adds Hash and OuterHash Joins to the Streaming API and Streaming Expressions</p>
+<p>管理界面功能日渐完善，增加jdbc驱动支持，增加多个sql特性，门槛越来越低了，也开始贴近大数据分析需求。</p>
+<h2 id="集群部署"><a href="#集群部署" class="headerlink" title="集群部署"></a>集群部署</h2><h3 id="软件需求"><a href="#软件需求" class="headerlink" title="软件需求"></a>软件需求</h3><p>1、必须使用jdk1.8或更高版本<br>2、本次使用jdk1.8.0_92 + solr6.0.1 + zookeeper3.4.5集群模式<br>3、请先下载安装zookeeper，本文没写zookeeper安装</p>
+<h3 id="solr集群安装"><a href="#solr集群安装" class="headerlink" title="solr集群安装"></a>solr集群安装</h3><h4 id="初始化zookeeper目录"><a href="#初始化zookeeper目录" class="headerlink" title="初始化zookeeper目录"></a>初始化zookeeper目录</h4><p>经测试必须先创建zookeeper目录，否则会报错，连接zookeeper创建/solr目录：</p>
+<figure class="highlight jboss-cli"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 进入zookeeper后台命令，默认连接本地localhost:2181</span></span><br><span class="line"><span class="string">./zookeeper/bin/zkCli.sh</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 创建目录</span></span><br><span class="line">create <span class="string">/solr</span> <span class="string">"solr"</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="安装solr自带例子"><a href="#安装solr自带例子" class="headerlink" title="安装solr自带例子"></a>安装solr自带例子</h4><p><strong>下载</strong></p>
+<figure class="highlight crystal"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">webget <span class="symbol">https:</span>/<span class="regexp">/mirrors.tuna.tsinghua.edu.cn/apache</span><span class="regexp">/lucene/solr</span><span class="regexp">/6.1.0/solr</span>-<span class="number">6.1</span>.<span class="number">0</span>.tgz</span><br><span class="line"></span><br><span class="line"><span class="comment">#解压</span></span><br><span class="line">tar zxvf solr-<span class="number">6.0</span>.<span class="number">1</span>.tgz</span><br></pre></td></tr></table></figure>
+
+<h4 id="初始化solr例子配置文件"><a href="#初始化solr例子配置文件" class="headerlink" title="初始化solr例子配置文件"></a>初始化solr例子配置文件</h4><p><strong>上传solr自带例子配置文件至zookeeper的/solr/configs目录下：</strong></p>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">.<span class="regexp">/bin/</span>solr zk -z <span class="string">localhost:</span><span class="number">2181</span><span class="regexp">/solr -upconfig -n solr -d example/</span>example-DIH<span class="regexp">/solr/</span>solr</span><br></pre></td></tr></table></figure>
+
+<p><strong>参数说明</strong></p>
+<figure class="highlight livecodeserver"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">-upconfig <span class="built_in">to</span> move <span class="keyword">a</span> configset <span class="built_in">from</span> <span class="keyword">the</span> <span class="built_in">local</span> machine <span class="built_in">to</span> Zookeeper.</span><br><span class="line">-n configName    Name <span class="keyword">of</span> <span class="keyword">the</span> configset <span class="keyword">in</span> Zookeeper that will be <span class="keyword">the</span> destinatino <span class="keyword">of</span> <span class="string">'upconfig'</span> <span class="keyword">and</span> <span class="keyword">the</span> source <span class="keyword">for</span> <span class="string">'downconfig'</span>.</span><br><span class="line">-d confdir       The <span class="built_in">local</span> <span class="built_in">directory</span> <span class="keyword">the</span> configuration will be uploaded <span class="built_in">from</span> </span><br><span class="line">-z zkHost        Zookeeper connection <span class="keyword">string</span>.</span><br></pre></td></tr></table></figure>
+
+<p><font color="red">在Solr部署中，必须先将collection配置文件上传至zookeeper中，后面才能创建collection。如果你不是新手，你也可以上传你自己真正要使用的配置文件。</font></p>
+<p>查看zk目录：</p>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">.<span class="regexp">/bin/</span>zkCli.sh -server <span class="string">localhost:</span><span class="number">2181</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="http://www.zhangrenhua.com/back_images/solr6.0.1-zk-ls.png" alt="Alt text"></p>
+<p>以前的schema.xml换成了managed-schema文件，具体配置文档：<a href="https://cwiki.apache.org/confluence/display/solr/Documents%2C+Fields%2C+and+Schema+Design" target="_blank" rel="noopener">https://cwiki.apache.org/confluence/display/solr/Documents%2C+Fields%2C+and+Schema+Design</a></p>
+<h4 id="使用自带的jetty启动服务"><a href="#使用自带的jetty启动服务" class="headerlink" title="使用自带的jetty启动服务"></a>使用自带的jetty启动服务</h4><p><strong>进入solr-6.0.1目录，启动服务：</strong></p>
+<figure class="highlight dos"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> solr-<span class="number">6</span>.<span class="number">0</span>.<span class="number">1</span></span><br><span class="line">./bin/solr  <span class="built_in">start</span> -c -m <span class="number">1</span>g -z localhost:<span class="number">2181</span>/solr -p <span class="number">8983</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>参数说明：</strong></p>
+<figure class="highlight diff"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="deletion">-c：cloud模式启动</span></span><br><span class="line"><span class="deletion">-m：最大内存使用</span></span><br><span class="line"><span class="deletion">-z：zookeeper集群地址</span></span><br><span class="line"><span class="deletion">-p：启动服务端口</span></span><br></pre></td></tr></table></figure>
+
+<p>本次测试在一台机器上装三个solr示例，用端口区分（如多台机器可以将solr复制过去直接启动）：</p>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">.<span class="regexp">/bin/</span>solr  start -c -m <span class="number">1</span>g -z <span class="string">localhost:</span><span class="number">2181</span>/solr -p <span class="number">8984</span></span><br><span class="line">.<span class="regexp">/bin/</span>solr  start -c -m <span class="number">1</span>g -z <span class="string">localhost:</span><span class="number">2181</span>/solr -p <span class="number">8985</span></span><br></pre></td></tr></table></figure>
+
+<p>命令行操作参数参考：<a href="https://cwiki.apache.org/confluence/display/solr/Command+Line+Utilities" target="_blank" rel="noopener">https://cwiki.apache.org/confluence/display/solr/Command+Line+Utilities</a></p>
+<p>solr面板<br><img src="http://www.zhangrenhua.com/back_images/solr6.0.1-dashboard.png" alt="Alt text"></p>
+<h4 id="创建collection并导入测试数据"><a href="#创建collection并导入测试数据" class="headerlink" title="创建collection并导入测试数据"></a>创建collection并导入测试数据</h4><p><strong>在页面创建collections集群</strong></p>
+<p>笔者服务器ip为：<code>192.168.31.135</code>，你们可以将下面ip换成自己的。</p>
+<p>1、浏览器访问<a href="http://192.168.31.135:8983，点击collections，点击Add" target="_blank" rel="noopener">http://192.168.31.135:8983，点击collections，点击Add</a> Collection，示例如下：<br><img src="http://www.zhangrenhua.com/back_images/solr6.0.1-collections-addCollection.png" alt="Alt text"></p>
+<p>具体参数描述在restful api接口中会说明。</p>
+<p>2、注意有可能报“Connection to Solr lost”错误，不过没关系，重新刷新浏览器即可：<br><img src="http://www.zhangrenhua.com/back_images/solr6.0.1-collections-addCollection-cloud.png" alt="Alt text"></p>
+<p>看到该页面则表示collection集群创建成功。</p>
+<p><strong>使用restful api创建collections集群</strong></p>
+<p>刚才在页面上创建collections集群是为了尝鲜一下solr的新功能。在实际部署中建议还是采用restful api的方式创建（可以传入更多参数）。</p>
+<p>直接通过 REST 接口来创建 Collection，你也可以通过浏览器访问下面地址，如下所示：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#先删除刚才创建好的collections集群</span></span><br><span class="line">curl 'http://192.168.31.135:8983/solr/admin/collections?action=<span class="keyword">DELETE</span>&amp;<span class="keyword">name</span>=solr<span class="string">'</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">删除后可以刷新浏览器确认是否删除，确认后再执行下面操作。</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">#创建collections集群</span></span><br><span class="line"><span class="string">curl '</span><span class="keyword">http</span>://<span class="number">192.168</span><span class="number">.31</span><span class="number">.135</span>:<span class="number">8983</span>/solr/<span class="keyword">admin</span>/collections?<span class="keyword">action</span>=<span class="keyword">CREATE</span>&amp;<span class="keyword">name</span>=solr&amp;numShards=<span class="number">3</span>&amp;replicationFactor=<span class="number">2</span>&amp;maxShardsPerNode=<span class="number">2</span><span class="string">'</span></span><br></pre></td></tr></table></figure>
+
+<p>上面链接中的几个参数的含义，说明如下：</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">•   name： 待创建Collection的名称</span><br><span class="line">•  <span class="built_in"> config </span>set： collection在zookeeper中的配置目录</span><br><span class="line">•   numShards： 分片的数量</span><br><span class="line">•   replicationFactor： 复制副本的数量</span><br><span class="line">•   maxShardsPerNode：默认值为1，注意三个数值：numShards、replicationFactor、liveSolrNode，一个正常的solrCloud集群不容许同一个liveSolrNode上部署同一个shard的多个replic，因此当<span class="attribute">maxShardsPerNode</span>=1时，numShards*replicationFactor&gt;liveSolrNode时，报错。因此正确时因满足以下条件：</span><br><span class="line">numShards*replicationFactor&lt;liveSolrNode*maxShardsPerNode</span><br></pre></td></tr></table></figure>
+
+<p>所有restful api接口文档参考：<a href="https://cwiki.apache.org/confluence/display/solr/Collections+API" target="_blank" rel="noopener">https://cwiki.apache.org/confluence/display/solr/Collections+API</a></p>
+<p>集群截图如下：<br><img src="http://www.zhangrenhua.com/back_images/solr6.0.1-collections-addCollection-cloud.png" alt="Alt text"></p>
+<p><strong>导入测试数据</strong></p>
+<p>导入solr自带的测试数据：</p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">.<span class="regexp">/bin/</span>post -c solr example<span class="regexp">/exampledocs/</span>*.xml</span><br></pre></td></tr></table></figure>
+
+<p><img src="http://www.zhangrenhua.com/back_images/solr6.0.1-collection-importdata.png" alt="Alt text"></p>
+<p><strong>查询数据</strong></p>
+<p>1、浏览器访问<a href="http://192.168.31.135:8983，选择solr" target="_blank" rel="noopener">http://192.168.31.135:8983，选择solr</a><br>collection，点击Query，示例如下：</p>
+<p><img src="http://www.zhangrenhua.com/back_images/solr6.0.1-collection-querydata.png" alt="Alt text"></p>
+<h4 id="集群管理"><a href="#集群管理" class="headerlink" title="集群管理"></a>集群管理</h4><p>collection和replia管理：<br><img src="http://www.zhangrenhua.com/back_images/solr6.0.1-collections-addCollection1.png" alt="Alt text"></p>
+<p>schema管理：<br><img src="http://www.zhangrenhua.com/back_images/solr6.0.1-collections-addCollection2.png" alt="Alt text"></p>
+<p>字段的热门关键字是什么？（提示：在Schema browser中选择某个字段，然后点击 Load Term Info 按钮）</p>
+<p>这些都是通过页面来管理集群，想要更多操作请参考上面的restful api接口文档。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>Solr版本更新速度确实很快，从去年4.x到今年的6.x，今天看到6.0.1的功能，着实让我很兴奋。<br>Solr6.0.1中页面管理功能日渐完善，以及新的一些特性，docValues越来越成熟了，增加jdbc驱动支持，增加多个sql特性，门槛越来越低了，也开始贴近大数据分析需求。</p>
+<p>后续我会整理如下几个方面的知识点：<br>1、jdbc客户端连接查询<br>2、MapReduce批量导入数据<br>3、Spark批量导入数据</p>
+<h2 id="参考文档"><a href="#参考文档" class="headerlink" title="参考文档"></a>参考文档</h2><ul>
+<li><a href="https://cwiki.apache.org/confluence/display/solr/Collections+API" target="_blank" rel="noopener">https://cwiki.apache.org/confluence/display/solr/Collections+API</a> （restful api）</li>
+<li><a href="https://cwiki.apache.org/confluence/display/solr/-" target="_blank" rel="noopener">https://cwiki.apache.org/confluence/display/solr/-</a> Command+Line+Utilities （命令行工具）</li>
+<li><a href="https://cwiki.apache.org/confluence/display/solr/Running+Solr+on+HDFS#RunningSolronHDFS-autoAddReplicasSettings" target="_blank" rel="noopener">https://cwiki.apache.org/confluence/display/solr/Running+Solr+on+HDFS#RunningSolronHDFS-autoAddReplicasSettings</a> （replica自动复制）</li>
+<li><a href="https://cwiki.apache.org/confluence/display/solr/Managing+Solr（solr管理）" target="_blank" rel="noopener">https://cwiki.apache.org/confluence/display/solr/Managing+Solr（solr管理）</a></li>
+<li><a href="https://cwiki.apache.org/confluence/display/solr/The+Well-Configured+Solr+Instance" target="_blank" rel="noopener">https://cwiki.apache.org/confluence/display/solr/The+Well-Configured+Solr+Instance</a> （solr配置）</li>
+<li><a href="https://cwiki.apache.org/confluence/display/solr/Documents%2C+Fields%2C+and+Schema+Design（schema配置）" target="_blank" rel="noopener">https://cwiki.apache.org/confluence/display/solr/Documents%2C+Fields%2C+and+Schema+Design（schema配置）</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/hadoop生态圈/" rel="tag"># hadoop生态圈</a>
+          
+            <a href="/tags/solr/" rel="tag"># solr</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/06/14/hadoop-Zookeeper常见问题整理/" rel="next" title="hadoop-Zookeeper常见问题整理">
+                <i class="fa fa-chevron-left"></i> hadoop-Zookeeper常见问题整理
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/06/18/Solr6 as JDBC Data Source/" rel="prev" title="Solr6 as JDBC Data Source">
+                Solr6 as JDBC Data Source <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+<span class="jiathis_txt">分享到：</span>
+<a class="jiathis_button_fav">收藏夹</a>
+<a class="jiathis_button_copy">复制网址</a>
+<a class="jiathis_button_email">邮件</a>
+<a class="jiathis_button_weixin">微信</a>
+<a class="jiathis_button_qzone">QQ空间</a>
+<a class="jiathis_button_tqq">腾讯微博</a>
+<a class="jiathis_button_douban">豆瓣</a>
+<a class="jiathis_button_share">一键分享</a>
+
+<a href="http://www.jiathis.com/share?uid=2140465" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank">更多</a>
+<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+var jiathis_config={
+  data_track_clickback:true,
+  summary:"",
+  shortUrl:false,
+  hideMore:false
+}
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  <p>热评文章</p>
+  <div class="ds-top-threads" data-range="weekly" data-num-items="4"></div>
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div class="ds-thread" data-thread-key="2016/06/17/Solr6.0.1概念和集群部署/" data-title="Solr6.0.1概念和集群部署" data-url="http://www.zhangrenhua.com/2016/06/17/Solr6.0.1概念和集群部署/">
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="http://www.zhangrenhua.com/back_images/avatar.jpg" alt="张仁华">
+            
+              <p class="site-author-name" itemprop="name">张仁华</p>
+              <p class="site-description motion-element" itemprop="description">记录软件生涯中的点点滴滴</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">76</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">17</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/zhangrenhua/" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://weibo.com/huaHBrother" target="_blank" title="Weibo">
+                      
+                        <i class="fa fa-fw fa-globe"></i>Weibo</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://douban.com/people/huaHBrother" target="_blank" title="douban">
+                      
+                        <i class="fa fa-fw fa-globe"></i>douban</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://zhihu.com/people/huaHBrother" target="_blank" title="zhihu">
+                      
+                        <i class="fa fa-fw fa-globe"></i>zhihu</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#简介"><span class="nav-number">1.</span> <span class="nav-text">简介</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#SolrCloud的特色功能"><span class="nav-number">1.1.</span> <span class="nav-text">SolrCloud的特色功能</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#概念"><span class="nav-number">2.</span> <span class="nav-text">概念</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#新特性"><span class="nav-number">3.</span> <span class="nav-text">新特性</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#集群部署"><span class="nav-number">4.</span> <span class="nav-text">集群部署</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#软件需求"><span class="nav-number">4.1.</span> <span class="nav-text">软件需求</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#solr集群安装"><span class="nav-number">4.2.</span> <span class="nav-text">solr集群安装</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#初始化zookeeper目录"><span class="nav-number">4.2.1.</span> <span class="nav-text">初始化zookeeper目录</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#安装solr自带例子"><span class="nav-number">4.2.2.</span> <span class="nav-text">安装solr自带例子</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#初始化solr例子配置文件"><span class="nav-number">4.2.3.</span> <span class="nav-text">初始化solr例子配置文件</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#使用自带的jetty启动服务"><span class="nav-number">4.2.4.</span> <span class="nav-text">使用自带的jetty启动服务</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#创建collection并导入测试数据"><span class="nav-number">4.2.5.</span> <span class="nav-text">创建collection并导入测试数据</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#集群管理"><span class="nav-number">4.2.6.</span> <span class="nav-text">集群管理</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">5.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考文档"><span class="nav-number">6.</span> <span class="nav-text">参考文档</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">张仁华</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"iissnan-notes"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

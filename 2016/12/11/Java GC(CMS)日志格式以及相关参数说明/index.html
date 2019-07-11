@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="google-site-verification" content="zUNgN8yGBtBZ8194JTl7PXh7YvztVw494zGKJ_8qH00">
+
+
+
+
+
+
+
+
+  <meta name="baidu-site-verification" content="kqLgluU8lc">
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/favicon.ico?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="jvm,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="hua的博客" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="阅读GC日志是处理Java虚拟机内存问题的基本技能，它只是一些人为确定的规则，没有太多技术含量。每种收集器的日志形式都是由它们自身的实现所决定的，换而言之，每个收集器的日志格式都可以不一样。但虚拟机设计者为了方便用户阅读，将各个收集器的日志都维持一定的共性。本文通过示例来描述gc日志的基本格式，并整理了Java虚拟机的一些常用参数。">
+<meta name="keywords" content="jvm">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java GC(CMS)日志格式以及相关参数说明">
+<meta property="og:url" content="http://www.zhangrenhua.com/2016/12/11/Java GC(CMS)日志格式以及相关参数说明/index.html">
+<meta property="og:site_name" content="hua的博客">
+<meta property="og:description" content="阅读GC日志是处理Java虚拟机内存问题的基本技能，它只是一些人为确定的规则，没有太多技术含量。每种收集器的日志形式都是由它们自身的实现所决定的，换而言之，每个收集器的日志格式都可以不一样。但虚拟机设计者为了方便用户阅读，将各个收集器的日志都维持一定的共性。本文通过示例来描述gc日志的基本格式，并整理了Java虚拟机的一些常用参数。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2016-12-11T12:55:22.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Java GC(CMS)日志格式以及相关参数说明">
+<meta name="twitter:description" content="阅读GC日志是处理Java虚拟机内存问题的基本技能，它只是一些人为确定的规则，没有太多技术含量。每种收集器的日志形式都是由它们自身的实现所决定的，换而言之，每个收集器的日志格式都可以不一样。但虚拟机设计者为了方便用户阅读，将各个收集器的日志都维持一定的共性。本文通过示例来描述gc日志的基本格式，并整理了Java虚拟机的一些常用参数。">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.zhangrenhua.com/2016/12/11/Java GC(CMS)日志格式以及相关参数说明/">
+
+
+
+
+
+  <title>Java GC(CMS)日志格式以及相关参数说明 | hua的博客</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-69647002-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?954f429681a4cd6dee6095ddaa2aac9a";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">hua的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">关注技术和人文的原创IT博客</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-schedule">
+          <a href="/schedule/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            日程表
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sitemap">
+          <a href="/sitemap.xml" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            站点地图
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="st-search-show-outputs">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <form class="site-search-form">
+  <input type="text" id="st-search-input" class="st-search-input st-default-search-input">
+</form>
+
+<script type="text/javascript">
+  (function(w,d,t,u,n,s,e){w['SwiftypeObject']=n;w[n]=w[n]||function(){
+    (w[n].q=w[n].q||[]).push(arguments);};s=d.createElement(t);
+    e=d.getElementsByTagName(t)[0];s.async=1;s.src=u;e.parentNode.insertBefore(s,e);
+  })(window,document,'script','//s.swiftypecdn.com/install/v2/st.js','_st');
+
+  _st('install', 'BAacTgC1f_bLy6kngppZ','2.0.0');
+</script>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.zhangrenhua.com/2016/12/11/Java GC(CMS)日志格式以及相关参数说明/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="张仁华">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="http://www.zhangrenhua.com/back_images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hua的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Java GC(CMS)日志格式以及相关参数说明</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-12-11T20:55:22+08:00">
+                2016-12-11
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/java/" itemprop="url" rel="index">
+                    <span itemprop="name">java</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2016/12/11/Java GC(CMS)日志格式以及相关参数说明/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2016/12/11/Java GC(CMS)日志格式以及相关参数说明/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  阅读GC日志是处理Java虚拟机内存问题的基本技能，它只是一些人为确定的规则，没有太多技术含量。<br>每种收集器的日志形式都是由它们自身的实现所决定的，换而言之，每个收集器的日志格式都可以不一样。但虚拟机设计者为了方便用户阅读，将各个收集器的日志都维持一定的共性。<br>本文通过示例来描述gc日志的基本格式，并整理了Java虚拟机的一些常用参数。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>阅读GC日志是处理Java虚拟机内存问题的基本技能，它只是一些人为确定的规则，没有太多技术含量。</p>
+<p>每种收集器的日志形式都是由它们自身的实现所决定的，换而言之，每个收集器的日志格式都可以不一样。但虚拟机设计者为了方便用户阅读，将各个收集器的日志都维持一定的共性，例如以下两段典型的GC日志：</p>
+<figure class="highlight mathematica"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">4.065</span>: [GC4<span class="number">.065</span>: [ParNew: <span class="number">279616</span><span class="keyword">K</span>-&gt;<span class="number">15816</span><span class="keyword">K</span>(<span class="number">314560</span><span class="keyword">K</span>), <span class="number">0.0592280</span> secs] <span class="number">279616</span><span class="keyword">K</span>-&gt;<span class="number">15816</span><span class="keyword">K</span>(<span class="number">1013632</span><span class="keyword">K</span>), <span class="number">0.0595130</span> secs] [<span class="keyword">Times</span>: user=<span class="number">0.72</span> sys=<span class="number">0.39</span>, real=<span class="number">0.06</span> secs]]</span><br><span class="line">[<span class="keyword">Full</span> GC <span class="number">283.736</span>:[ParNew:<span class="number">261599</span><span class="keyword">K</span>-＞<span class="number">261599</span><span class="keyword">K</span>（<span class="number">261952</span><span class="keyword">K</span>），<span class="number">0.0000288</span> secs]</span><br></pre></td></tr></table></figure>
+
+<p><strong>第一行gc日志：</strong><br><code>4.065:</code> 代表GC发生的时间，这个值是Java虚拟机启动的以来经过的秒数。<br><code>[GC4.065: [ParNew:</code> 代表此次是<code>ParNew</code>新生代在进行回收<br><code>279616K-&gt;15816K(314560K)</code> “GC前该内存区域已使用容量” -&gt; “GC后该内存区域已使用容量” （该内存区域总容量）<br><code>0.0592280 secs</code> 该区域GC所占用时间<br><code>[Times: user=0.72 sys=0.39, real=0.06 secs]</code> 这里面的user、sys和real与Linux的time命令所输出的时间含义一致，分别代表用户消耗的CPU时间、内核态消耗的CPU事件和操作从开始到结束所经过的墙钟时间（Wall Clock Time）。CPU时间与墙钟时间的区别是，墙钟时间包括各种非运算的等待耗时，例如等待磁盘I/O、等待线程阻塞，而CPU时间不包括这些耗时，但当系统有多CPU或者多核的话，多线程操作会叠加这些CPU时间，所以读者看到user或sys时间超过real时间是完全正常的。</p>
+<p><strong>第二行gc日志：</strong><br><code>[Full GC（System）</code> 是由System.gc()方法所触发的收集，full说明这次垃圾收集是停顿类型“stop-the-world”<br><code>[Full GC 283.736:[ParNew:</code> 在新生代收集器ParNew的日志也会出现[Full GC，折衣板是因为出现了分配担保失败之类的问题，所以才导致STW)</p>
+<h2 id="垃圾收集相关的常用参数"><a href="#垃圾收集相关的常用参数" class="headerlink" title="垃圾收集相关的常用参数"></a>垃圾收集相关的常用参数</h2><table>
+<thead>
+<tr>
+<th>参数</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>UseSerialGC</td>
+<td>虚拟机运行在Client 模式下的默认值，打开此开关后，使用Serial + Serial Old 的收集器组合进行内存回收</td>
+</tr>
+<tr>
+<td>UseParNewGC</td>
+<td>打开此开关后，使用ParNew + Serial Old 的收集器组合进行内存回收</td>
+</tr>
+<tr>
+<td>UseConcMarkSweepGC</td>
+<td>打开此开关后，使用ParNew + CMS + Serial Old 的收集器组合进行内存回收。Serial Old 收集器将作为CMS 收集器出现Concurrent Mode Failure失败后的后备收集器使用</td>
+</tr>
+<tr>
+<td>UseParallelGC</td>
+<td>虚拟机运行在Server 模式下的默认值，打开此开关后，使用Parallel Scavenge + Serial Old（PS MarkSweep）的收集器组合进行内存回收</td>
+</tr>
+<tr>
+<td>UseParallelOldGC</td>
+<td>打开此开关后，使用Parallel Scavenge + Parallel Old 的收集器组合进行内存回收</td>
+</tr>
+<tr>
+<td>SurvivorRatio</td>
+<td>新生代中Eden 区域与Survivor 区域的容量比值， 默认为8， 代表Eden ：Survivor=8∶1:1，Survivor分S0和S1</td>
+</tr>
+<tr>
+<td>NewRatio</td>
+<td>-XX:NewRatio=4表示年轻代与年老代所占比值为1:4</td>
+</tr>
+<tr>
+<td>PretenureSizeThreshold</td>
+<td>直接晋升到老年代的对象大小，设置这个参数后，大于这个参数的对象将直接在老年代分配</td>
+</tr>
+<tr>
+<td>MaxTenuringThreshold</td>
+<td>晋升到老年代的对象年龄。每个对象在坚持过一次Minor GC 之后，年龄就加1，当超过这个参数值时就进入老年代</td>
+</tr>
+<tr>
+<td>UseAdaptiveSizePolicy</td>
+<td>动态调整Java 堆中各个区域的大小以及进入老年代的年龄</td>
+</tr>
+<tr>
+<td>HandlePromotionFailure</td>
+<td>是否允许分配担保失败，即老年代的剩余空间不足以应付新生代的整个Eden 和Survivor 区的所有对象都存活的极端情况</td>
+</tr>
+<tr>
+<td>ParallelGCThreads</td>
+<td>设置并行GC 时进行内存回收的线程数</td>
+</tr>
+<tr>
+<td>GCTimeRatio</td>
+<td>GC 时间占总时间的比率，默认值为99，即允许1% 的GC 时间。仅在使用Parallel Scavenge 收集器时生效</td>
+</tr>
+<tr>
+<td>MaxGCPauseMillis</td>
+<td>设置GC 的最大停顿时间。仅在使用Parallel Scavenge 收集器时生效</td>
+</tr>
+<tr>
+<td>CMSInitiatingOccupancyFraction</td>
+<td>设置CMS 收集器在老年代空间被使用多少后触发垃圾收集。默认值为68%，仅在使用CMS 收集器时生效</td>
+</tr>
+<tr>
+<td>UseCMSCompactAtFullCollection</td>
+<td>设置CMS 收集器在完成垃圾收集后是否要进行一次内存碎片整理。仅在使用CMS 收集器时生效</td>
+</tr>
+<tr>
+<td>CMSFullGCsBeforeCompaction</td>
+<td>设置CMS 收集器在进行若干次垃圾收集后再启动一次内存碎片整理。仅在使用CMS 收集器时生效</td>
+</tr>
+</tbody></table>
+<h3 id="功能选项"><a href="#功能选项" class="headerlink" title="功能选项"></a>功能选项</h3><table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认值/限制</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>-XX:-AllowUserSignalHandlers</td>
+<td>限于Linux和Solaris，默认不启用</td>
+<td>允许为java进程安装信号处理器,信号处理参见类:sun.misc.Signal, sun.misc.SignalHandler</td>
+</tr>
+<tr>
+<td>-XX:+DisableExplicitGC</td>
+<td>默认启用</td>
+<td>禁止在运行期显式地调用System.gc()</td>
+</tr>
+<tr>
+<td>-XX:+FailOverToOldVerifier</td>
+<td>Java6新引入选项，默认启用</td>
+<td>如果新的Class校验器检查失败，则使用老的校验器(失败原因:因为JDK6最高向下兼容到JDK1.2，而JDK1.2的class info 与JDK6的info存在较大的差异，所以新校验器可能会出现校验失败的情况)</td>
+</tr>
+<tr>
+<td>-XX:+HandlePromotionFailure</td>
+<td>java5以前是默认不启用，java6默认启用</td>
+<td>关闭新生代收集担保</td>
+</tr>
+<tr>
+<td>-XX:+MaxFDLimit</td>
+<td>限于Solaris，默认启用</td>
+<td>设置java进程可用文件描述符为操作系统允许的最大值。</td>
+</tr>
+<tr>
+<td>-XX:PreBlockSpin=10</td>
+<td>-XX:+UseSpinning 必须先启用，对于java6来说已经默认启用了，这里默认自旋10次</td>
+<td>控制多线程自旋锁优化的自旋次数</td>
+</tr>
+<tr>
+<td>-XX:-RelaxAccessControlCheck</td>
+<td>默认不启用</td>
+<td>在Class校验器中，放松对访问控制的检查,作用与reflection里的setAccessible类似</td>
+</tr>
+<tr>
+<td>-XX:+ScavengeBeforeFullGC</td>
+<td>默认启用</td>
+<td>在Full GC前触发一次Minor GC</td>
+</tr>
+<tr>
+<td>-XX:+UseAltSigs</td>
+<td>限于Solaris，默认启用</td>
+<td>为了防止与其他发送信号的应用程序冲突，允许使用候补信号替代 SIGUSR1和SIGUSR2</td>
+</tr>
+<tr>
+<td>-XX:+UseBoundThreads</td>
+<td>限于Solaris, 默认启用</td>
+<td>绑定所有的用户线程到内核线程, 减少线程进入饥饿状态（得不到任何cpu time）的次数</td>
+</tr>
+<tr>
+<td>-XX:-UseConcMarkSweepGC</td>
+<td>默认不启用</td>
+<td>启用CMS低停顿垃圾收集器,减少FGC的暂停时间</td>
+</tr>
+<tr>
+<td>-XX:+UseGCOverheadLimit</td>
+<td>默认启用</td>
+<td>限制GC的运行时间。如果GC耗时过长，就抛OOM</td>
+</tr>
+<tr>
+<td>-XX:+UseLWPSynchronization</td>
+<td>限于solaris，默认启用</td>
+<td>使用轻量级进程（内核线程）替换线程同步</td>
+</tr>
+<tr>
+<td>-XX:-UseParallelGC</td>
+<td>-server时启用,其他情况下，默认不启用</td>
+<td>策略为新生代使用并行清除，年老代使用单线程Mark-Sweep-Compact的垃圾收集器</td>
+</tr>
+<tr>
+<td>-XX:-UseParallelOldGC</td>
+<td>默认不启用</td>
+<td>策略为老年代和新生代都使用并行清除的垃圾收集器</td>
+</tr>
+<tr>
+<td>-XX:-UseSerialGC</td>
+<td>-client时启用,其他情况下，默认不启用</td>
+<td>使用串行垃圾收集器</td>
+</tr>
+<tr>
+<td>-XX:-UseSpinning</td>
+<td>java1.4.2和1.5需要手动启用, java6默认已启用</td>
+<td>启用多线程自旋锁优化</td>
+</tr>
+<tr>
+<td>-XX:+UseTLAB</td>
+<td>1.4.2以前和使用-client选项时，默认不启用，其余版本默认启用</td>
+<td>启用线程本地缓存区</td>
+</tr>
+<tr>
+<td>-XX:+UseSplitVerifier</td>
+<td>java5默认不启用, java6默认启用</td>
+<td>使用新的Class类型校验器</td>
+</tr>
+<tr>
+<td>-XX:+UseThreadPriorities</td>
+<td>默认启用</td>
+<td>使用本地线程的优先级</td>
+</tr>
+<tr>
+<td>-XX:+UseVMInterruptibleIO</td>
+<td>限于solaris，默认启用</td>
+<td>在solaris中，允许运行时中断线程</td>
+</tr>
+</tbody></table>
+<h3 id="性能选项"><a href="#性能选项" class="headerlink" title="性能选项"></a>性能选项</h3><table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认值/限制</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>-XX:+AggressiveOpts</td>
+<td>JDK 5 update 6后引入，但需要手动启用, JDK6默认启用</td>
+<td>启用JVM开发团队最新的调优成果。例如编译优化，偏向锁，并行年老代收集等</td>
+</tr>
+<tr>
+<td>-XX:CompileThreshold=10000</td>
+<td>1000</td>
+<td>通过JIT编译器，将方法编译成机器码的触发阀值，可以理解为调用方法的次数，例如调1000次，将方法编译为机器码</td>
+</tr>
+<tr>
+<td>-XX:LargePageSizeInBytes=4m</td>
+<td>默认4m, amd64位：2m</td>
+<td>设置堆内存的内存页大小</td>
+</tr>
+<tr>
+<td>-XX:MaxHeapFreeRatio=70</td>
+<td>70</td>
+<td>GC后，如果发现空闲堆内存占到整个预估上限值的70%，则收缩预估上限值</td>
+</tr>
+<tr>
+<td>-XX:MaxNewSize=size</td>
+<td>1.3.1 Sparc: 32m, 1.3.1 x86: 2.5m</td>
+<td>新生代占整个堆内存的最大值</td>
+</tr>
+<tr>
+<td>-XX:MaxPermSize=64m</td>
+<td>5.0以后: 64 bit VMs会增大预设值的30%, 1.4 amd64: 96m, 1.3.1 -client: 32m, 其他默认 64m</td>
+<td>Perm（俗称方法区）占整个堆内存的最大值</td>
+</tr>
+<tr>
+<td>-XX:MinHeapFreeRatio=40</td>
+<td>40</td>
+<td>GC后，如果发现空闲堆内存占到整个预估上限值的40%，则增大上限值</td>
+</tr>
+<tr>
+<td>-XX:NewRatio=2</td>
+<td>Sparc -client: 8, x86 -server: 8, x86 -client: 12, -client: 4 (1.3),</td>
+<td>新生代和年老代的堆内存占用比例, 例如2表示新生代占年老代的1/2，占整个堆内存的1/3</td>
+</tr>
+<tr>
+<td></td>
+<td>8 (1.3.1+), x86: 12, 其他默认 2</td>
+<td></td>
+</tr>
+<tr>
+<td>-XX:NewSize=2.125m</td>
+<td>5.0以后: 64 bit Vms 会增大预设值的30%, x86: 1m, x86, 5.0以后: 640k, 其他默认 2.125m</td>
+<td>新生代预估上限的默认值</td>
+</tr>
+<tr>
+<td>-XX:ReservedCodeCacheSize=32m</td>
+<td>Solaris 64-bit, amd64, -server x86: 48m, 1.5.0_06之前, Solaris 64-bit amd64: 1024m, 其他默认 32m</td>
+<td>设置代码缓存的最大值，编译时用</td>
+</tr>
+<tr>
+<td>-XX:SurvivorRatio=8</td>
+<td>Solaris amd64: 6, Sparc in 1.3.1: 25, Solaris platforms 5.0以前: 32, 其他默认 8</td>
+<td>Eden与Survivor的占用比例。例如8表示，一个survivor区占用 1/8 的Eden内存，即1/10的新生代内存，为什么不是1/9？</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>因为我们的新生代有2个survivor，即S0和S1。所以survivor总共是占用新生代内存的 2/10，Eden与新生代的占比则为 8/10</td>
+</tr>
+<tr>
+<td>-XX:TargetSurvivorRatio=50</td>
+<td>50</td>
+<td>实际使用的survivor空间大小占比。默认是50%，最高90%</td>
+</tr>
+<tr>
+<td>-XX:ThreadStackSize=512</td>
+<td>Sparc: 512, Solaris x86: 320 (5.0以前 256), Sparc 64 bit: 1024, Linux amd64: 1024 (5.0 以前 0), 其他默认 512.</td>
+<td>线程堆栈大小</td>
+</tr>
+<tr>
+<td>-XX:+UseBiasedLocking</td>
+<td>JDK 5 update 6后引入，但需要手动启用, JDK6默认启用</td>
+<td>启用偏向锁</td>
+</tr>
+<tr>
+<td>-XX:+UseFastAccessorMethods</td>
+<td>默认启用</td>
+<td>优化原始类型的getter方法性能(get/set:Primitive Type)</td>
+</tr>
+<tr>
+<td>-XX:-UseISM</td>
+<td>默认启用</td>
+<td>启用solaris的ISM</td>
+</tr>
+<tr>
+<td>-XX:+UseLargePages</td>
+<td>JDK 5 update 5后引入，但需要手动启用, JDK6默认启用</td>
+<td>启用大内存分页</td>
+</tr>
+<tr>
+<td>-XX:+UseMPSS</td>
+<td>1.4.1 之前: 不启用, 其余版本默认启用</td>
+<td>启用solaris的MPSS，不能与ISM同时使用</td>
+</tr>
+<tr>
+<td>-XX:+UseStringCache</td>
+<td>默认开启</td>
+<td>启用缓存常用的字符串。</td>
+</tr>
+<tr>
+<td>-XX:AllocatePrefetchLines=1</td>
+<td>1</td>
+<td>Number of cache lines to load after the last object allocation using prefetch instructions generated in JIT compiled code. Default values are 1 if the last allocated object was an instance and 3 if it was an array.</td>
+</tr>
+<tr>
+<td>-XX:AllocatePrefetchStyle=1</td>
+<td>1</td>
+<td>Generated code style for prefetch instructions. 0 – no prefetch instructions are generate<em>d</em>, 1 – execute prefetch instructions after each allocation, 2 – use TLAB allocation watermark pointer to gate when prefetch instructions are executed.</td>
+</tr>
+<tr>
+<td>-XX:+UseCompressedStrings</td>
+<td>Java 6 update 21有一选项</td>
+<td>其中，对于不需要16位字符的字符串，可以使用byte[] 而非char[]。对于许多应用，这可以节省内存，但速度较慢（5％-10％）</td>
+</tr>
+<tr>
+<td>-XX:+OptimizeStringConcat</td>
+<td>在Java 6更新20中引入</td>
+<td>优化字符串连接操作在可能的情况下</td>
+</tr>
+</tbody></table>
+<h3 id="G1垃圾收集器选项"><a href="#G1垃圾收集器选项" class="headerlink" title="G1垃圾收集器选项"></a>G1垃圾收集器选项</h3><table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>-XX:+UseG1GC</td>
+<td>使用Garbage First（G1）收集器</td>
+</tr>
+<tr>
+<td>-XX:MaxGCPauseMillis=n</td>
+<td>为所需的最长暂停时间设置目标值。默认值是 200 毫秒。指定的值不适用于您的堆大小。</td>
+</tr>
+<tr>
+<td>-XX:InitiatingHeapOccupancyPercent=n</td>
+<td>设置触发标记周期的 Java 堆占用率阈值。默认占用率是整个 Java 堆的 45%。</td>
+</tr>
+<tr>
+<td>-XX:NewRatio=n</td>
+<td>旧/新生代空间大小比率。默认值为2。</td>
+</tr>
+<tr>
+<td>-XX:SurvivorRatio=n</td>
+<td>eden / survivor空间大小比例。默认值为8。</td>
+</tr>
+<tr>
+<td>-XX:MaxTenuringThreshold=n</td>
+<td>对象能经历多少次Minor GC才晋升到旧生代。默认值为15。</td>
+</tr>
+<tr>
+<td>-XX:ParallelGCThreads=n</td>
+<td>“设置 STW 工作线程数的值。将 n 的值设置为逻辑处理器的数量。n 的值与逻辑处理器的数量相同，最多为 8。</td>
+</tr>
+<tr>
+<td>如果逻辑处理器不止八个，则将 n 的值设置为逻辑处理器数的 5/8 左右。这适用于大多数情况，除非是较大的 SPARC 系统，其中 n 的值可以是逻辑处理器数的 5/16 左右。”</td>
+<td></td>
+</tr>
+<tr>
+<td>-XX:ConcGCThreads=n</td>
+<td>设置并行标记的线程数。将 n 设置为并行垃圾回收线程数 (ParallelGCThreads) 的 1/4 左右。</td>
+</tr>
+<tr>
+<td>-XX:G1ReservePercent=n</td>
+<td>设置作为空闲空间的预留内存百分比，以降低目标空间溢出的风险。默认值是 10%。增加或减少百分比时，请确保对总的 Java 堆调整相同的量。Java HotSpot VM build 23 中没有此设置。</td>
+</tr>
+<tr>
+<td>-XX:G1HeapRegionSize=n</td>
+<td>设置的 G1 区域的大小。值是 2 的幂，范围是 1 MB 到 32 MB 之间。目标是根据最小的 Java 堆大小划分出约 2048 个区域。</td>
+</tr>
+</tbody></table>
+<p>参考文档：</p>
+<ul>
+<li>G1垃圾收集器参数调优参考： <a href="http://www.oracle.com/technetwork/cn/articles/java/g1gc-1984535-zhs.html" target="_blank" rel="noopener">http://www.oracle.com/technetwork/cn/articles/java/g1gc-1984535-zhs.html</a></li>
+<li>oracle官网 <a href="http://www.oracle.com/technetwork/java/javase/tech/vmoptions-jsp-140102.html#G1Options" target="_blank" rel="noopener">http://www.oracle.com/technetwork/java/javase/tech/vmoptions-jsp-140102.html#G1Options</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/jvm/" rel="tag"># jvm</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/11/15/Java虚拟机垃圾收集器/" rel="next" title="Java虚拟机垃圾收集器">
+                <i class="fa fa-chevron-left"></i> Java虚拟机垃圾收集器
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/12/18/Java虚拟机性能监控与故障处理工具/" rel="prev" title="Java虚拟机性能监控与故障处理工具">
+                Java虚拟机性能监控与故障处理工具 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+<span class="jiathis_txt">分享到：</span>
+<a class="jiathis_button_fav">收藏夹</a>
+<a class="jiathis_button_copy">复制网址</a>
+<a class="jiathis_button_email">邮件</a>
+<a class="jiathis_button_weixin">微信</a>
+<a class="jiathis_button_qzone">QQ空间</a>
+<a class="jiathis_button_tqq">腾讯微博</a>
+<a class="jiathis_button_douban">豆瓣</a>
+<a class="jiathis_button_share">一键分享</a>
+
+<a href="http://www.jiathis.com/share?uid=2140465" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank">更多</a>
+<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+var jiathis_config={
+  data_track_clickback:true,
+  summary:"",
+  shortUrl:false,
+  hideMore:false
+}
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  <p>热评文章</p>
+  <div class="ds-top-threads" data-range="weekly" data-num-items="4"></div>
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div class="ds-thread" data-thread-key="2016/12/11/Java GC(CMS)日志格式以及相关参数说明/" data-title="Java GC(CMS)日志格式以及相关参数说明" data-url="http://www.zhangrenhua.com/2016/12/11/Java GC(CMS)日志格式以及相关参数说明/">
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="http://www.zhangrenhua.com/back_images/avatar.jpg" alt="张仁华">
+            
+              <p class="site-author-name" itemprop="name">张仁华</p>
+              <p class="site-description motion-element" itemprop="description">记录软件生涯中的点点滴滴</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">76</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">17</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/zhangrenhua/" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://weibo.com/huaHBrother" target="_blank" title="Weibo">
+                      
+                        <i class="fa fa-fw fa-globe"></i>Weibo</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://douban.com/people/huaHBrother" target="_blank" title="douban">
+                      
+                        <i class="fa fa-fw fa-globe"></i>douban</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://zhihu.com/people/huaHBrother" target="_blank" title="zhihu">
+                      
+                        <i class="fa fa-fw fa-globe"></i>zhihu</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#垃圾收集相关的常用参数"><span class="nav-number">2.</span> <span class="nav-text">垃圾收集相关的常用参数</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#功能选项"><span class="nav-number">2.1.</span> <span class="nav-text">功能选项</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#性能选项"><span class="nav-number">2.2.</span> <span class="nav-text">性能选项</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#G1垃圾收集器选项"><span class="nav-number">2.3.</span> <span class="nav-text">G1垃圾收集器选项</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">张仁华</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"iissnan-notes"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="google-site-verification" content="zUNgN8yGBtBZ8194JTl7PXh7YvztVw494zGKJ_8qH00">
+
+
+
+
+
+
+
+
+  <meta name="baidu-site-verification" content="kqLgluU8lc">
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/favicon.ico?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="j2ee-疑难解决,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="hua的博客" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="最近几天有位同事在接口开发中遇到一个难点。本来在tomcat上运行的好好的程序，部署到IBM WebSphere上就出现数据加解密报错。经过一番排除终于找到问题的根源，问题出在了IBM WebSphere用的jdk版本是IBM自带的，所以才会出现加解密错误的问题。下面我对使用`RSA`加解密时需要注意的细节进行详细说明，并附上本次问题的完美解决方案。">
+<meta name="keywords" content="j2ee-疑难解决">
+<meta property="og:type" content="article">
+<meta property="og:title" content="IBM JDK进行RSA加解密时遇到的问题">
+<meta property="og:url" content="http://www.zhangrenhua.com/2015/11/01/j2ee-RSA/index.html">
+<meta property="og:site_name" content="hua的博客">
+<meta property="og:description" content="最近几天有位同事在接口开发中遇到一个难点。本来在tomcat上运行的好好的程序，部署到IBM WebSphere上就出现数据加解密报错。经过一番排除终于找到问题的根源，问题出在了IBM WebSphere用的jdk版本是IBM自带的，所以才会出现加解密错误的问题。下面我对使用`RSA`加解密时需要注意的细节进行详细说明，并附上本次问题的完美解决方案。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2015-12-14T15:58:35.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="IBM JDK进行RSA加解密时遇到的问题">
+<meta name="twitter:description" content="最近几天有位同事在接口开发中遇到一个难点。本来在tomcat上运行的好好的程序，部署到IBM WebSphere上就出现数据加解密报错。经过一番排除终于找到问题的根源，问题出在了IBM WebSphere用的jdk版本是IBM自带的，所以才会出现加解密错误的问题。下面我对使用`RSA`加解密时需要注意的细节进行详细说明，并附上本次问题的完美解决方案。">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.zhangrenhua.com/2015/11/01/j2ee-RSA/">
+
+
+
+
+
+  <title>IBM JDK进行RSA加解密时遇到的问题 | hua的博客</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-69647002-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?954f429681a4cd6dee6095ddaa2aac9a";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">hua的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">关注技术和人文的原创IT博客</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-schedule">
+          <a href="/schedule/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            日程表
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sitemap">
+          <a href="/sitemap.xml" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            站点地图
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="st-search-show-outputs">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <form class="site-search-form">
+  <input type="text" id="st-search-input" class="st-search-input st-default-search-input">
+</form>
+
+<script type="text/javascript">
+  (function(w,d,t,u,n,s,e){w['SwiftypeObject']=n;w[n]=w[n]||function(){
+    (w[n].q=w[n].q||[]).push(arguments);};s=d.createElement(t);
+    e=d.getElementsByTagName(t)[0];s.async=1;s.src=u;e.parentNode.insertBefore(s,e);
+  })(window,document,'script','//s.swiftypecdn.com/install/v2/st.js','_st');
+
+  _st('install', 'BAacTgC1f_bLy6kngppZ','2.0.0');
+</script>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.zhangrenhua.com/2015/11/01/j2ee-RSA/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="张仁华">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="http://www.zhangrenhua.com/back_images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hua的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">IBM JDK进行RSA加解密时遇到的问题</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2015-11-01T20:20:00+08:00">
+                2015-11-01
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/java/" itemprop="url" rel="index">
+                    <span itemprop="name">java</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2015/11/01/j2ee-RSA/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2015/11/01/j2ee-RSA/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  最近几天有位同事在接口开发中遇到一个难点。本来在tomcat上运行的好好的程序，部署到IBM WebSphere上就出现数据加解密报错。经过一番排除终于找到问题的根源，问题出在了IBM WebSphere用的jdk版本是IBM自带的，所以才会出现加解密错误的问题。下面我对使用`RSA`加解密时需要注意的细节进行详细说明，并附上本次问题的完美解决方案。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>最近几天有位同事在接口开发中遇到一个难点。本来在tomcat上运行的好好的程序，部署到IBM WebSphere上就出现数据加解密报错。经过一番排除终于找到问题的根源，问题出在了IBM WebSphere用的jdk版本是IBM自带的，所以才会出现加解密错误的问题。下面我对<code>RSA</code>加解密进行详细说明，并附上本次问题的<code>完美解决</code>方案。</p>
+<h2 id="问题解决"><a href="#问题解决" class="headerlink" title="问题解决"></a>问题解决</h2><h3 id="错误代码"><a href="#错误代码" class="headerlink" title="错误代码"></a>错误代码</h3><figure class="highlight processing"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.io.FileInputStream;</span><br><span class="line"><span class="keyword">import</span> java.io.ObjectInputStream;</span><br><span class="line"><span class="keyword">import</span> java.security.Key;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> javax.crypto.Cipher;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> sun.misc.BASE64Decoder;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * RSA加密算法</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> class RSAEncryption &#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * RSA加密算法</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> RSAEncryption rsaEncrypt = <span class="keyword">null</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 指定加密算法为RSA</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">String</span> ALGORITHM = <span class="string">"RSA"</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 公钥</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> Key PublicKey;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 私钥</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> Key PrivateKey;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 指定公钥存放文件</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">String</span> PUBLIC_KEY_FILE = <span class="string">"D:\\PublicKey.crt"</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * RSA加密算法</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> RSAEncryption() &#123;</span><br><span class="line">        <span class="comment">// 将文件中的公钥对象读出</span></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            ObjectInputStream ois = <span class="keyword">new</span> ObjectInputStream(<span class="keyword">new</span> FileInputStream(PUBLIC_KEY_FILE));</span><br><span class="line">            PublicKey = (Key) ois.readObject();</span><br><span class="line">            ois.close();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception localException) &#123;</span><br><span class="line">            localException.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 初始化RSA加密算法</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> RSAEncryption initialize() &#123;</span><br><span class="line">        <span class="keyword">synchronized</span> (RSAEncryption.class) &#123;</span><br><span class="line">            <span class="keyword">if</span> (rsaEncrypt == <span class="keyword">null</span>) &#123;</span><br><span class="line">                rsaEncrypt = <span class="keyword">new</span> RSAEncryption();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> rsaEncrypt;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 解密</span></span><br><span class="line"><span class="comment">     * </span></span><br><span class="line"><span class="comment">     * @param cryptograph</span></span><br><span class="line"><span class="comment">     *            密文</span></span><br><span class="line"><span class="comment">     * @param key</span></span><br><span class="line"><span class="comment">     *            解密KEY</span></span><br><span class="line"><span class="comment">     * @return 解密后数据</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">String</span> doDecrypt(<span class="keyword">String</span> cryptograph, Key <span class="built_in">key</span>) &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            Cipher cipher = Cipher.getInstance(ALGORITHM);</span><br><span class="line">            cipher.init(Cipher.DECRYPT_MODE, <span class="built_in">key</span>);</span><br><span class="line">            BASE64Decoder decoder = <span class="keyword">new</span> BASE64Decoder();</span><br><span class="line">            <span class="built_in">byte</span>[] b1 = decoder.decodeBuffer(cryptograph);</span><br><span class="line">            <span class="comment">// 执行解密操作</span></span><br><span class="line">            <span class="built_in">byte</span>[] b = cipher.doFinal(b1);</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> <span class="keyword">String</span>(b, <span class="string">"UTF-8"</span>);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 私钥解密</span></span><br><span class="line"><span class="comment">     * </span></span><br><span class="line"><span class="comment">     * @param cryptograph</span></span><br><span class="line"><span class="comment">     *            密文</span></span><br><span class="line"><span class="comment">     * @return 解密后数据</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">String</span> PrivateDecrypt(<span class="keyword">String</span> cryptograph) &#123;</span><br><span class="line">        <span class="keyword">return</span> initialize().doDecrypt(cryptograph, PrivateKey);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 测试代码</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> main(<span class="keyword">String</span>[] args) &#123;</span><br><span class="line">        <span class="keyword">String</span> <span class="built_in">key</span> = <span class="string">"MM9YaThlm3vVg+l8/BkTA8+Xa5XdkEzB/1cbxLOodAjuB0xWNJu9NiR/58LCE2xoqKH3d78I+FxW9pDOn1n5Ze7aRDPEIa0hyK6jw9YTXBS4ChJfaduUSDvzCOteqmjuJIkZ5Ob+hHYPcOHSuovLc8nfQA3qYSRBJQKNQRcwDFc="</span>;</span><br><span class="line">        initialize().doDecrypt(<span class="built_in">key</span>, PublicKey);</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>执行main方法会报如下错误：</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">java<span class="selector-class">.security</span><span class="selector-class">.InvalidKeyException</span>: Public Key cannot be used to decrypt.</span><br><span class="line">    at com<span class="selector-class">.ibm</span><span class="selector-class">.crypto</span><span class="selector-class">.provider</span><span class="selector-class">.RSACipher</span><span class="selector-class">.a</span>(Unknown Source)</span><br><span class="line">    at com<span class="selector-class">.ibm</span><span class="selector-class">.crypto</span><span class="selector-class">.provider</span><span class="selector-class">.RSACipher</span><span class="selector-class">.engineInit</span>(Unknown Source)</span><br><span class="line">    at javax<span class="selector-class">.crypto</span><span class="selector-class">.Cipher</span><span class="selector-class">.a</span>(Unknown Source)</span><br><span class="line">    at javax<span class="selector-class">.crypto</span><span class="selector-class">.Cipher</span><span class="selector-class">.a</span>(Unknown Source)</span><br><span class="line">    at javax<span class="selector-class">.crypto</span><span class="selector-class">.Cipher</span><span class="selector-class">.init</span>(Unknown Source)</span><br><span class="line">    at javax<span class="selector-class">.crypto</span><span class="selector-class">.Cipher</span><span class="selector-class">.init</span>(Unknown Source)</span><br><span class="line">    at com<span class="selector-class">.dongfeng</span><span class="selector-class">.pactera</span><span class="selector-class">.RSAEncryption</span><span class="selector-class">.doDecrypt</span>(RSAEncryption<span class="selector-class">.java</span>:<span class="number">78</span>)</span><br><span class="line">    at com<span class="selector-class">.dongfeng</span><span class="selector-class">.pactera</span><span class="selector-class">.RSAEncryption</span><span class="selector-class">.main</span>(RSAEncryption<span class="selector-class">.java</span>:<span class="number">104</span>)</span><br></pre></td></tr></table></figure>
+
+<p>当我看到这个错误的时候，我还以为是不是秘钥文件的问题。当我google查看异常信息时，才发现原来我们这边使用的是IBM JDK。这里不得不吐槽一下，IBM的东西真是烂到家了。下面列出WebSphere几点让人恶心的个人观点供到家参考：安装包大、启动慢、资源占用多、部署的时候点多了进程直接挂掉等…</p>
+<h3 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h3><p>为什么会报这样的错呢？原因在与IBM JDK采用的算法提供商与Oracle JDK不一致导致的。那如何解决呢？通过网上找资料发现一个比较完美的解决方案，使用<a href="http://www.bouncycastle.org/java.html" target="_blank" rel="noopener">bcprov</a>一个开源的基于java1.x的加密算法实现。本文使用的是bcprov-jdk16-1.46.jar。核心步骤：<br>1、项目中添加bcprov-jdk16-1.46.jar<br>2、注册bc算法提供商：Security.addProvider(new BouncyCastleProvider())<br>3、选择正确的加密算法：Cipher.getInstance(“<font color="red">RSA/None/PKCS1Padding</font>“, “BC”);<br>最终代码：</p>
+<figure class="highlight haxe"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.io.FileInputStream;</span><br><span class="line"><span class="keyword">import</span> java.io.ObjectInputStream;</span><br><span class="line"><span class="keyword">import</span> java.security.Key;</span><br><span class="line"><span class="keyword">import</span> java.security.Security;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> javax.crypto.Cipher;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> org.bouncycastle.jce.provider.BouncyCastleProvider;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> sun.misc.BASE64Decoder;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * RSA加密算法</span></span><br><span class="line"><span class="comment"> * </span></span><br><span class="line"><span class="comment"> * @author liguoxiang</span></span><br><span class="line"><span class="comment"> * </span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">RSAEncryption</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> &#123;</span><br><span class="line">        <span class="comment">/**</span></span><br><span class="line"><span class="comment">         * 注册算法提供商</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        Security.addProvider(<span class="keyword">new</span> <span class="type">BouncyCastleProvider</span>());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * RSA加密算法</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> RSAEncryption rsaEncrypt = <span class="literal">null</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 公钥</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> Key PublicKey;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 指定公钥存放文件</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">String</span> PUBLIC_KEY_FILE = <span class="string">"D:\\PublicKey.crt"</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * RSA加密算法</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> RSAEncryption() &#123;</span><br><span class="line">        <span class="comment">// 将文件中的公钥对象读出</span></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            ObjectInputStream ois = <span class="keyword">new</span> <span class="type">ObjectInputStream</span>(<span class="keyword">new</span> <span class="type">FileInputStream</span>(PUBLIC_KEY_FILE));</span><br><span class="line">            PublicKey = (Key) ois.readObject();</span><br><span class="line">            ois.close();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception localException) &#123;</span><br><span class="line">            localException.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> void main(<span class="keyword">String</span>[] args) &#123;</span><br><span class="line">        <span class="keyword">String</span> message = <span class="string">"JLlSjMGxZWNgy71lPWHfeczrbpweQ26RQdjXj7un1FqcvVoKtOU/vlQ7SCxCOT5ANwdns1BIE+PeBPhqnyKQqnPxC9OHNW/5ioDJxXKq10+/D68VL/51c6Auzc5lo81FqYsyiS+MEbBLrUmJpAYpuNoD5T25k45DzjDVD/4u4ro="</span>;</span><br><span class="line">        System.out.println(initialize().doDecrypt(message, PublicKey));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 初始化RSA加密算法</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> RSAEncryption initialize() &#123;</span><br><span class="line">        <span class="keyword">if</span> (rsaEncrypt == <span class="literal">null</span>) &#123;</span><br><span class="line">            synchronized (RSAEncryption.class) &#123;</span><br><span class="line">                rsaEncrypt = <span class="keyword">new</span> <span class="type">RSAEncryption</span>();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> rsaEncrypt;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 解密</span></span><br><span class="line"><span class="comment">     * </span></span><br><span class="line"><span class="comment">     * @param cryptograph</span></span><br><span class="line"><span class="comment">     *            密文</span></span><br><span class="line"><span class="comment">     * @param key</span></span><br><span class="line"><span class="comment">     *            解密KEY</span></span><br><span class="line"><span class="comment">     * @return 解密后数据</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">String</span> doDecrypt(<span class="keyword">String</span> cryptograph, Key key) &#123;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            Cipher cipher = Cipher.getInstance(<span class="string">"RSA/None/PKCS1Padding"</span>, <span class="string">"BC"</span>);</span><br><span class="line">            cipher.init(Cipher.DECRYPT_MODE, key);</span><br><span class="line">            BASE64Decoder decoder = <span class="keyword">new</span> <span class="type">BASE64Decoder</span>();</span><br><span class="line">            byte[] b1 = decoder.decodeBuffer(cryptograph);</span><br><span class="line">            <span class="comment">// 执行解密操作</span></span><br><span class="line">            byte[] b = cipher.doFinal(b1);</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> <span class="type">String</span>(b);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>正确输出：0a3QcKRRCpQ8A2KN574j524trq93kjM1Mt2zR0ntYge<br>注：<font color="red">Cipher.getInstance(“RSA/None/PKCS1Padding”, “BC”)</font>这行中的<font color="red">“RSA/None/PKCS1Padding”</font>算法必须根据自己实际情况来填写，否则会出现解析错误的情况。<br>比如：我将上面代码中的Cipher.getInstance(<font color="red">“RSA/None/PKCS1Padding”</font>, “BC”)改成Cipher.getInstance(<font color="red">“RSA”</font>, “BC”)，执行main函数结果输出乱码（������…）</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>我希望大家遇到问题时能冷静思考，了解程序运行原理，多上网找资料，最后果断解决。其实开发中遇到异常或者bug，是个人能力提升的一个机会。<br>以上代码采用同事的demo，代码不规范之处还请多多包涵。下面对RSA算法的一些细节进行讲解。</p>
+<h2 id="RSA算法细节"><a href="#RSA算法细节" class="headerlink" title="RSA算法细节"></a>RSA算法细节</h2><p>RSA这种算法1978年就出现了，它是第一个既能用于数据加密也能用于数字签名的算法。它易于理解和操作，也很流行。算法的名字以发明者的名字命名：Ron Rivest, AdiShamir 和Leonard Adleman。<br>RSA同时有两把钥匙，公钥与私钥。同时支持数字签名。数字签名的意义在于，对传输过来的数据进行校验。确保数据在传输工程中不被修改。 </p>
+<h3 id="加密的系统不要具备解密的功能，否则RSA可能不太合适"><a href="#加密的系统不要具备解密的功能，否则RSA可能不太合适" class="headerlink" title="加密的系统不要具备解密的功能，否则RSA可能不太合适"></a>加密的系统不要具备解密的功能，否则RSA可能不太合适</h3><p>公钥加密，私钥解密。加密的系统和解密的系统分开部署，加密的系统不应该同时具备解密的功能，这样即使黑客攻破了加密系统，他拿到的也只是一堆无法破解的密文数据。否则的话，你就要考虑你的场景是否有必要用 RSA 了。</p>
+<h3 id="可以通过修改生成密钥的长度来调整密文长度"><a href="#可以通过修改生成密钥的长度来调整密文长度" class="headerlink" title="可以通过修改生成密钥的长度来调整密文长度"></a>可以通过修改生成密钥的长度来调整密文长度</h3><p>生成密文的长度等于密钥长度。密钥长度越大，生成密文的长度也就越大，加密的速度也就越慢，而密文也就越难被破解掉。著名的”安全和效率总是一把双刃剑”定律，在这里展现的淋漓尽致。我们必须通过定义密钥的长度在”安全”和”加解密效率”之间做出一个平衡的选择。</p>
+<h3 id="生成密文的长度和明文长度无关，但明文长度不能超过密钥长度"><a href="#生成密文的长度和明文长度无关，但明文长度不能超过密钥长度" class="headerlink" title="生成密文的长度和明文长度无关，但明文长度不能超过密钥长度"></a>生成密文的长度和明文长度无关，但明文长度不能超过密钥长度</h3><p>不管明文长度是多少，RSA 生成的密文长度总是固定的。<br>但是明文长度不能超过密钥长度。比如 Java 默认的 RSA 加密实现不允许明文长度超过密钥长度减去 11(单位是字节，也就是 byte)。也就是说，如果我们定义的密钥(我们可以通过 java.security.KeyPairGenerator.initialize(int keysize) 来定义密钥长度)长度为 1024(单位是位，也就是 bit)，生成的密钥长度就是 1024位 / 8位/字节 = 128字节，那么我们需要加密的明文长度不能超过 128字节 -<br>11 字节 = 117字节。也就是说，我们最大能将 117 字节长度的明文进行加密，否则会出问题(抛诸如 javax.crypto.IllegalBlockSizeException: Data must not be longer than 53 bytes 的异常)。<br>而 BC 提供的加密算法能够支持到的 RSA 明文长度最长为密钥长度。</p>
+<h3 id="byte-toString-返回的实际上是内存地址，不是将数组的实际内容转换为-String"><a href="#byte-toString-返回的实际上是内存地址，不是将数组的实际内容转换为-String" class="headerlink" title="byte[].toString() 返回的实际上是内存地址，不是将数组的实际内容转换为 String"></a>byte[].toString() 返回的实际上是内存地址，不是将数组的实际内容转换为 String</h3><p>警惕 toString 陷阱：Java 中数组的 toString() 方法返回的并非数组内容，它返回的实际上是数组存储元素的类型以及数组在内存的位置的一个标识。<br>大部分人跌入这个误区而不自知，包括一些写了多年 Java 的老鸟。比如这篇博客《<a href="http://www.mkyong.com/java/how-do-convert-byte-array-to-string-in-java/" target="_blank" rel="noopener">How To Convert Byte[] Array To String In Java</a>》中的代码</p>
+<figure class="highlight arduino"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> class TestByte</span><br><span class="line">&#123;    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> main(<span class="keyword">String</span>[] argv) &#123;</span><br><span class="line"> </span><br><span class="line">            <span class="keyword">String</span> example = <span class="string">"This is an example"</span>;</span><br><span class="line">            <span class="keyword">byte</span>[] bytes = example.getBytes();</span><br><span class="line"> </span><br><span class="line">            System.out.<span class="built_in">println</span>(<span class="string">"Text : "</span> + example);</span><br><span class="line">            System.out.<span class="built_in">println</span>(<span class="string">"Text [Byte Format] : "</span> + bytes);</span><br><span class="line">            System.out.<span class="built_in">println</span>(<span class="string">"Text [Byte Format] : "</span> + bytes.toString());</span><br><span class="line"> </span><br><span class="line">            <span class="keyword">String</span> s = <span class="keyword">new</span> <span class="keyword">String</span>(bytes);</span><br><span class="line">            System.out.<span class="built_in">println</span>(<span class="string">"Text Decryted : "</span> + s);</span><br><span class="line"> </span><br><span class="line"> </span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>输出：<br>Text : This is an example<br>Text [Byte Format] : [B@187aeca<br>Text [Byte Format] : [B@187aeca<br>Text Decryted : This is an example<br>这些输出其实都是字节数组在内存的位置的一个标识，而不是作者所认为的字节数组转换成的字符串内容。如果我们对密钥以 byte[].toString() 进行持久化存储或者和其他一些字符串打 json 传输，那么密钥的解密者得到的将只是一串毫无意义的字符，当他解码的时候很可能会遇到 “javax.crypto.BadPaddingException” 异常。</p>
+<h3 id="字符串用以保存文本信息，字节数组用以保存二进制数据"><a href="#字符串用以保存文本信息，字节数组用以保存二进制数据" class="headerlink" title="字符串用以保存文本信息，字节数组用以保存二进制数据"></a>字符串用以保存文本信息，字节数组用以保存二进制数据</h3><p>java.lang.String 保存明文，byte 数组保存二进制密文，在 java.lang.String 和 byte[] 之间不应该具备互相转换。如果你确实必须得使用 java.lang.String 来持有这些二进制数据的话，最安全的方式是使用 Base64(推荐 Apache 的 commons-codec 库的 org.apache.commons.codec.binary.Base64)：</p>
+<figure class="highlight armasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">// use <span class="keyword">String </span>to hold cipher <span class="keyword">binary </span><span class="meta">data</span></span><br><span class="line"><span class="keyword">Base64 </span><span class="keyword">base64 </span>= new <span class="keyword">Base64(); </span></span><br><span class="line"><span class="keyword">String </span>cipherTextBase64 = <span class="keyword">base64.encodeToString(cipherText);</span></span><br><span class="line"><span class="keyword"></span></span><br><span class="line"><span class="keyword">// </span><span class="meta">get</span> cipher <span class="keyword">binary </span><span class="meta">data</span> <span class="keyword">back </span>from <span class="keyword">String</span></span><br><span class="line"><span class="keyword">byte[] </span>cipherTextArray = <span class="keyword">base64.decode(cipherTextBase64);</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="每次生成的密文都不一致证明你选用的加密算法很安全"><a href="#每次生成的密文都不一致证明你选用的加密算法很安全" class="headerlink" title="每次生成的密文都不一致证明你选用的加密算法很安全"></a>每次生成的密文都不一致证明你选用的加密算法很安全</h3><p>一个优秀的加密必须每次生成的密文都不一致，即使每次你的明文一样、使用同一个公钥。因为这样才能把明文信息更安全地隐藏起来。<br>    Java 默认的 RSA 实现是 <font color="red">“RSA/None/PKCS1Padding”</font>(比如 Cipher cipher = Cipher.getInstance(“<font color="red">RSA</font>“);句，这个 Cipher 生成的密文总是不一致的)，Bouncy Castle 的默认 RSA 实现是 “RSA/None/NoPadding”。<br>    为什么Java默认的RSA实现每次生成的密文都不一致呢，即使每次使用同一个明文、同一个公钥？<font color="red">这是因为 RSA 的 PKCS #1 padding 方案在加密前对明文信息进行了随机数填充。</font><br>你可以使用以下办法让同一个明文、同一个公钥每次生成同一个密文，但是你必须意识到你这么做付出的代价是什么。比如，你可能使用RSA来加密传输，但是由于你的同一明文每次生成的同一密文，攻击者能够据此识别到同一个信息都是何时被发送。</p>
+<figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Security.<span class="keyword">addProvider(new </span><span class="keyword">org.bouncycastle.jce.provider.BouncyCastleProvider());</span></span><br><span class="line"><span class="keyword">final </span>Cipher cipher = Cipher.getInstance(<span class="string">"RSA/None/NoPadding"</span>, <span class="string">"BC"</span>)<span class="comment">;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="可以通过调整算法提供者来减小密文长度"><a href="#可以通过调整算法提供者来减小密文长度" class="headerlink" title="可以通过调整算法提供者来减小密文长度"></a>可以通过调整算法提供者来减小密文长度</h3><p>Java 默认的 RSA 实现 “RSA/None/PKCS1Padding” 要求最小密钥长度为 512 位(否则会报 java.security.InvalidParameterException: RSA keys must be at least 512 bits long 异常)，也就是说生成的密钥、密文长度最小为 64 个字节。如果你还嫌大，可以通过调整算法提供者来减小密文长度:</p>
+<figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Security.<span class="keyword">addProvider(new </span><span class="keyword">org.bouncycastle.jce.provider.BouncyCastleProvider());</span></span><br><span class="line"><span class="keyword">final </span>KeyPairGenerator keyGen = KeyPairGenerator.getInstance(<span class="string">"RSA"</span>, <span class="string">"BC"</span>)<span class="comment">;</span></span><br><span class="line">keyGen.initialize(<span class="number">128</span>)<span class="comment">;</span></span><br></pre></td></tr></table></figure>
+
+<p>如此这般得到的密文长度为 128 位(16 个字节)。但是这么干之前请先回顾一下本文<a href="#u53EF_u4EE5_u901A_u8FC7_u4FEE_u6539_u751F_u6210_u5BC6_u94A5_u7684_u957F_u5EA6_u6765_u8C03_u6574_u5BC6_u6587_u957F_u5EA6">修改秘钥长度</a>所述。</p>
+<h3 id="Cipher-是有状态的，而且是线程不安全的"><a href="#Cipher-是有状态的，而且是线程不安全的" class="headerlink" title="Cipher 是有状态的，而且是线程不安全的"></a>Cipher 是有状态的，而且是线程不安全的</h3><p>javax.crypto.Cipher 是有状态的，不要把Cipher当做一个静态变量，除非你的程序是单线程的，也就是说你能够保证同一时刻只有一个线程在调用 Cipher。否则你可能会像笔者似的遇到 java.lang.ArrayIndexOutOfBoundsException: too much data for RSA block异常。遇见这个异常，你需要先确定你给 Cipher 加密的明文(或者需要解密的密文)是否过长；排除掉明文(或者密文)过长的情况，你需要考虑是不是你的 Cipher 线程不安全了。</p>
+<p>虽然《<a href="https://javadigest.wordpress.com/2012/08/26/rsa-encryption-example/" target="_blank" rel="noopener">RSA Encryption Example</a>》存在一些认识上的误区，不过是一篇很不错的入门级文章。结合本文所列内容，笔者将其代码做了一些调整以供参考：</p>
+<figure class="highlight processing"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.io.File;</span><br><span class="line"><span class="keyword">import</span> java.io.FileInputStream;</span><br><span class="line"><span class="keyword">import</span> java.io.FileNotFoundException;</span><br><span class="line"><span class="keyword">import</span> java.io.FileOutputStream;</span><br><span class="line"><span class="keyword">import</span> java.io.IOException;</span><br><span class="line"><span class="keyword">import</span> java.io.ObjectInputStream;</span><br><span class="line"><span class="keyword">import</span> java.io.ObjectOutputStream;</span><br><span class="line"><span class="keyword">import</span> java.security.KeyPair;</span><br><span class="line"><span class="keyword">import</span> java.security.KeyPairGenerator;</span><br><span class="line"><span class="keyword">import</span> java.security.NoSuchAlgorithmException;</span><br><span class="line"><span class="keyword">import</span> java.security.PrivateKey;</span><br><span class="line"><span class="keyword">import</span> java.security.PublicKey;</span><br><span class="line"><span class="keyword">import</span> java.security.Security;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> javax.crypto.Cipher;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> org.apache.commons.codec.<span class="built_in">binary</span>.Base64;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * @author hua</span></span><br><span class="line"><span class="comment"> * </span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> class EncryptionUtil &#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * String to hold name of the encryption algorithm.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">String</span> ALGORITHM = <span class="string">"RSA"</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * String to hold name of the encryption padding.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">String</span> PADDING = <span class="string">"RSA/NONE/NoPadding"</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * String to hold name of the security provider.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">String</span> PROVIDER = <span class="string">"BC"</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * String to hold the name of the private key file.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">String</span> PRIVATE_KEY_FILE = <span class="string">"e:/defonds/work/20150116/private.key"</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * String to hold name of the public key file.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">String</span> PUBLIC_KEY_FILE = <span class="string">"e:/defonds/work/20150116/public.key"</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Generate key which contains a pair of private and public key using 1024</span></span><br><span class="line"><span class="comment">     * bytes. Store the set of keys in Prvate.key and Public.key files.</span></span><br><span class="line"><span class="comment">     * </span></span><br><span class="line"><span class="comment">     * @throws NoSuchAlgorithmException</span></span><br><span class="line"><span class="comment">     * @throws IOException</span></span><br><span class="line"><span class="comment">     * @throws FileNotFoundException</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> generateKey() &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line"></span><br><span class="line">            Security.addProvider(<span class="keyword">new</span> org.bouncycastle.jce.provider.BouncyCastleProvider());</span><br><span class="line">            <span class="keyword">final</span> KeyPairGenerator keyGen = KeyPairGenerator.getInstance(</span><br><span class="line">                    ALGORITHM, PROVIDER);</span><br><span class="line">            keyGen.initialize(<span class="number">256</span>);</span><br><span class="line">            <span class="keyword">final</span> KeyPair <span class="built_in">key</span> = keyGen.generateKeyPair();</span><br><span class="line"></span><br><span class="line">            File privateKeyFile = <span class="keyword">new</span> File(PRIVATE_KEY_FILE);</span><br><span class="line">            File publicKeyFile = <span class="keyword">new</span> File(PUBLIC_KEY_FILE);</span><br><span class="line"></span><br><span class="line">            <span class="comment">// Create files to store public and private key</span></span><br><span class="line">            <span class="keyword">if</span> (privateKeyFile.getParentFile() != <span class="keyword">null</span>) &#123;</span><br><span class="line">                privateKeyFile.getParentFile().mkdirs();</span><br><span class="line">            &#125;</span><br><span class="line">            privateKeyFile.createNewFile();</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (publicKeyFile.getParentFile() != <span class="keyword">null</span>) &#123;</span><br><span class="line">                publicKeyFile.getParentFile().mkdirs();</span><br><span class="line">            &#125;</span><br><span class="line">            publicKeyFile.createNewFile();</span><br><span class="line"></span><br><span class="line">            <span class="comment">// Saving the Public key in a file</span></span><br><span class="line">            ObjectOutputStream publicKeyOS = <span class="keyword">new</span> ObjectOutputStream(</span><br><span class="line">                    <span class="keyword">new</span> FileOutputStream(publicKeyFile));</span><br><span class="line">            publicKeyOS.writeObject(<span class="built_in">key</span>.getPublic());</span><br><span class="line">            publicKeyOS.close();</span><br><span class="line"></span><br><span class="line">            <span class="comment">// Saving the Private key in a file</span></span><br><span class="line">            ObjectOutputStream privateKeyOS = <span class="keyword">new</span> ObjectOutputStream(</span><br><span class="line">                    <span class="keyword">new</span> FileOutputStream(privateKeyFile));</span><br><span class="line">            privateKeyOS.writeObject(<span class="built_in">key</span>.getPrivate());</span><br><span class="line">            privateKeyOS.close();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * The method checks if the pair of public and private key has been</span></span><br><span class="line"><span class="comment">     * generated.</span></span><br><span class="line"><span class="comment">     * </span></span><br><span class="line"><span class="comment">     * @return flag indicating if the pair of keys were generated.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="built_in">boolean</span> areKeysPresent() &#123;</span><br><span class="line"></span><br><span class="line">        File privateKey = <span class="keyword">new</span> File(PRIVATE_KEY_FILE);</span><br><span class="line">        File publicKey = <span class="keyword">new</span> File(PUBLIC_KEY_FILE);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (privateKey.exists() &amp;&amp; publicKey.exists()) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Encrypt the plain text using public key.</span></span><br><span class="line"><span class="comment">     * </span></span><br><span class="line"><span class="comment">     * @param text</span></span><br><span class="line"><span class="comment">     *            : original plain text</span></span><br><span class="line"><span class="comment">     * @param key</span></span><br><span class="line"><span class="comment">     *            :The public key</span></span><br><span class="line"><span class="comment">     * @return Encrypted text</span></span><br><span class="line"><span class="comment">     * @throws java.lang.Exception</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="built_in">byte</span>[] encrypt(<span class="keyword">String</span> <span class="built_in">text</span>, PublicKey <span class="built_in">key</span>) &#123;</span><br><span class="line">        <span class="built_in">byte</span>[] cipherText = <span class="keyword">null</span>;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">// get an RSA cipher object and print the provider</span></span><br><span class="line">            Security.addProvider(<span class="keyword">new</span> org.bouncycastle.jce.provider.BouncyCastleProvider());</span><br><span class="line">            <span class="keyword">final</span> Cipher cipher = Cipher.getInstance(PADDING, PROVIDER);</span><br><span class="line">            </span><br><span class="line">            <span class="comment">// encrypt the plain text using the public key</span></span><br><span class="line">            cipher.init(Cipher.ENCRYPT_MODE, <span class="built_in">key</span>);</span><br><span class="line">            cipherText = cipher.doFinal(<span class="built_in">text</span>.getBytes());</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> cipherText;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Decrypt text using private key.</span></span><br><span class="line"><span class="comment">     * </span></span><br><span class="line"><span class="comment">     * @param text</span></span><br><span class="line"><span class="comment">     *            :encrypted text</span></span><br><span class="line"><span class="comment">     * @param key</span></span><br><span class="line"><span class="comment">     *            :The private key</span></span><br><span class="line"><span class="comment">     * @return plain text</span></span><br><span class="line"><span class="comment">     * @throws java.lang.Exception</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">String</span> decrypt(<span class="built_in">byte</span>[] <span class="built_in">text</span>, PrivateKey <span class="built_in">key</span>) &#123;</span><br><span class="line">        <span class="built_in">byte</span>[] dectyptedText = <span class="keyword">null</span>;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">// get an RSA cipher object and print the provider</span></span><br><span class="line">            Security.addProvider(<span class="keyword">new</span> org.bouncycastle.jce.provider.BouncyCastleProvider());</span><br><span class="line">            <span class="keyword">final</span> Cipher cipher = Cipher.getInstance(PADDING, PROVIDER);</span><br><span class="line"></span><br><span class="line">            <span class="comment">// decrypt the text using the private key</span></span><br><span class="line">            cipher.init(Cipher.DECRYPT_MODE, <span class="built_in">key</span>);</span><br><span class="line">            dectyptedText = cipher.doFinal(<span class="built_in">text</span>);</span><br><span class="line"></span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception ex) &#123;</span><br><span class="line">            ex.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="keyword">String</span>(dectyptedText);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Test the EncryptionUtil</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> main(<span class="keyword">String</span>[] args) &#123;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// Check if the pair of keys are present else generate those.</span></span><br><span class="line">            <span class="keyword">if</span> (!areKeysPresent()) &#123;</span><br><span class="line">                <span class="comment">// Method generates a pair of keys using the RSA algorithm and</span></span><br><span class="line">                <span class="comment">// stores it</span></span><br><span class="line">                <span class="comment">// in their respective files</span></span><br><span class="line">                generateKey();</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">final</span> <span class="keyword">String</span> originalText = <span class="string">"12345678901234567890123456789012"</span>;</span><br><span class="line">            ObjectInputStream inputStream = <span class="keyword">null</span>;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// Encrypt the string using the public key</span></span><br><span class="line">            inputStream = <span class="keyword">new</span> ObjectInputStream(<span class="keyword">new</span> FileInputStream(</span><br><span class="line">                    PUBLIC_KEY_FILE));</span><br><span class="line">            <span class="keyword">final</span> PublicKey publicKey = (PublicKey) inputStream.readObject();</span><br><span class="line">            <span class="keyword">final</span> <span class="built_in">byte</span>[] cipherText = encrypt(originalText, publicKey);</span><br><span class="line"></span><br><span class="line">            <span class="comment">// use String to hold cipher binary data</span></span><br><span class="line">            Base64 base64 = <span class="keyword">new</span> Base64();</span><br><span class="line">            <span class="keyword">String</span> cipherTextBase64 = base64.encodeToString(cipherText);</span><br><span class="line"></span><br><span class="line">            <span class="comment">// get cipher binary data back from String</span></span><br><span class="line">            <span class="built_in">byte</span>[] cipherTextArray = base64.decode(cipherTextBase64);</span><br><span class="line"></span><br><span class="line">            <span class="comment">// Decrypt the cipher text using the private key.</span></span><br><span class="line">            inputStream = <span class="keyword">new</span> ObjectInputStream(<span class="keyword">new</span> FileInputStream(</span><br><span class="line">                    PRIVATE_KEY_FILE));</span><br><span class="line">            <span class="keyword">final</span> PrivateKey privateKey = (PrivateKey) inputStream.readObject();</span><br><span class="line">            <span class="keyword">final</span> <span class="keyword">String</span> plainText = decrypt(cipherTextArray, privateKey);</span><br><span class="line"></span><br><span class="line">            <span class="comment">// Printing the Original, Encrypted and Decrypted Text</span></span><br><span class="line">            System.out.<span class="built_in">println</span>(<span class="string">"Original="</span> + originalText);</span><br><span class="line">            System.out.<span class="built_in">println</span>(<span class="string">"Encrypted="</span> + cipherTextBase64);</span><br><span class="line">            System.out.<span class="built_in">println</span>(<span class="string">"Decrypted="</span> + plainText);</span><br><span class="line"></span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>先生成一对密钥，供以后加解密使用(不需要每次加解密都生成一个密钥)，密钥长度为 256 位，也就是说生成密文长度都是 32 字节的，支持加密最大长度为 32 字节的明文，因为使用了 nopadding 所以对于同一密钥同一明文，本文总是生成一样的密文；然后使用生成的公钥对你提供的明文信息进行加密，生成 32 字节二进制明文，然后使用 Base64 将二进制密文转换为字符串保存；之后演示了如何把 Base64 字符串转换回二进制密文；最后把二进制密文转换成加密前的明文。以上程序输出如下：<br>Original=12345678901234567890123456789012<br>Encrypted=GTyX3nLO9vseMJ+RB/dNrZp9XEHCzFkHpgtaZKa8aCc=<br>Decrypted=12345678901234567890123456789012</p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
+<li><a href="http://blog.csdn.net/defonds/article/details/42775183" target="_blank" rel="noopener">http://blog.csdn.net/defonds/article/details/42775183</a></li>
+<li><a href="http://www.bouncycastle.org/wiki/display/JA1/Frequently+Asked+Questions" target="_blank" rel="noopener">http://www.bouncycastle.org/wiki/display/JA1/Frequently+Asked+Questions</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/j2ee-疑难解决/" rel="tag"># j2ee-疑难解决</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2015/11/02/离线官方文档生成器-全网爬取工具/" rel="prev" title="离线官方文档生成器-全网爬取工具">
+                离线官方文档生成器-全网爬取工具 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+<span class="jiathis_txt">分享到：</span>
+<a class="jiathis_button_fav">收藏夹</a>
+<a class="jiathis_button_copy">复制网址</a>
+<a class="jiathis_button_email">邮件</a>
+<a class="jiathis_button_weixin">微信</a>
+<a class="jiathis_button_qzone">QQ空间</a>
+<a class="jiathis_button_tqq">腾讯微博</a>
+<a class="jiathis_button_douban">豆瓣</a>
+<a class="jiathis_button_share">一键分享</a>
+
+<a href="http://www.jiathis.com/share?uid=2140465" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank">更多</a>
+<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+var jiathis_config={
+  data_track_clickback:true,
+  summary:"",
+  shortUrl:false,
+  hideMore:false
+}
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  <p>热评文章</p>
+  <div class="ds-top-threads" data-range="weekly" data-num-items="4"></div>
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div class="ds-thread" data-thread-key="2015/11/01/j2ee-RSA/" data-title="IBM JDK进行RSA加解密时遇到的问题" data-url="http://www.zhangrenhua.com/2015/11/01/j2ee-RSA/">
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="http://www.zhangrenhua.com/back_images/avatar.jpg" alt="张仁华">
+            
+              <p class="site-author-name" itemprop="name">张仁华</p>
+              <p class="site-description motion-element" itemprop="description">记录软件生涯中的点点滴滴</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">76</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">17</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/zhangrenhua/" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://weibo.com/huaHBrother" target="_blank" title="Weibo">
+                      
+                        <i class="fa fa-fw fa-globe"></i>Weibo</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://douban.com/people/huaHBrother" target="_blank" title="douban">
+                      
+                        <i class="fa fa-fw fa-globe"></i>douban</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://zhihu.com/people/huaHBrother" target="_blank" title="zhihu">
+                      
+                        <i class="fa fa-fw fa-globe"></i>zhihu</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#问题解决"><span class="nav-number">1.</span> <span class="nav-text">问题解决</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#错误代码"><span class="nav-number">1.1.</span> <span class="nav-text">错误代码</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#解决方案"><span class="nav-number">1.2.</span> <span class="nav-text">解决方案</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#总结"><span class="nav-number">1.3.</span> <span class="nav-text">总结</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RSA算法细节"><span class="nav-number">2.</span> <span class="nav-text">RSA算法细节</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#加密的系统不要具备解密的功能，否则RSA可能不太合适"><span class="nav-number">2.1.</span> <span class="nav-text">加密的系统不要具备解密的功能，否则RSA可能不太合适</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#可以通过修改生成密钥的长度来调整密文长度"><span class="nav-number">2.2.</span> <span class="nav-text">可以通过修改生成密钥的长度来调整密文长度</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#生成密文的长度和明文长度无关，但明文长度不能超过密钥长度"><span class="nav-number">2.3.</span> <span class="nav-text">生成密文的长度和明文长度无关，但明文长度不能超过密钥长度</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#byte-toString-返回的实际上是内存地址，不是将数组的实际内容转换为-String"><span class="nav-number">2.4.</span> <span class="nav-text">byte[].toString() 返回的实际上是内存地址，不是将数组的实际内容转换为 String</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#字符串用以保存文本信息，字节数组用以保存二进制数据"><span class="nav-number">2.5.</span> <span class="nav-text">字符串用以保存文本信息，字节数组用以保存二进制数据</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#每次生成的密文都不一致证明你选用的加密算法很安全"><span class="nav-number">2.6.</span> <span class="nav-text">每次生成的密文都不一致证明你选用的加密算法很安全</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#可以通过调整算法提供者来减小密文长度"><span class="nav-number">2.7.</span> <span class="nav-text">可以通过调整算法提供者来减小密文长度</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Cipher-是有状态的，而且是线程不安全的"><span class="nav-number">2.8.</span> <span class="nav-text">Cipher 是有状态的，而且是线程不安全的</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">3.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">张仁华</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"iissnan-notes"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

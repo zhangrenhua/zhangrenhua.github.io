@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="google-site-verification" content="zUNgN8yGBtBZ8194JTl7PXh7YvztVw494zGKJ_8qH00">
+
+
+
+
+
+
+
+
+  <meta name="baidu-site-verification" content="kqLgluU8lc">
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/favicon.ico?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="hadoop生态圈,kerberos,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="hua的博客" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="Cloudera大数据平台kerberos认证配置。">
+<meta name="keywords" content="hadoop生态圈,kerberos">
+<meta property="og:type" content="article">
+<meta property="og:title" content="CDH-Kerber认证配置">
+<meta property="og:url" content="http://www.zhangrenhua.com/2017/07/19/CDH-Kerber认证配置/index.html">
+<meta property="og:site_name" content="hua的博客">
+<meta property="og:description" content="Cloudera大数据平台kerberos认证配置。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/kerberos-req-error1.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/kerberos-config1.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/kerberos-config2.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/kerberos-config3.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/kerberos-config4.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/kerberos-config5.png">
+<meta property="og:updated_time" content="2019-07-11T06:43:13.708Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="CDH-Kerber认证配置">
+<meta name="twitter:description" content="Cloudera大数据平台kerberos认证配置。">
+<meta name="twitter:image" content="http://www.zhangrenhua.com/back_images/kerberos-req-error1.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.zhangrenhua.com/2017/07/19/CDH-Kerber认证配置/">
+
+
+
+
+
+  <title>CDH-Kerber认证配置 | hua的博客</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-69647002-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?954f429681a4cd6dee6095ddaa2aac9a";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">hua的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">关注技术和人文的原创IT博客</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-schedule">
+          <a href="/schedule/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            日程表
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sitemap">
+          <a href="/sitemap.xml" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            站点地图
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="st-search-show-outputs">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <form class="site-search-form">
+  <input type="text" id="st-search-input" class="st-search-input st-default-search-input">
+</form>
+
+<script type="text/javascript">
+  (function(w,d,t,u,n,s,e){w['SwiftypeObject']=n;w[n]=w[n]||function(){
+    (w[n].q=w[n].q||[]).push(arguments);};s=d.createElement(t);
+    e=d.getElementsByTagName(t)[0];s.async=1;s.src=u;e.parentNode.insertBefore(s,e);
+  })(window,document,'script','//s.swiftypecdn.com/install/v2/st.js','_st');
+
+  _st('install', 'BAacTgC1f_bLy6kngppZ','2.0.0');
+</script>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.zhangrenhua.com/2017/07/19/CDH-Kerber认证配置/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="张仁华">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="http://www.zhangrenhua.com/back_images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hua的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">CDH-Kerber认证配置</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-07-19T10:48:04+08:00">
+                2017-07-19
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/hadoop/" itemprop="url" rel="index">
+                    <span itemprop="name">hadoop</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2017/07/19/CDH-Kerber认证配置/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2017/07/19/CDH-Kerber认证配置/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  Cloudera大数据平台kerberos认证配置。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="环境说明"><a href="#环境说明" class="headerlink" title="环境说明"></a>环境说明</h2><table>
+<thead>
+<tr>
+<th>软件名称</th>
+<th>软件版本</th>
+<th>软件描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>CDH</td>
+<td>5.11.0</td>
+<td>hadoop企业发行版</td>
+</tr>
+<tr>
+<td>Centos</td>
+<td>7.1-1503</td>
+<td>集群操作系统</td>
+</tr>
+<tr>
+<td>Jdk</td>
+<td>1.7.0_67</td>
+<td>java运行环境</td>
+</tr>
+<tr>
+<td>kerberos</td>
+<td>1.14</td>
+<td>kerberos认证服务</td>
+</tr>
+</tbody></table>
+<p><font color="red">请严格按照以上软件版本要进行操作，不要使用大小写混合的主机名。</font></p>
+<h2 id="安装kerberos"><a href="#安装kerberos" class="headerlink" title="安装kerberos"></a>安装kerberos</h2><p>选一台<font color="red">主节点</font>安装服务：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum <span class="keyword">install</span> krb5-<span class="keyword">server</span> -y</span><br></pre></td></tr></table></figure>
+
+<p>在其它子节点安装krb5-devel、krb5-workstation：</p>
+<figure class="highlight cmake"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum <span class="keyword">install</span> krb5-devel krb5-workstation -y</span><br></pre></td></tr></table></figure>
+
+<h3 id="安装JCE"><a href="#安装JCE" class="headerlink" title="安装JCE"></a>安装JCE</h3><p>安装JCE包需要下载<a href="http://www.zhangrenhua.com/back_images/UnlimitedJCEPolicyJDK7.zip">Java Cryptography Extension (JCE) Unlimited Strength Jurisdiction Policy Files for JDK/JRE 7</a><br>解压之后放到到$JAVA_HOME/jre/lib/security目录</p>
+<p>所有机器必须安装。</p>
+<h3 id="修改配置文件"><a href="#修改配置文件" class="headerlink" title="修改配置文件"></a>修改配置文件</h3><p>kdc服务器包含三个配置文件：</p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 集群上所有节点都有这个文件而且内容同步</span></span><br><span class="line"><span class="regexp">/etc/</span>krb5.conf</span><br><span class="line"><span class="comment"># 主服务器上的kdc配置</span></span><br><span class="line"><span class="regexp">/var/</span>kerberos<span class="regexp">/krb5kdc/</span>kdc.conf</span><br><span class="line"><span class="comment"># 能够不直接访问 KDC 控制台而从 Kerberos 数据库添加和删除主体，需要添加配置</span></span><br><span class="line"><span class="regexp">/var/</span>kerberos<span class="regexp">/krb5kdc/</span>kadm5.acl</span><br></pre></td></tr></table></figure>
+
+<p>修改/etc/krb5.conf为以下内容：</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">[libdefaults]</span><br><span class="line">default_realm = BIGMAN.COM</span><br><span class="line">dns_lookup_kdc = false</span><br><span class="line">dns_lookup_realm = false</span><br><span class="line">ticket_lifetime = 86400</span><br><span class="line">renew_lifetime = 604800</span><br><span class="line">forwardable = true</span><br><span class="line">default_tgs_enctypes = aes256-cts-hmac-sha1-96</span><br><span class="line">default_tkt_enctypes = aes256-cts-hmac-sha1-96</span><br><span class="line">permitted_enctypes = aes256-cts-hmac-sha1-96</span><br><span class="line">udp_preference_limit = 1</span><br><span class="line">kdc_timeout = 3000</span><br><span class="line">[realms]</span><br><span class="line">BIGMAN.COM = &#123;</span><br><span class="line">kdc = bigman-m1</span><br><span class="line">admin_server = bigman-m1</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>bigman-m1</code>为kdc服务主机hostname</p>
+<p>配置项说明：</p>
+<figure class="highlight accesslog"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">[logging]</span>：日志输出设置</span><br><span class="line"><span class="string">[libdefaults]</span>：连接的默认配置</span><br><span class="line">default_realm：Kerberos应用程序的默认领域，所有的principal都将带有这个领域标志</span><br><span class="line">ticket_lifetime： 表明凭证生效的时限，一般为<span class="number">24</span>小时</span><br><span class="line">renew_lifetime： 表明凭证最长可以被延期的时限，一般为一个礼拜。当凭证过期之后，对安全认证的服务的后续访问则会失败</span><br><span class="line">clockskew：时钟偏差是不完全符合主机系统时钟的票据时戳的容差，超过此容差将不接受此票据。通常，将时钟扭斜设置为 <span class="number">300</span> 秒（<span class="number">5</span> 分钟）。这意味着从服务器的角度看，票证的时间戳与它的偏差可以是在前后 <span class="number">5</span> 分钟内</span><br><span class="line">udp_preference_limit= <span class="number">1</span>：禁止使用 udp 可以防止一个 Hadoop 中的错误</span><br><span class="line"><span class="string">[realms]</span>：列举使用的 realm</span><br><span class="line">kdc：代表要 kdc 的位置。格式是 机器:端口</span><br><span class="line">admin_server：代表 admin 的位置。格式是 机器:端口</span><br><span class="line">default_domain：代表默认的域名</span><br><span class="line"><span class="string">[domain_realm]</span>：域名到realm的关系</span><br></pre></td></tr></table></figure>
+
+<p>修改/var/kerberos/krb5kdc/kdc.conf：</p>
+<figure class="highlight nsis"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">[kdcdefaults]</span><br><span class="line"> kdc_ports = <span class="number">88</span></span><br><span class="line"> kdc_tcp_ports = <span class="number">88</span></span><br><span class="line"></span><br><span class="line">[realms]</span><br><span class="line"> BIGMAN.COM = &#123;</span><br><span class="line">  <span class="comment">#master_key_type = aes256-cts</span></span><br><span class="line">  acl_file = /var/kerberos/krb5kdc/kadm5.acl</span><br><span class="line">  dict_file = /usr/share/dict/words</span><br><span class="line">  admin_keytab = /var/kerberos/krb5kdc/kadm5.keytab</span><br><span class="line">  supported_enctypes = aes256-cts:<span class="literal">normal</span> aes128-cts:<span class="literal">normal</span> des3-hmac-sha1:<span class="literal">normal</span> arcfour-hmac:<span class="literal">normal</span> camellia256-cts:<span class="literal">normal</span> camellia128-cts:<span class="literal">normal</span> des-hmac-sha1:<span class="literal">normal</span> des-cbc-md5:<span class="literal">normal</span> des-cbc-crc:<span class="literal">normal</span></span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+
+<p>配置项说明：</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="selector-tag">kdcdefaults</span>：<span class="selector-tag">kdc</span>相关配置，这里只设置了端口信息</span><br><span class="line"><span class="selector-tag">realms</span>：<span class="selector-tag">realms</span>的配置</span><br><span class="line"><span class="selector-tag">XIAOHEI</span><span class="selector-class">.INFO</span>：设定的<span class="selector-tag">realms</span>领域</span><br><span class="line"><span class="selector-tag">master_key_type</span>：和 <span class="selector-tag">supported_enctypes</span> 默认使用 <span class="selector-tag">aes256-cts</span>。<span class="selector-tag">JAVA</span> 使用 <span class="selector-tag">aes256-cts</span> 验证方式需要安装 <span class="selector-tag">JCE</span> 包</span><br><span class="line"><span class="selector-tag">acl_file</span>：标注了 <span class="selector-tag">admin</span> 的用户权限，文件格式是：<span class="selector-tag">Kerberos_principal</span> <span class="selector-tag">permissions</span> <span class="selector-attr">[target_principal]</span> <span class="selector-attr">[restrictions]</span></span><br><span class="line"><span class="selector-tag">supported_enctypes</span>：支持的校验方式</span><br><span class="line"><span class="selector-tag">admin_keytab</span>：<span class="selector-tag">KDC</span> 进行校验的 <span class="selector-tag">keytab</span></span><br></pre></td></tr></table></figure>
+
+<p>创建/var/kerberos/krb5kdc/kadm5.acl，内容为：</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">*/admin@EXAMPLE<span class="selector-class">.COM</span> *</span><br></pre></td></tr></table></figure>
+
+<p>创建Kerberos数据库：</p>
+<figure class="highlight gauss"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta"># 保存路径为/var/kerberos/krb5kdc 如果需要重建数据库，将该目录下的principal相关的文件删除即可</span></span><br><span class="line">kdb5_util <span class="keyword">create</span> -r BIGMAN.COM -s</span><br></pre></td></tr></table></figure>
+
+<p>该命令会在/var/kerberos/krb5kdc/目录下创建 principal数据库</p>
+<h3 id="启动服务"><a href="#启动服务" class="headerlink" title="启动服务"></a>启动服务</h3><p>在主节点上执行：</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">systemctl <span class="builtin-name">enable</span> krb5kdc</span><br><span class="line">systemctl <span class="builtin-name">enable</span> kadmin</span><br><span class="line">systemctl start krb5kdc</span><br><span class="line">systemctl start kadmin</span><br></pre></td></tr></table></figure>
+
+<h3 id="创建Kerberos管理员"><a href="#创建Kerberos管理员" class="headerlink" title="创建Kerberos管理员"></a>创建Kerberos管理员</h3><p><strong>需要设置两次密码，当前设置为root</strong><br>kadmin.local -q “addprinc cloudera-scm/admin”</p>
+<p>principal的名字的第二部分是admin,那么该principal就拥有administrative privileges这个账号将会被CDH用来生成其他用户/服务的principal</p>
+<h3 id="测试Kerberos"><a href="#测试Kerberos" class="headerlink" title="测试Kerberos"></a>测试Kerberos</h3><figure class="highlight vala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta"># 列出Kerberos中的所有认证用户，即principals</span></span><br><span class="line">kadmin.local -q <span class="string">"list_principals"</span></span><br><span class="line"><span class="meta"># 添加认证用户，需要输入密码</span></span><br><span class="line">kadmin.local -q <span class="string">"addprinc user1"</span></span><br><span class="line"><span class="meta"># 使用该用户登录，获取身份认证，需要输入密码</span></span><br><span class="line">kinit user1</span><br><span class="line"><span class="meta"># 查看当前用户的认证信息ticket</span></span><br><span class="line">klist</span><br><span class="line"><span class="meta"># 更新ticket</span></span><br><span class="line">kinit -R</span><br><span class="line"><span class="meta"># 销毁当前的ticket</span></span><br><span class="line">kdestroy</span><br><span class="line"><span class="meta"># 删除认证用户</span></span><br><span class="line">kadmin.local -q <span class="string">"delprinc user1"</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="配置文件同步"><a href="#配置文件同步" class="headerlink" title="配置文件同步"></a>配置文件同步</h3><p>将主节点配置的/etc/krb5.conf和/var/kerberos/krb5kdc/kdc.conf两个文件，通过scp命令复制到其它所有子节点机器上。</p>
+<h2 id="CDH开启kerberos认证"><a href="#CDH开启kerberos认证" class="headerlink" title="CDH开启kerberos认证"></a>CDH开启kerberos认证</h2><p>参考文档：<a href="https://www.cloudera.com/documentation/enterprise/latest/topics/cm_sg_intro_kerb.html#xd_583c10bfdbd326ba--6eed2fb8-14349d04bee--76dd" target="_blank" rel="noopener">https://www.cloudera.com/documentation/enterprise/latest/topics/cm_sg_intro_kerb.html#xd_583c10bfdbd326ba--6eed2fb8-14349d04bee--76dd</a></p>
+<p>通过CDH Manager向导启用kerberos。</p>
+<h2 id="命令行帮助"><a href="#命令行帮助" class="headerlink" title="命令行帮助"></a>命令行帮助</h2><h3 id="导出keytab命令"><a href="#导出keytab命令" class="headerlink" title="导出keytab命令"></a>导出keytab命令</h3><p>先通过下面命令将CDH默认创建的用户票据信息，导出成keytab文件。</p>
+<p>抽取密钥并将其储存在本地 keytab 文件 /etc/krb5.keytab 中。这个文件由超级用户拥有，所以必须是 root 用户才能在 kadmin shell 中执行以下命令：</p>
+<figure class="highlight autoit"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta"># 进入kadmin命令行</span></span><br><span class="line">$ kadmin.<span class="keyword">local</span></span><br><span class="line">kadmin.<span class="keyword">local</span>:  ktadd -k /root/hbase.keytab -q hbase/bigman-m2<span class="symbol">@BIGMAN</span>.COM</span><br><span class="line"></span><br><span class="line"><span class="meta"># 查看生成的keytab</span></span><br><span class="line">$ klist -k /root/hbase.keytab</span><br></pre></td></tr></table></figure>
+
+<p>kadmin语法：<code>kadmin: ktadd [-e enctype] [-k keytab] [-q] [principal | -glob principal-exp]</code><br><code>-e enctype</code><br>覆盖 krb5.conf 文件中定义的加密类型列表。<br><code>-k keytab</code><br>指定密钥表文件。缺省情况下，使用 /etc/krb5.keytab。<br><code>-q</code><br>显示简要信息。<br><code>principal</code><br>指定要添加至密钥表文件的主体。可以添加以下服务主体：host、root、nfs 和 ftp。<br><code>-glob principal-exp</code><br>指定主体表达式。与 principal-exp 匹配的所有主体都将添加至密钥表文件。主体表达式的规则与 kadmin 的 list_principals 命令的规则相同。</p>
+<h3 id="Hadoop平台操作命令参考"><a href="#Hadoop平台操作命令参考" class="headerlink" title="Hadoop平台操作命令参考"></a>Hadoop平台操作命令参考</h3><p><strong>查看所有票据信息</strong></p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kadmin<span class="selector-class">.local</span> -<span class="selector-tag">q</span> <span class="string">"list_principals"</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>删除认证用户</strong></p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kadmin<span class="selector-class">.local</span> -<span class="selector-tag">q</span> <span class="string">"delprinc hadoop@BIGMAN.COM"</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>hdfs初始化票据</strong></p>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">kinit</span> bumblebee/bigman-m2<span class="variable">@BIGMAN</span>.COM</span><br></pre></td></tr></table></figure>
+
+<p><strong>hbase初始化票据</strong></p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">kinit -kt /var/kerberos/keytab/hbase<span class="selector-class">.keytab</span> hbase/bigman-m2@BIGMAN.COM</span><br><span class="line">hbase shell</span><br></pre></td></tr></table></figure>
+
+<p><strong>hive</strong></p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">kinit -kt /var/kerberos/keytab/hive<span class="selector-class">.keytab</span> hive/bigman-m2@BIGMAN.COM</span><br><span class="line">beeline -u <span class="string">"jdbc:hive2://bigman-m2:10000/default;principal=hive/_HOST@BIGMAN.COM"</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>hive on hbase这样也行</strong></p>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">kinit</span> -kt /var/kerberos/keytab/hbase.keytab hbase/bigman-m2<span class="variable">@BIGMAN</span>.COM</span><br><span class="line">hive HIVE_OPTS=<span class="string">"-hiveconf hbase.security.authentication=kerberos -hiveconf hbase.master.kerberos.principal=hbase/_HOST<span class="variable">@BIGMAN</span>.COM -hiveconf hbase.regionserver.kerberos.principal=hbase/_HOST<span class="variable">@BIGMAN</span> -hiveconf hbase.zookeeper.quorum=bigman-s1,bigman-s2,bigman-s3"</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>hive on hbase授权hive用户</strong></p>
+<p>进入hbase shell，授权用户权限（执行一次即可）：</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">kinit -kt /var/kerberos/keytab/hbase<span class="selector-class">.keytab</span> hbase/bigman-m2@BIGMAN.COM</span><br><span class="line">hbase shell</span><br><span class="line">grant  <span class="string">'hive'</span>, <span class="string">'RWCA'</span>   #授权hive用户有rwca权限</span><br></pre></td></tr></table></figure>
+
+<p>参考：<a href="https://discuss.pivotal.io/hc/en-us/articles/201998166-HBase-SQL-statement-fails-with-Insufficient-permissions-for-user" target="_blank" rel="noopener">https://discuss.pivotal.io/hc/en-us/articles/201998166-HBase-SQL-statement-fails-with-Insufficient-permissions-for-user</a></p>
+<p><strong>hive on hbase授权impala用户</strong></p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">kinit -kt /var/kerberos/keytab/hbase<span class="selector-class">.keytab</span> hbase/bigman-m2@BIGMAN.COM</span><br><span class="line">hbase shell</span><br><span class="line">grant  <span class="string">'impala'</span>, <span class="string">'RWCA'</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>sentry必须所有机器都有权限的用户和用户组，否则报错</strong></p>
+<p>授权操作：</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">kinit -kt /var/kerberos/keytab/hive.keytab hive/bigman-m2@BIGMAN.COM</span><br><span class="line">beeline -u <span class="string">"jdbc:hive2://bigman-m1:10000/;principal=impala/_HOST@BIGMAN.COM"</span></span><br><span class="line"></span><br><span class="line">create role admin_role;</span><br><span class="line">GRANT ALL ON<span class="built_in"> SERVER </span>server1 <span class="keyword">TO</span> ROLE admin_role;</span><br><span class="line">GRANT ROLE admin_role <span class="keyword">TO</span><span class="built_in"> GROUP </span>hive;</span><br><span class="line"></span><br><span class="line">drop role test_role;</span><br><span class="line">create role test_role;</span><br><span class="line">GRANT ALL ON table default.test <span class="keyword">TO</span> ROLE test_role;</span><br><span class="line">GRANT ROLE test_role <span class="keyword">TO</span><span class="built_in"> GROUP </span>hadoop;</span><br><span class="line"></span><br><span class="line">drop role test_role;</span><br><span class="line">create role test_role;</span><br><span class="line">GRANT ALL ON database<span class="built_in"> default </span><span class="keyword">TO</span> ROLE test_role;</span><br><span class="line">GRANT ROLE test_role <span class="keyword">TO</span><span class="built_in"> GROUP </span>test;</span><br></pre></td></tr></table></figure>
+
+<h3 id="创建管理员权限用户"><a href="#创建管理员权限用户" class="headerlink" title="创建管理员权限用户"></a>创建管理员权限用户</h3><h4 id="创建系统用户和组"><a href="#创建系统用户和组" class="headerlink" title="创建系统用户和组"></a>创建系统用户和组</h4><p>所有机器创建<code>bigman</code>用户以及<code>supergroup</code>组</p>
+<figure class="highlight ebnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">groupadd supergroup</span></span><br><span class="line"><span class="attribute">useradd -g supergroup bigman</span></span><br></pre></td></tr></table></figure>
+
+<p>supergroup代表有hdfs管理员权限，可以根据hadoop配置参数<code>dfs.permissions.supergroup, dfs.permissions.superusergroup</code>修改。<br>由于impala、impala验证的是操作系统的用户，不能使用虚拟用户，所以得创建系统级的用户和组</p>
+<h4 id="创建bigman票据"><a href="#创建bigman票据" class="headerlink" title="创建bigman票据"></a>创建bigman票据</h4><p>在kerberos服务器执行：</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kadmin<span class="selector-class">.local</span> -<span class="selector-tag">q</span> <span class="string">"addprinc bigman/bigman-m1@BIGMAN.COM"</span></span><br></pre></td></tr></table></figure>
+
+<p>输入密码，回车。</p>
+<h4 id="导出keytab"><a href="#导出keytab" class="headerlink" title="导出keytab"></a>导出keytab</h4><figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">kadmin.local</span><br><span class="line">xst -k /var/kerberos/keytab/bigman<span class="selector-class">.keytab</span> bigman/bigman-m1@BIGMAN.COM</span><br></pre></td></tr></table></figure>
+
+<p>导出keytab文件，为了不需要使用密码也能使用该票据。</p>
+<h4 id="登录hive，授权给bigman管理员权限"><a href="#登录hive，授权给bigman管理员权限" class="headerlink" title="登录hive，授权给bigman管理员权限"></a>登录hive，授权给bigman管理员权限</h4><figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">kinit -kt /var/kerberos/keytab/hive.keytab hive/bigman-m2@BIGMAN.COM</span><br><span class="line">beeline -u <span class="string">"jdbc:hive2://bigman-m2:10000/default;principal=hive/_HOST@BIGMAN.COM"</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#赋予admin角色</span></span><br><span class="line">GRANT ROLE admin_role <span class="keyword">TO</span><span class="built_in"> GROUP </span>supergroup;</span><br></pre></td></tr></table></figure>
+
+<p><code>admin_role</code>角色在之前已经创建好了的。</p>
+<h4 id="登录hbase，授权给bigman权限"><a href="#登录hbase，授权给bigman权限" class="headerlink" title="##登录hbase，授权给bigman权限"></a>##登录hbase，授权给bigman权限</h4><figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">kinit -kt /var/kerberos/keytab/hbase<span class="selector-class">.keytab</span> hbase/bigman-m2@BIGMAN.COM</span><br><span class="line">hbase shell</span><br><span class="line">grant  <span class="string">'bigman'</span>, <span class="string">'RWCA'</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h4><figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">kinit <span class="keyword">bigman/bigman-m1 </span>  <span class="comment">#输入密码</span></span><br><span class="line"><span class="keyword">beeline </span>-u <span class="string">"jdbc:hive2://bigman-m2:10000/default;principal=hive/_HOST@BIGMAN.COM"</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Windows下通过浏览器访问Hadoop-web应用"><a href="#Windows下通过浏览器访问Hadoop-web应用" class="headerlink" title="Windows下通过浏览器访问Hadoop web应用"></a>Windows下通过浏览器访问Hadoop web应用</h2><h3 id="环境初始化"><a href="#环境初始化" class="headerlink" title="环境初始化"></a>环境初始化</h3><p>1、安装jdk，配置了JAVA_HOME和PATH环境变量<br>2、根据上面章节，安装JCE<br>3、下载并安装<a href="http://www.zhangrenhua.com/back_images/kfw-4.0.1-amd64.msi">kfw-4.0.1-amd64.msi</a><br>4、将krb5.ini文件放到C:\Windows和C:\ProgramData\MIT\Kerberos5目录：<br>krb5.init</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">[libdefaults]</span><br><span class="line">default_realm = BIGMAN.COM</span><br><span class="line">dns_lookup_kdc = false</span><br><span class="line">dns_lookup_realm = false</span><br><span class="line">ticket_lifetime = 86400</span><br><span class="line">renew_lifetime = 604800</span><br><span class="line">forwardable = true</span><br><span class="line">default_tgs_enctypes = aes256-cts-hmac-sha1-96</span><br><span class="line">default_tkt_enctypes = aes256-cts-hmac-sha1-96</span><br><span class="line">permitted_enctypes = aes256-cts-hmac-sha1-96</span><br><span class="line">udp_preference_limit = 1</span><br><span class="line">kdc_timeout = 3000</span><br><span class="line">[realms]</span><br><span class="line">BIGMAN.COM = &#123;</span><br><span class="line">kdc = bigman-m1</span><br><span class="line">admin_server = bigman-m1</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="访问hdfs"><a href="#访问hdfs" class="headerlink" title="访问hdfs"></a>访问hdfs</h3><p>浏览器打开地址：<a href="http://bigman-m1:50070/，直接报错：" target="_blank" rel="noopener">http://bigman-m1:50070/，直接报错：</a><br><img src="http://www.zhangrenhua.com/back_images/kerberos-req-error1.png" alt="kerberos-hdfs-error"></p>
+<p>报错就对了。。。</p>
+<h3 id="开启浏览器SPNEGO认证"><a href="#开启浏览器SPNEGO认证" class="headerlink" title="开启浏览器SPNEGO认证"></a>开启浏览器SPNEGO认证</h3><p>完成以下步骤以确保已启用 Microsoft Internet Explorer 浏览器来执行 SPNEGO 认证。</p>
+<p>1、激活 Internet Explorer。<br>2、在 Internet Explorer 窗口中，单击<strong>工具 &gt; Internet 选项 &gt; 安全</strong>选项卡。<br>3、选择<strong>本地 Intranet</strong> 图标并单击<strong>站点</strong>。<br>4、在“本地 Intranet”窗口中，确保选中了“包括没有列在其他区域的所有本地 (Intranet) 站点”复选框，然后单击<strong>高级</strong>。<br>5、在<strong>本地 Intranet窗口</strong>中，使用主机名的 Web 地址填写“将此 Web 站点添加到区域中”字段，以便可以对“Web 站点”字段中显示的 Web 站点列表启用单点登录 (SSO)。您的站点信息技术人员提供此信息。单击确定以完成此步骤并关闭“本地 Intranet”窗口。<br>6、在 <strong>Internet 选项</strong>窗口，单击<strong>高级</strong>选项卡并滚动到<strong>安全设置</strong>。确保选中了<strong>启用集成 Windows 认证（需要重新启动）</strong>框。<br>单击确定。重新启动 Microsoft Internet Explorer 以激活此配置。</p>
+<h2 id="激活Firefox-浏览器"><a href="#激活Firefox-浏览器" class="headerlink" title="激活Firefox 浏览器"></a>激活Firefox 浏览器</h2><p>1、激活 Firefox。<br>2、在“地址”字段中，输入 about:config。<br>3、在“过滤器”中，输入 network.n<br>4、双击network.negotiate-auth.trusted-uris。此首选项列示那些被允许向浏览器执行 SPNEGO 认证的站点。输入用逗号定界的可信域或 URL 的列表。<br>Note<br>必须设置 network.negotiate-auth.trusted-uris 的值。<br>5、双击network.auth.use-sspi设置为false。<br>6、单击确定。配置表现为已更新。<br>7、重新启动 Firefox 浏览器以激活此配置。</p>
+<p>配置network.negotiate-auth.trusted-uris：<br><img src="http://www.zhangrenhua.com/back_images/kerberos-config1.png" alt="firefox-kerberos-config1"></p>
+<p>配置network.auth.use-sspi：<br><img src="http://www.zhangrenhua.com/back_images/kerberos-config2.png" alt="firefox-kerberos-config2"></p>
+<h3 id="最后一步，登录Kerberos"><a href="#最后一步，登录Kerberos" class="headerlink" title="最后一步，登录Kerberos"></a>最后一步，登录Kerberos</h3><p>打开MIT Kerberos Ticket Manager软件，使用bumblebee/bigman-m2登录（密码是123456），具体操作见下图：</p>
+<p><img src="http://www.zhangrenhua.com/back_images/kerberos-config3.png" alt="firefox-kerberos-config3"></p>
+<p>登录成功之后：<br><img src="http://www.zhangrenhua.com/back_images/kerberos-config4.png" alt="firefox-kerberos-config4"></p>
+<p>成功访问：<br><img src="http://www.zhangrenhua.com/back_images/kerberos-config5.png" alt="firefox-kerberos-success"></p>
+<p>注：<font color="red">本次测试采用firefox浏览器，其它浏览器访问请参考<a href="https://www.cloudera.com/documentation/enterprise/latest/topics/cdh_sg_browser_access_kerberos_protected_url.html" target="_blank" rel="noopener">这里</a>。</font></p>
+<h2 id="最后"><a href="#最后" class="headerlink" title="最后"></a>最后</h2><p>本文中提到的主机名，请换成自己环境相对应的主机。kerberos票据创建等命令可参考前面章节。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a href="https://www.ibm.com/support/knowledgecenter/zh/SSAW57_8.5.5/com.ibm.websphere.nd.iseries.doc/ae/tsec_SPNEGO_config_web.html" target="_blank" rel="noopener">https://www.ibm.com/support/knowledgecenter/zh/SSAW57_8.5.5/com.ibm.websphere.nd.iseries.doc/ae/tsec_SPNEGO_config_web.html</a></li>
+<li><a href="http://community.cloudera.com/t5/Security-Apache-Sentry/Cant-access-secured-web-UI-Solr-UI-GSSException-Defective-token/m-p/45470" target="_blank" rel="noopener">http://community.cloudera.com/t5/Security-Apache-Sentry/Cant-access-secured-web-UI-Solr-UI-GSSException-Defective-token/m-p/45470</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/hadoop生态圈/" rel="tag"># hadoop生态圈</a>
+          
+            <a href="/tags/kerberos/" rel="tag"># kerberos</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/05/16/hadoop-Hive进阶-LDAP用户登录控制/" rel="next" title="Hive/impala进阶-LDAP用户登录控制">
+                <i class="fa fa-chevron-left"></i> Hive/impala进阶-LDAP用户登录控制
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/07/23/StreamSets-MySQL数据实时同步/" rel="prev" title="StreamSets-MySQL数据实时同步">
+                StreamSets-MySQL数据实时同步 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+<span class="jiathis_txt">分享到：</span>
+<a class="jiathis_button_fav">收藏夹</a>
+<a class="jiathis_button_copy">复制网址</a>
+<a class="jiathis_button_email">邮件</a>
+<a class="jiathis_button_weixin">微信</a>
+<a class="jiathis_button_qzone">QQ空间</a>
+<a class="jiathis_button_tqq">腾讯微博</a>
+<a class="jiathis_button_douban">豆瓣</a>
+<a class="jiathis_button_share">一键分享</a>
+
+<a href="http://www.jiathis.com/share?uid=2140465" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank">更多</a>
+<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+var jiathis_config={
+  data_track_clickback:true,
+  summary:"",
+  shortUrl:false,
+  hideMore:false
+}
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  <p>热评文章</p>
+  <div class="ds-top-threads" data-range="weekly" data-num-items="4"></div>
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div class="ds-thread" data-thread-key="2017/07/19/CDH-Kerber认证配置/" data-title="CDH-Kerber认证配置" data-url="http://www.zhangrenhua.com/2017/07/19/CDH-Kerber认证配置/">
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="http://www.zhangrenhua.com/back_images/avatar.jpg" alt="张仁华">
+            
+              <p class="site-author-name" itemprop="name">张仁华</p>
+              <p class="site-description motion-element" itemprop="description">记录软件生涯中的点点滴滴</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">76</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">17</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/zhangrenhua/" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://weibo.com/huaHBrother" target="_blank" title="Weibo">
+                      
+                        <i class="fa fa-fw fa-globe"></i>Weibo</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://douban.com/people/huaHBrother" target="_blank" title="douban">
+                      
+                        <i class="fa fa-fw fa-globe"></i>douban</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://zhihu.com/people/huaHBrother" target="_blank" title="zhihu">
+                      
+                        <i class="fa fa-fw fa-globe"></i>zhihu</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#环境说明"><span class="nav-number">1.</span> <span class="nav-text">环境说明</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#安装kerberos"><span class="nav-number">2.</span> <span class="nav-text">安装kerberos</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#安装JCE"><span class="nav-number">2.1.</span> <span class="nav-text">安装JCE</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#修改配置文件"><span class="nav-number">2.2.</span> <span class="nav-text">修改配置文件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#启动服务"><span class="nav-number">2.3.</span> <span class="nav-text">启动服务</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#创建Kerberos管理员"><span class="nav-number">2.4.</span> <span class="nav-text">创建Kerberos管理员</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#测试Kerberos"><span class="nav-number">2.5.</span> <span class="nav-text">测试Kerberos</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#配置文件同步"><span class="nav-number">2.6.</span> <span class="nav-text">配置文件同步</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#CDH开启kerberos认证"><span class="nav-number">3.</span> <span class="nav-text">CDH开启kerberos认证</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#命令行帮助"><span class="nav-number">4.</span> <span class="nav-text">命令行帮助</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#导出keytab命令"><span class="nav-number">4.1.</span> <span class="nav-text">导出keytab命令</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Hadoop平台操作命令参考"><span class="nav-number">4.2.</span> <span class="nav-text">Hadoop平台操作命令参考</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#创建管理员权限用户"><span class="nav-number">4.3.</span> <span class="nav-text">创建管理员权限用户</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#创建系统用户和组"><span class="nav-number">4.3.1.</span> <span class="nav-text">创建系统用户和组</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#创建bigman票据"><span class="nav-number">4.3.2.</span> <span class="nav-text">创建bigman票据</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#导出keytab"><span class="nav-number">4.3.3.</span> <span class="nav-text">导出keytab</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#登录hive，授权给bigman管理员权限"><span class="nav-number">4.3.4.</span> <span class="nav-text">登录hive，授权给bigman管理员权限</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#登录hbase，授权给bigman权限"><span class="nav-number">4.3.5.</span> <span class="nav-text">##登录hbase，授权给bigman权限</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#验证"><span class="nav-number">4.3.6.</span> <span class="nav-text">验证</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Windows下通过浏览器访问Hadoop-web应用"><span class="nav-number">5.</span> <span class="nav-text">Windows下通过浏览器访问Hadoop web应用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#环境初始化"><span class="nav-number">5.1.</span> <span class="nav-text">环境初始化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#访问hdfs"><span class="nav-number">5.2.</span> <span class="nav-text">访问hdfs</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#开启浏览器SPNEGO认证"><span class="nav-number">5.3.</span> <span class="nav-text">开启浏览器SPNEGO认证</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#激活Firefox-浏览器"><span class="nav-number">6.</span> <span class="nav-text">激活Firefox 浏览器</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#最后一步，登录Kerberos"><span class="nav-number">6.1.</span> <span class="nav-text">最后一步，登录Kerberos</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#最后"><span class="nav-number">7.</span> <span class="nav-text">最后</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考"><span class="nav-number">8.</span> <span class="nav-text">参考</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">张仁华</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"iissnan-notes"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

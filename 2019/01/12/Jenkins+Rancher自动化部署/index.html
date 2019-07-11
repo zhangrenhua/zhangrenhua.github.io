@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="google-site-verification" content="zUNgN8yGBtBZ8194JTl7PXh7YvztVw494zGKJ_8qH00">
+
+
+
+
+
+
+
+
+  <meta name="baidu-site-verification" content="kqLgluU8lc">
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/favicon.ico?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="k8s,docker,rancher,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="hua的博客" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="本文主要记录Jenkins+Rancher+k8s自动化部署相关配置说明，不涉及rancher和jenkins安装部署，部署请参考Rancher2.1 HA部署k8s，包含java server项目、WAR项目、前端VUE项目部署配置介绍。">
+<meta name="keywords" content="k8s,docker,rancher">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Jenkins+Rancher自动化部署">
+<meta property="og:url" content="http://www.zhangrenhua.com/2019/01/12/Jenkins+Rancher自动化部署/index.html">
+<meta property="og:site_name" content="hua的博客">
+<meta property="og:description" content="本文主要记录Jenkins+Rancher+k8s自动化部署相关配置说明，不涉及rancher和jenkins安装部署，部署请参考Rancher2.1 HA部署k8s，包含java server项目、WAR项目、前端VUE项目部署配置介绍。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/jeknis-rancher1.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/jenkins1.jpg">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/jenkins2.jpg">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/jenkins3.jpg">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/jenkins4.jpg">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/jenkins5.jpg">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/jenkins6.jpg">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/jenkins7.jpg">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/jenkins8.jpg">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/jenkins9.jpg">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/jenkins10.jpg">
+<meta property="og:updated_time" content="2019-07-11T06:43:13.753Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Jenkins+Rancher自动化部署">
+<meta name="twitter:description" content="本文主要记录Jenkins+Rancher+k8s自动化部署相关配置说明，不涉及rancher和jenkins安装部署，部署请参考Rancher2.1 HA部署k8s，包含java server项目、WAR项目、前端VUE项目部署配置介绍。">
+<meta name="twitter:image" content="http://www.zhangrenhua.com/back_images/jeknis-rancher1.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.zhangrenhua.com/2019/01/12/Jenkins+Rancher自动化部署/">
+
+
+
+
+
+  <title>Jenkins+Rancher自动化部署 | hua的博客</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-69647002-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?954f429681a4cd6dee6095ddaa2aac9a";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">hua的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">关注技术和人文的原创IT博客</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-schedule">
+          <a href="/schedule/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            日程表
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sitemap">
+          <a href="/sitemap.xml" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            站点地图
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="st-search-show-outputs">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <form class="site-search-form">
+  <input type="text" id="st-search-input" class="st-search-input st-default-search-input">
+</form>
+
+<script type="text/javascript">
+  (function(w,d,t,u,n,s,e){w['SwiftypeObject']=n;w[n]=w[n]||function(){
+    (w[n].q=w[n].q||[]).push(arguments);};s=d.createElement(t);
+    e=d.getElementsByTagName(t)[0];s.async=1;s.src=u;e.parentNode.insertBefore(s,e);
+  })(window,document,'script','//s.swiftypecdn.com/install/v2/st.js','_st');
+
+  _st('install', 'BAacTgC1f_bLy6kngppZ','2.0.0');
+</script>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.zhangrenhua.com/2019/01/12/Jenkins+Rancher自动化部署/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="张仁华">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="http://www.zhangrenhua.com/back_images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hua的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Jenkins+Rancher自动化部署</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-01-12T15:24:49+08:00">
+                2019-01-12
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/jenkins/" itemprop="url" rel="index">
+                    <span itemprop="name">jenkins</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2019/01/12/Jenkins+Rancher自动化部署/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2019/01/12/Jenkins+Rancher自动化部署/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  本文主要记录Jenkins+Rancher+k8s自动化部署相关配置说明，不涉及rancher和jenkins安装部署，部署请参考<a href="http://www.zhangrenhua.com/2019/01/09/Rancher2.1%20HA%E9%83%A8%E7%BD%B2k8s/">Rancher2.1 HA部署k8s</a>，包含java server项目、WAR项目、前端VUE项目部署配置介绍。<br><img src="http://www.zhangrenhua.com/back_images/jeknis-rancher1.png" alt="jeknis-rancher1">
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>本文主要记录Jenkins+Rancher+k8s自动化部署相关配置说明，不涉及rancher和jenkins安装部署，部署请参考<a href="http://www.zhangrenhua.com/2019/01/09/Rancher2.1%20HA%E9%83%A8%E7%BD%B2k8s/">Rancher2.1 HA部署k8s</a>，包含java server项目、WAR项目、前端VUE项目部署配置介绍。</p>
+<p><img src="http://www.zhangrenhua.com/back_images/jeknis-rancher1.png" alt="jeknis-rancher1"></p>
+<p>服务器环境信息：</p>
+<table>
+<thead>
+<tr>
+<th>节点名称</th>
+<th>IP</th>
+<th>OS</th>
+<th>安装软件</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Master</td>
+<td>192.168.100.22</td>
+<td>Centos7.6</td>
+<td>nginx, jenkins, docker, nodejs, jdk, maven</td>
+</tr>
+<tr>
+<td>Node1</td>
+<td>192.168.100.31</td>
+<td>Centos7.6</td>
+<td>etcd, docker, k8s</td>
+</tr>
+<tr>
+<td>Node2</td>
+<td>192.168.100.32</td>
+<td>Centos7.6</td>
+<td>etcd, docker, k8s</td>
+</tr>
+<tr>
+<td>Node3</td>
+<td>192.168.100.33</td>
+<td>Centos7.6</td>
+<td>etcd, docker, k8s</td>
+</tr>
+</tbody></table>
+<h2 id="环境验证"><a href="#环境验证" class="headerlink" title="环境验证"></a>环境验证</h2><p>需要在安装jenkins服务上部署下面相应的软件，请注意软件版本，<font color="red">如已经安装相关软件，可跳过此章节</font>。</p>
+<h3 id="docker本地仓库"><a href="#docker本地仓库" class="headerlink" title="docker本地仓库"></a>docker本地仓库</h3><p>参考<a href="http://www.zhangrenhua.com/2019/01/09/Rancher2.1%20HA%E9%83%A8%E7%BD%B2k8s/">Rancher2.1 HA部署k8s</a></p>
+<h3 id="rancher-cli"><a href="#rancher-cli" class="headerlink" title="rancher-cli"></a>rancher-cli</h3><p>需要安装rancher-cli，并且使用jenkins用户预先登录rancher平台：<br>命令参考：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">[root@bigman-m2 ~]<span class="comment"># sudo -u jenkins rancher login https://hi.rancher.cn/v3  --token token-jpf2f:sjmptntdn6k7rf9mqz7k7c9w77q6pfxmxmr7fvtdjwswbprpjhzvq8</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">Do</span> you want <span class="keyword">to</span> continue connecting (yes/<span class="keyword">no</span>)? yes</span><br><span class="line"><span class="built_in">NUMBER</span>    CLUSTER <span class="keyword">NAME</span>   <span class="keyword">PROJECT</span> <span class="keyword">ID</span>      <span class="keyword">PROJECT</span> <span class="keyword">NAME</span>   <span class="keyword">PROJECT</span> DESCRIPTION</span><br><span class="line"><span class="number">1</span>         <span class="keyword">local</span>          <span class="keyword">local</span>:p-dgg2f   <span class="keyword">Default</span>        <span class="keyword">Default</span> <span class="keyword">project</span> created <span class="keyword">for</span> the cluster</span><br><span class="line"><span class="number">2</span>         <span class="keyword">local</span>          <span class="keyword">local</span>:p-ftk7j   <span class="keyword">System</span>         <span class="keyword">System</span> <span class="keyword">project</span> created <span class="keyword">for</span> the cluster</span><br><span class="line"><span class="keyword">Select</span> a <span class="keyword">Project</span>:<span class="number">1</span></span><br><span class="line">INFO[<span class="number">0003</span>] Saving config <span class="keyword">to</span> /<span class="keyword">var</span>/lib/jenkins/.rancher/cli2.json</span><br></pre></td></tr></table></figure>
+
+<p><code>--token</code>：这个用户的token建议设置为永不过期，在rancher管理端 -&gt; api&amp;key &gt; 添加。</p>
+<h3 id="nodejs"><a href="#nodejs" class="headerlink" title="nodejs"></a>nodejs</h3><figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="selector-attr">[root@bigman-m2 ~]</span># <span class="selector-tag">node</span> <span class="selector-tag">--version</span></span><br><span class="line"><span class="selector-tag">v9</span><span class="selector-class">.3</span><span class="selector-class">.0</span></span><br></pre></td></tr></table></figure>
+
+<p>建议安装阿里镜像，提高编译速度：</p>
+<figure class="highlight crystal"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">[root@bigman-m2 ~]<span class="comment"># npm install -g cnpm --registry=https://registry.npm.taobao.org</span></span><br><span class="line">[root@bigman-m2 ~]<span class="comment"># cnpm version</span></span><br><span class="line">cnpm@<span class="number">6.0</span>.<span class="number">0</span> (<span class="regexp">/usr/lib</span><span class="regexp">/nodejs/lib</span><span class="regexp">/node_modules/cnpm</span><span class="regexp">/lib/parse</span>_argv.js)</span><br><span class="line">npm@<span class="number">6.5</span>.<span class="number">0</span> (<span class="regexp">/usr/lib</span><span class="regexp">/nodejs/lib</span><span class="regexp">/node_modules/cnpm</span><span class="regexp">/node_modules/npm</span><span class="regexp">/lib/npm</span>.js)</span><br><span class="line">node@<span class="number">9.3</span>.<span class="number">0</span> (<span class="regexp">/usr/lib</span><span class="regexp">/nodejs/bin</span><span class="regexp">/node)</span></span><br><span class="line"><span class="regexp">npminstall@3.20.1 (/usr</span><span class="regexp">/lib/nodejs</span><span class="regexp">/lib/node</span>_modules/cnpm/node_modules/npminstall/<span class="class"><span class="keyword">lib</span>/<span class="title">index</span>.<span class="title">js</span>)</span></span><br><span class="line">prefix=<span class="regexp">/usr/lib</span><span class="regexp">/nodejs </span></span><br><span class="line"><span class="regexp">linux x64 4.20.0-1.el7.elrepo.x86_64 </span></span><br><span class="line"><span class="regexp">registry=https:/</span><span class="regexp">/registry.npm.taobao.org</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="jenkins相关插件"><a href="#jenkins相关插件" class="headerlink" title="jenkins相关插件"></a>jenkins相关插件</h3><p>jenkins启动用户需要添加到docker组中：</p>
+<figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@<span class="keyword">bigman-m2 </span>~]<span class="comment"># sudo -u jenkins groups</span></span><br><span class="line"><span class="keyword">jenkins </span>root docker</span><br></pre></td></tr></table></figure>
+
+<h4 id="全局工具配置"><a href="#全局工具配置" class="headerlink" title="全局工具配置"></a>全局工具配置</h4><p><img src="http://www.zhangrenhua.com/back_images/jenkins1.jpg" alt="jenkins1"></p>
+<h4 id="插件管理"><a href="#插件管理" class="headerlink" title="插件管理"></a>插件管理</h4><p>项目主要是java和vue开发的，所以需要安装Maven Integration plugin插件。</p>
+<p><img src="http://www.zhangrenhua.com/back_images/jenkins2.jpg" alt="jenkins2"></p>
+<h2 id="java-server项目部署"><a href="#java-server项目部署" class="headerlink" title="java server项目部署"></a>java server项目部署</h2><p>spring boot或者spring cloud自带容器，以及其它服务类型的java后端应用部署。</p>
+<h3 id="jenkins任务配置"><a href="#jenkins任务配置" class="headerlink" title="jenkins任务配置"></a>jenkins任务配置</h3><p>1、填写项目名称，选择“构建一个maven项目”</p>
+<p><img src="http://www.zhangrenhua.com/back_images/jenkins3.jpg" alt="jenkins3"></p>
+<p>点击下面“OK”按钮</p>
+<p>2、填写项目描述信息</p>
+<p><img src="http://www.zhangrenhua.com/back_images/jenkins4.jpg" alt="jenkins4"></p>
+<p>3、输入项目地址，并选择用户凭证</p>
+<p><img src="http://www.zhangrenhua.com/back_images/jenkins5.jpg" alt="jenkins5"></p>
+<p>本文通过conding.net作为代码管理平台，点击“Add”添加自己账号凭证（输入coding.net平台登陆账号密码即可）。</p>
+<p>4、配置maven编译脚本</p>
+<p><img src="http://www.zhangrenhua.com/back_images/jenkins6.jpg" alt="jenkins6"></p>
+<p>5、编写rancher部署脚本</p>
+<p><img src="http://www.zhangrenhua.com/back_images/jenkins7.jpg" alt="jenkins7"></p>
+<h3 id="rancher部署脚本详细说明"><a href="#rancher部署脚本详细说明" class="headerlink" title="rancher部署脚本详细说明"></a>rancher部署脚本详细说明</h3><h4 id="docker镜像制作"><a href="#docker镜像制作" class="headerlink" title="docker镜像制作"></a>docker镜像制作</h4><figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">echo -------------------------------------</span><br><span class="line"><span class="comment"># 显示当前目录</span></span><br><span class="line">pwd</span><br><span class="line"><span class="comment"># 进入项目target目录</span></span><br><span class="line">cd bRule-deploy/target</span><br><span class="line"></span><br><span class="line"><span class="comment"># 创建docker镜像</span></span><br><span class="line">cat &gt;Dockerfile &lt;&lt;EFO</span><br><span class="line"><span class="keyword">FROM</span> openjdk:8</span><br><span class="line">ENV environment default</span><br><span class="line"><span class="builtin-name">ADD</span> ./bRule-deploy-1.0.0.tar.gz brule</span><br><span class="line">EXPOSE 2002</span><br><span class="line">ENTRYPOINT cd brule &amp;&amp; ./bin/start.sh registry 1g local localhost &amp;&amp; sleep 5 &amp;&amp; tail -fn 1 ./logs/brule-registry.log</span><br><span class="line">EFO</span><br></pre></td></tr></table></figure>
+
+<p>Dockerfile参数说明：<br><code>FROM</code>：选择基础镜像包，该项目是用java语言开发需要jdk1.8所以选择openjdk:8<br><code>ADD</code>：将bRule-deploy-1.0.0.tar.gz文件解压并上传到镜像的brule目录<br><code>EXPOSE</code>：容器内部启动2002端口，根据自身项目填写指定端口，多个端口填写多行EXPOSE标签<br><code>ENTRYPOINT</code>：容器启动时执行的命令，执行多条命令使用<code>&amp;&amp;</code>拼接，命令行中带<code>&amp;</code>需要加上转移符<code>\&amp;</code>，使用tail -fn监听应用日志，以便容器日志查看。</p>
+<h4 id="编译并上传镜像"><a href="#编译并上传镜像" class="headerlink" title="编译并上传镜像"></a>编译并上传镜像</h4><p>用于创建docker镜像，就好比创建一个已经安装并且配置好了应用程序的操作系统镜像。</p>
+<figure class="highlight crmsh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 编译镜像</span></span><br><span class="line">docker build -t brule:latest .</span><br><span class="line"><span class="comment"># 修改tag</span></span><br><span class="line">docker <span class="keyword">tag</span> <span class="title">brule</span>:latest  <span class="number">192.168</span>.<span class="number">100.21</span>:<span class="number">5000</span>/brule:latest</span><br><span class="line"><span class="comment"># 上传到21 docker仓库</span></span><br><span class="line">docker push <span class="number">192.168</span>.<span class="number">100.21</span>:<span class="number">5000</span>/brule:latest</span><br></pre></td></tr></table></figure>
+
+<p>参数说明：<br><code>192.168.100.21:5000</code>：为本地docker镜像服务器地址<br><code>brule:latest</code>：应用名称，根据自身项目名称修改</p>
+<h4 id="创建k8s容器"><a href="#创建k8s容器" class="headerlink" title="创建k8s容器"></a>创建k8s容器</h4><p>利用上面创建好的操作系统镜像启动一个vmware虚拟机，创建k8s容器。</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">echo</span> <span class="bullet">-------------------------------------</span></span><br><span class="line"><span class="comment"># 创建k8s容器</span></span><br><span class="line"><span class="string">cat</span> <span class="string">&gt;k8s-rc.yaml</span> <span class="string">&lt;&lt;EFO</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">ReplicationController</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line"><span class="attr">  name:</span> <span class="string">brule</span></span><br><span class="line"><span class="attr">  labels:</span></span><br><span class="line"><span class="attr">    name:</span> <span class="string">brule</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line"><span class="attr">  replicas:</span> <span class="number">1</span></span><br><span class="line"><span class="attr">  selector:</span></span><br><span class="line"><span class="attr">    name:</span> <span class="string">brule</span></span><br><span class="line"><span class="attr">  template:</span></span><br><span class="line"><span class="attr">    metadata:</span></span><br><span class="line"><span class="attr">      labels:</span></span><br><span class="line"><span class="attr">        name:</span> <span class="string">brule</span></span><br><span class="line"><span class="attr">    spec:</span></span><br><span class="line"><span class="attr">      containers:</span></span><br><span class="line"><span class="attr">      - name:</span> <span class="string">brule</span></span><br><span class="line"><span class="attr">        image:</span> <span class="number">192.168</span><span class="number">.100</span><span class="number">.21</span><span class="string">:5000/brule:latest</span></span><br><span class="line"><span class="attr">        ports:</span></span><br><span class="line"><span class="attr">        - containerPort:</span> <span class="number">2002</span></span><br><span class="line"><span class="string">EFO</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 先删除，再创建</span></span><br><span class="line"><span class="string">rancher</span> <span class="string">kubectl</span> <span class="string">delete</span> <span class="bullet">-f</span> <span class="string">k8s-rc.yaml</span> <span class="bullet">--ignore-not-found=true</span></span><br><span class="line"><span class="string">sleep</span> <span class="number">5</span></span><br><span class="line"><span class="string">rancher</span> <span class="string">kubectl</span> <span class="string">create</span> <span class="bullet">-f</span> <span class="string">k8s-rc.yaml</span></span><br></pre></td></tr></table></figure>
+
+<p>参数说明：<br><code>brule</code>：应用名称，根据自身项目名称修改，应用名称规范<a href="[-a-z0-9]*[a-z0-9]">a-z0-9</a>?(.<a href="[-a-z0-9]*[a-z0-9]">a-z0-9</a>?)*<br><code>image</code>：刚才创建的docker镜像<br><code>containerPort</code>：容器启动端口，多个端口使用多行<code>containerPort</code>标签声明，端口限制在【30000-32000】</p>
+<h4 id="创建k8s网络服务"><a href="#创建k8s网络服务" class="headerlink" title="创建k8s网络服务"></a>创建k8s网络服务</h4><p>前面vmware虚拟机创建好后，怎么能让别人访问？这个时候就需要创建一个网络服务，用于打通路由器与vmware本地虚拟机的网络。</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">echo -------------------------------------</span><br><span class="line"><span class="comment"># 创建k8s网络服务</span></span><br><span class="line">cat &gt;k8s-service.yaml &lt;&lt;EFO</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  name: brule</span><br><span class="line">  labels:</span><br><span class="line">    name: brule</span><br><span class="line">spec:</span><br><span class="line">  selector:</span><br><span class="line">    name: brule</span><br><span class="line">  type:</span><br><span class="line">    NodePort</span><br><span class="line">  ports:</span><br><span class="line">  - port: 2002</span><br><span class="line">    nodePort: 32001</span><br><span class="line">EFO</span><br><span class="line"></span><br><span class="line"><span class="comment"># service不存在则创建</span></span><br><span class="line">sleep 10</span><br><span class="line">rancher kubectl <span class="builtin-name">get</span><span class="built_in"> service </span>brule || rancher kubectl create -f k8s-service.yaml</span><br><span class="line"></span><br><span class="line">trap <span class="string">"rancher kubectl get service brule || rancher kubectl create -f k8s-service.yaml; exit"</span> SIGHUP SIGINT SIGTERM</span><br></pre></td></tr></table></figure>
+
+<p>参数说明：<br><code>brule</code>：应用名称，根据自身项目名称修改<br><code>port</code>：容器启动端口<br><code>nodePort</code>：对外提供服务端口，外部机器访问</p>
+<p>将上面配置好的shell脚本复制到Post Steps -&gt; 执行shell文本域中，并点击“保存” -&gt; “立即构建”即可部署。</p>
+<h3 id="应用部署"><a href="#应用部署" class="headerlink" title="应用部署"></a>应用部署</h3><p>1、进入刚才创建好的jenkins任务，点击立即构建</p>
+<p><img src="http://www.zhangrenhua.com/back_images/jenkins8.jpg" alt="jenkins8"></p>
+<p>2、点击左下角构建任务，选择“Console Output”，查看构建日志</p>
+<p><img src="http://www.zhangrenhua.com/back_images/jenkins9.jpg" alt="jenkins9"></p>
+<p>3、登录rancher管理平台，查看构建好的应用</p>
+<p><img src="http://www.zhangrenhua.com/back_images/jenkins10.jpg" alt="jenkins9"></p>
+<h2 id="war项目部署"><a href="#war项目部署" class="headerlink" title="war项目部署"></a>war项目部署</h2><p>基于J2EE项目的war包部署，前面操作都一致，只是shell部署脚本稍有不同，这里主要详细说明rancher部署脚本。</p>
+<h3 id="rancher部署脚本详细说明-1"><a href="#rancher部署脚本详细说明-1" class="headerlink" title="rancher部署脚本详细说明"></a>rancher部署脚本详细说明</h3><h4 id="docker镜像制作-1"><a href="#docker镜像制作-1" class="headerlink" title="docker镜像制作"></a>docker镜像制作</h4><figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">echo -------------------------------------</span><br><span class="line"><span class="comment"># 显示当前目录</span></span><br><span class="line">pwd</span><br><span class="line"><span class="comment"># 进入target目录</span></span><br><span class="line">cd target</span><br><span class="line"></span><br><span class="line"><span class="comment"># 创建docker镜像</span></span><br><span class="line">cat &gt;Dockerfile &lt;&lt;EFO</span><br><span class="line"><span class="keyword">FROM</span> tomcat:8.5-jre8-slim</span><br><span class="line">ENV environment default</span><br><span class="line"><span class="builtin-name">ADD</span> operation.war /usr/local/tomcat/webapps/</span><br><span class="line">EXPOSE 8080</span><br><span class="line">EFO</span><br></pre></td></tr></table></figure>
+
+<p>Dockerfile参数说明：<br><code>FROM</code>：选择基础镜像包，war统一使用tomcat容器部署，<code>tomcat:8.5-jre8-slim</code><br><code>ADD</code>：将operation.war文件解压并上传到镜像的/usr/local/tomcat/webapps/目录<br><code>EXPOSE</code>：容器内部启动8080端口，根据自身项目填写指定端口，多个端口填写多行EXPOSE标签</p>
+<p>这里不需要配置<code>ENTRYPOINT</code>标签，因为tomcat镜像包中已经有了。</p>
+<h4 id="编译并上传镜像-1"><a href="#编译并上传镜像-1" class="headerlink" title="编译并上传镜像"></a>编译并上传镜像</h4><p>用于创建docker镜像，就好比创建一个已经安装并且配置好了应用程序的操作系统镜像。</p>
+<figure class="highlight crmsh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 编译镜像</span></span><br><span class="line">docker build -t operation:latest .</span><br><span class="line"><span class="comment"># 修改tag</span></span><br><span class="line">docker <span class="keyword">tag</span> <span class="title">operation</span>:latest  <span class="number">192.168</span>.<span class="number">100.21</span>:<span class="number">5000</span>/operation:latest</span><br><span class="line"><span class="comment"># 上传到21 docker仓库</span></span><br><span class="line">docker push <span class="number">192.168</span>.<span class="number">100.21</span>:<span class="number">5000</span>/operation:latest</span><br></pre></td></tr></table></figure>
+
+<p>参数说明：<br><code>192.168.100.21:5000</code>：为本地docker镜像服务器地址<br><code>operation:latest</code>：应用名称，根据自身项目名称修改</p>
+<h4 id="创建k8s容器-1"><a href="#创建k8s容器-1" class="headerlink" title="创建k8s容器"></a>创建k8s容器</h4><p>利用上面创建好的操作系统镜像启动一个vmware虚拟机，创建k8s容器。</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">echo</span> <span class="bullet">-------------------------------------</span></span><br><span class="line"><span class="comment"># 创建k8s容器</span></span><br><span class="line"><span class="string">cat</span> <span class="string">&gt;k8s-rc.yaml</span> <span class="string">&lt;&lt;EFO</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">ReplicationController</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line"><span class="attr">  name:</span> <span class="string">operation</span></span><br><span class="line"><span class="attr">  labels:</span></span><br><span class="line"><span class="attr">    name:</span> <span class="string">operation</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line"><span class="attr">  replicas:</span> <span class="number">1</span></span><br><span class="line"><span class="attr">  selector:</span></span><br><span class="line"><span class="attr">    name:</span> <span class="string">operation</span></span><br><span class="line"><span class="attr">  template:</span></span><br><span class="line"><span class="attr">    metadata:</span></span><br><span class="line"><span class="attr">      labels:</span></span><br><span class="line"><span class="attr">        name:</span> <span class="string">operation</span></span><br><span class="line"><span class="attr">    spec:</span></span><br><span class="line"><span class="attr">      containers:</span></span><br><span class="line"><span class="attr">      - name:</span> <span class="string">operation</span></span><br><span class="line"><span class="attr">        image:</span> <span class="number">192.168</span><span class="number">.100</span><span class="number">.21</span><span class="string">:5000/operation:latest</span></span><br><span class="line"><span class="attr">        ports:</span></span><br><span class="line"><span class="attr">        - containerPort:</span> <span class="number">8080</span></span><br><span class="line"><span class="string">EFO</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 先删除，再创建</span></span><br><span class="line"><span class="string">rancher</span> <span class="string">kubectl</span> <span class="string">delete</span> <span class="bullet">-f</span> <span class="string">k8s-rc.yaml</span> <span class="bullet">--ignore-not-found=true</span></span><br><span class="line"><span class="string">sleep</span> <span class="number">5</span></span><br><span class="line"><span class="string">rancher</span> <span class="string">kubectl</span> <span class="string">create</span> <span class="bullet">-f</span> <span class="string">k8s-rc.yaml</span></span><br></pre></td></tr></table></figure>
+
+<p>参数说明：<br><code>operation</code>：应用名称，根据自身项目名称修改<br><code>image</code>：刚才创建的docker镜像<br><code>containerPort</code>：容器启动端口，多个端口使用多行<code>containerPort</code>标签声明，端口限制在【30000-32000】</p>
+<h4 id="创建k8s网络服务-1"><a href="#创建k8s网络服务-1" class="headerlink" title="创建k8s网络服务"></a>创建k8s网络服务</h4><p>前面vmware虚拟机创建好后，怎么能让别人访问？这个时候就需要创建一个网络服务，用于打通路由器与vmware本地虚拟机的网络。</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">echo -------------------------------------</span><br><span class="line"><span class="comment"># 创建k8s网络服务</span></span><br><span class="line">cat &gt;k8s-service.yaml &lt;&lt;EFO</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  name: operation</span><br><span class="line">  labels:</span><br><span class="line">    name: operation</span><br><span class="line">spec:</span><br><span class="line">  selector:</span><br><span class="line">    name: operation</span><br><span class="line">  type:</span><br><span class="line">    NodePort</span><br><span class="line">  ports:</span><br><span class="line">  - port: 8080</span><br><span class="line">    nodePort: 32004</span><br><span class="line">EFO</span><br><span class="line"></span><br><span class="line"><span class="comment"># service不存在则创建</span></span><br><span class="line">sleep 10</span><br><span class="line">rancher kubectl <span class="builtin-name">get</span><span class="built_in"> service </span>operation || rancher kubectl create -f k8s-service.yaml</span><br><span class="line"></span><br><span class="line">trap <span class="string">"rancher kubectl get service brule || rancher kubectl create -f k8s-service.yaml; exit"</span> SIGHUP SIGINT SIGTERM</span><br></pre></td></tr></table></figure>
+
+<p>参数说明：<br><code>operation</code>：应用名称，根据自身项目名称修改<br><code>port</code>：容器启动端口<br><code>nodePort</code>：对外提供服务端口，外部机器访问</p>
+<p>将上面配置好的shell脚本复制到Post Steps -&gt; 执行shell文本域中，并点击“保存” -&gt; “立即构建”即可部署。</p>
+<h2 id="前端VUE项目部署"><a href="#前端VUE项目部署" class="headerlink" title="前端VUE项目部署"></a>前端VUE项目部署</h2><p>基于webpack构建的VUE项目部署，前面操作都一致，只是shell部署脚本稍有不同，这里主要详细说明rancher部署脚本。</p>
+<h3 id="rancher部署脚本详细说明-2"><a href="#rancher部署脚本详细说明-2" class="headerlink" title="rancher部署脚本详细说明"></a>rancher部署脚本详细说明</h3><h4 id="docker镜像制作-2"><a href="#docker镜像制作-2" class="headerlink" title="docker镜像制作"></a>docker镜像制作</h4><figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">echo -------------------------------------</span><br><span class="line"><span class="comment"># 显示当前目录</span></span><br><span class="line">pwd</span><br><span class="line"></span><br><span class="line"><span class="comment"># 创建docker镜像</span></span><br><span class="line">cat &gt;Dockerfile &lt;&lt;EFO</span><br><span class="line"><span class="keyword">FROM</span> tomcat:8.5-jre8-slim</span><br><span class="line">ENV environment default</span><br><span class="line">COPY /dist /usr/local/tomcat/webapps/fastquery/</span><br><span class="line">EXPOSE 8080</span><br><span class="line">EFO</span><br></pre></td></tr></table></figure>
+
+<p>Dockerfile参数说明：<br><code>FROM</code>：选择基础镜像包，前端统一使用tomcat容器部署，<code>tomcat:8.5-jre8-slim</code><br><code>COPY</code>：将/dist目录上传到镜像的/usr/local/tomcat/webapps/fastquery/目录<br><code>EXPOSE</code>：容器内部启动8080端口，根据自身项目填写指定端口，多个端口填写多行EXPOSE标签</p>
+<p>这里不需要配置<code>ENTRYPOINT</code>标签，因为tomcat镜像包中已经有了。</p>
+<h4 id="编译并上传镜像-2"><a href="#编译并上传镜像-2" class="headerlink" title="编译并上传镜像"></a>编译并上传镜像</h4><p>用于创建docker镜像，就好比创建一个已经安装并且配置好了应用程序的操作系统镜像。</p>
+<figure class="highlight crmsh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 编译镜像</span></span><br><span class="line">docker build -t shutcm_fastquery_web:latest .</span><br><span class="line"><span class="comment"># 修改tag</span></span><br><span class="line">docker <span class="keyword">tag</span> <span class="title">shutcm_fastquery_web</span>:latest  <span class="number">192.168</span>.<span class="number">100.21</span>:<span class="number">5000</span>/shutcm_fastquery_web:latest</span><br><span class="line"><span class="comment"># 上传到21 docker仓库</span></span><br><span class="line">docker push <span class="number">192.168</span>.<span class="number">100.21</span>:<span class="number">5000</span>/shutcm_fastquery_web:latest</span><br></pre></td></tr></table></figure>
+
+<p>参数说明：<br><code>192.168.100.21:5000</code>：为本地docker镜像服务器地址<br><code>operation:latest</code>：应用名称，根据自身项目名称修改</p>
+<h4 id="创建k8s容器-2"><a href="#创建k8s容器-2" class="headerlink" title="创建k8s容器"></a>创建k8s容器</h4><p>利用上面创建好的操作系统镜像启动一个vmware虚拟机，创建k8s容器。</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">echo</span> <span class="bullet">-------------------------------------</span></span><br><span class="line"><span class="comment"># 创建k8s容器</span></span><br><span class="line"><span class="string">cat</span> <span class="string">&gt;k8s-rc.yaml</span> <span class="string">&lt;&lt;EFO</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">ReplicationController</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line"><span class="attr">  name:</span> <span class="string">shutcm-fastquery-web</span></span><br><span class="line"><span class="attr">  labels:</span></span><br><span class="line"><span class="attr">    name:</span> <span class="string">shutcm-fastquery-web</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line"><span class="attr">  replicas:</span> <span class="number">1</span></span><br><span class="line"><span class="attr">  selector:</span></span><br><span class="line"><span class="attr">    name:</span> <span class="string">shutcm-fastquery-web</span></span><br><span class="line"><span class="attr">  template:</span></span><br><span class="line"><span class="attr">    metadata:</span></span><br><span class="line"><span class="attr">      labels:</span></span><br><span class="line"><span class="attr">        name:</span> <span class="string">shutcm-fastquery-web</span></span><br><span class="line"><span class="attr">    spec:</span></span><br><span class="line"><span class="attr">      containers:</span></span><br><span class="line"><span class="attr">      - name:</span> <span class="string">shutcm-fastquery-web</span></span><br><span class="line"><span class="attr">        image:</span> <span class="number">192.168</span><span class="number">.100</span><span class="number">.21</span><span class="string">:5000/shutcm_fastquery_web:latest</span></span><br><span class="line"><span class="attr">        ports:</span></span><br><span class="line"><span class="attr">        - containerPort:</span> <span class="number">8080</span></span><br><span class="line"><span class="string">EFO</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 先删除，再创建</span></span><br><span class="line"><span class="string">rancher</span> <span class="string">kubectl</span> <span class="string">delete</span> <span class="bullet">-f</span> <span class="string">k8s-rc.yaml</span> <span class="bullet">--ignore-not-found=true</span></span><br><span class="line"><span class="string">rancher</span> <span class="string">kubectl</span> <span class="string">create</span> <span class="bullet">-f</span> <span class="string">k8s-rc.yaml</span></span><br></pre></td></tr></table></figure>
+
+<p>参数说明：<br><code>shutcm-fastquery-web</code>：应用名称，根据自身项目名称修改<br><code>image</code>：刚才创建的docker镜像<br><code>containerPort</code>：容器启动端口，多个端口使用多行<code>containerPort</code>标签声明，端口限制在【30000-32000】</p>
+<h4 id="创建k8s网络服务-2"><a href="#创建k8s网络服务-2" class="headerlink" title="创建k8s网络服务"></a>创建k8s网络服务</h4><p>前面vmware虚拟机创建好后，怎么能让别人访问？这个时候就需要创建一个网络服务，用于打通路由器与vmware本地虚拟机的网络。</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">echo -------------------------------------</span><br><span class="line"><span class="comment"># 创建k8s网络服务</span></span><br><span class="line">cat &gt;k8s-service.yaml &lt;&lt;EFO</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  name: shutcm-fastquery-web</span><br><span class="line">  labels:</span><br><span class="line">    name: shutcm-fastquery-web</span><br><span class="line">spec:</span><br><span class="line">  selector:</span><br><span class="line">    name: shutcm-fastquery-web</span><br><span class="line">  type:</span><br><span class="line">    NodePort</span><br><span class="line">  ports:</span><br><span class="line">  - port: 8080</span><br><span class="line">    nodePort: 32009</span><br><span class="line">EFO</span><br><span class="line"></span><br><span class="line"><span class="comment"># service不存在则创建</span></span><br><span class="line">sleep 10</span><br><span class="line">rancher kubectl <span class="builtin-name">get</span><span class="built_in"> service </span>operation || rancher kubectl create -f k8s-service.yaml</span><br><span class="line"></span><br><span class="line">trap <span class="string">"rancher kubectl get service shutcm-fastquery-web || rancher kubectl create -f k8s-service.yaml; exit"</span> SIGHUP SIGINT SIGTERM</span><br></pre></td></tr></table></figure>
+
+<p>参数说明：<br><code>shutcm-fastquery-web</code>：应用名称，根据自身项目名称修改<br><code>port</code>：容器启动端口<br><code>nodePort</code>：对外提供服务端口，外部机器访问</p>
+<p>将上面配置好的shell脚本复制到Post Steps -&gt; 执行shell文本域中，并点击“保存” -&gt; “立即构建”即可部署。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/k8s/" rel="tag"># k8s</a>
+          
+            <a href="/tags/docker/" rel="tag"># docker</a>
+          
+            <a href="/tags/rancher/" rel="tag"># rancher</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/01/09/Rancher2.1 HA部署k8s/" rel="next" title="Rancher2.1 HA部署k8s">
+                <i class="fa fa-chevron-left"></i> Rancher2.1 HA部署k8s
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+<span class="jiathis_txt">分享到：</span>
+<a class="jiathis_button_fav">收藏夹</a>
+<a class="jiathis_button_copy">复制网址</a>
+<a class="jiathis_button_email">邮件</a>
+<a class="jiathis_button_weixin">微信</a>
+<a class="jiathis_button_qzone">QQ空间</a>
+<a class="jiathis_button_tqq">腾讯微博</a>
+<a class="jiathis_button_douban">豆瓣</a>
+<a class="jiathis_button_share">一键分享</a>
+
+<a href="http://www.jiathis.com/share?uid=2140465" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank">更多</a>
+<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+var jiathis_config={
+  data_track_clickback:true,
+  summary:"",
+  shortUrl:false,
+  hideMore:false
+}
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  <p>热评文章</p>
+  <div class="ds-top-threads" data-range="weekly" data-num-items="4"></div>
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div class="ds-thread" data-thread-key="2019/01/12/Jenkins+Rancher自动化部署/" data-title="Jenkins+Rancher自动化部署" data-url="http://www.zhangrenhua.com/2019/01/12/Jenkins+Rancher自动化部署/">
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="http://www.zhangrenhua.com/back_images/avatar.jpg" alt="张仁华">
+            
+              <p class="site-author-name" itemprop="name">张仁华</p>
+              <p class="site-description motion-element" itemprop="description">记录软件生涯中的点点滴滴</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">76</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">17</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/zhangrenhua/" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://weibo.com/huaHBrother" target="_blank" title="Weibo">
+                      
+                        <i class="fa fa-fw fa-globe"></i>Weibo</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://douban.com/people/huaHBrother" target="_blank" title="douban">
+                      
+                        <i class="fa fa-fw fa-globe"></i>douban</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://zhihu.com/people/huaHBrother" target="_blank" title="zhihu">
+                      
+                        <i class="fa fa-fw fa-globe"></i>zhihu</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#介绍"><span class="nav-number">1.</span> <span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#环境验证"><span class="nav-number">2.</span> <span class="nav-text">环境验证</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#docker本地仓库"><span class="nav-number">2.1.</span> <span class="nav-text">docker本地仓库</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#rancher-cli"><span class="nav-number">2.2.</span> <span class="nav-text">rancher-cli</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#nodejs"><span class="nav-number">2.3.</span> <span class="nav-text">nodejs</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#jenkins相关插件"><span class="nav-number">2.4.</span> <span class="nav-text">jenkins相关插件</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#全局工具配置"><span class="nav-number">2.4.1.</span> <span class="nav-text">全局工具配置</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#插件管理"><span class="nav-number">2.4.2.</span> <span class="nav-text">插件管理</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#java-server项目部署"><span class="nav-number">3.</span> <span class="nav-text">java server项目部署</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#jenkins任务配置"><span class="nav-number">3.1.</span> <span class="nav-text">jenkins任务配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#rancher部署脚本详细说明"><span class="nav-number">3.2.</span> <span class="nav-text">rancher部署脚本详细说明</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#docker镜像制作"><span class="nav-number">3.2.1.</span> <span class="nav-text">docker镜像制作</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#编译并上传镜像"><span class="nav-number">3.2.2.</span> <span class="nav-text">编译并上传镜像</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#创建k8s容器"><span class="nav-number">3.2.3.</span> <span class="nav-text">创建k8s容器</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#创建k8s网络服务"><span class="nav-number">3.2.4.</span> <span class="nav-text">创建k8s网络服务</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#应用部署"><span class="nav-number">3.3.</span> <span class="nav-text">应用部署</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#war项目部署"><span class="nav-number">4.</span> <span class="nav-text">war项目部署</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#rancher部署脚本详细说明-1"><span class="nav-number">4.1.</span> <span class="nav-text">rancher部署脚本详细说明</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#docker镜像制作-1"><span class="nav-number">4.1.1.</span> <span class="nav-text">docker镜像制作</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#编译并上传镜像-1"><span class="nav-number">4.1.2.</span> <span class="nav-text">编译并上传镜像</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#创建k8s容器-1"><span class="nav-number">4.1.3.</span> <span class="nav-text">创建k8s容器</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#创建k8s网络服务-1"><span class="nav-number">4.1.4.</span> <span class="nav-text">创建k8s网络服务</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#前端VUE项目部署"><span class="nav-number">5.</span> <span class="nav-text">前端VUE项目部署</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#rancher部署脚本详细说明-2"><span class="nav-number">5.1.</span> <span class="nav-text">rancher部署脚本详细说明</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#docker镜像制作-2"><span class="nav-number">5.1.1.</span> <span class="nav-text">docker镜像制作</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#编译并上传镜像-2"><span class="nav-number">5.1.2.</span> <span class="nav-text">编译并上传镜像</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#创建k8s容器-2"><span class="nav-number">5.1.3.</span> <span class="nav-text">创建k8s容器</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#创建k8s网络服务-2"><span class="nav-number">5.1.4.</span> <span class="nav-text">创建k8s网络服务</span></a></li></ol></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">张仁华</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"iissnan-notes"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

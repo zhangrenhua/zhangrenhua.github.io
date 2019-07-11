@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="google-site-verification" content="zUNgN8yGBtBZ8194JTl7PXh7YvztVw494zGKJ_8qH00">
+
+
+
+
+
+
+
+
+  <meta name="baidu-site-verification" content="kqLgluU8lc">
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/favicon.ico?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="hadoop生态圈,hbase,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="hua的博客" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="在工作中由于涉及高并发Hbase写入项目，对Hbase参数调优有过深入研究。当数据到了一定的量的时候会出现各种错误导致写入失败，最普遍的有，连接超时、regionServe自动下线，然而regionServer自动下线是个最头疼的问题（有的时候宁愿写入速度慢一点也不想RegionServer当掉）。下面主要讲解Hbase的一些参数调优，以及GC调优。">
+<meta name="keywords" content="hadoop生态圈,hbase">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Hbase参数优化以及问题汇总">
+<meta property="og:url" content="http://www.zhangrenhua.com/2016/01/17/hadoop-Hbase参数优化以及问题汇总/index.html">
+<meta property="og:site_name" content="hua的博客">
+<meta property="og:description" content="在工作中由于涉及高并发Hbase写入项目，对Hbase参数调优有过深入研究。当数据到了一定的量的时候会出现各种错误导致写入失败，最普遍的有，连接超时、regionServe自动下线，然而regionServer自动下线是个最头疼的问题（有的时候宁愿写入速度慢一点也不想RegionServer当掉）。下面主要讲解Hbase的一些参数调优，以及GC调优。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2016-01-26T01:12:22.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Hbase参数优化以及问题汇总">
+<meta name="twitter:description" content="在工作中由于涉及高并发Hbase写入项目，对Hbase参数调优有过深入研究。当数据到了一定的量的时候会出现各种错误导致写入失败，最普遍的有，连接超时、regionServe自动下线，然而regionServer自动下线是个最头疼的问题（有的时候宁愿写入速度慢一点也不想RegionServer当掉）。下面主要讲解Hbase的一些参数调优，以及GC调优。">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.zhangrenhua.com/2016/01/17/hadoop-Hbase参数优化以及问题汇总/">
+
+
+
+
+
+  <title>Hbase参数优化以及问题汇总 | hua的博客</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-69647002-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?954f429681a4cd6dee6095ddaa2aac9a";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">hua的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">关注技术和人文的原创IT博客</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-schedule">
+          <a href="/schedule/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            日程表
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sitemap">
+          <a href="/sitemap.xml" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            站点地图
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="st-search-show-outputs">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <form class="site-search-form">
+  <input type="text" id="st-search-input" class="st-search-input st-default-search-input">
+</form>
+
+<script type="text/javascript">
+  (function(w,d,t,u,n,s,e){w['SwiftypeObject']=n;w[n]=w[n]||function(){
+    (w[n].q=w[n].q||[]).push(arguments);};s=d.createElement(t);
+    e=d.getElementsByTagName(t)[0];s.async=1;s.src=u;e.parentNode.insertBefore(s,e);
+  })(window,document,'script','//s.swiftypecdn.com/install/v2/st.js','_st');
+
+  _st('install', 'BAacTgC1f_bLy6kngppZ','2.0.0');
+</script>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.zhangrenhua.com/2016/01/17/hadoop-Hbase参数优化以及问题汇总/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="张仁华">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="http://www.zhangrenhua.com/back_images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hua的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Hbase参数优化以及问题汇总</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-01-17T13:35:22+08:00">
+                2016-01-17
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/hbase/" itemprop="url" rel="index">
+                    <span itemprop="name">hbase</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2016/01/17/hadoop-Hbase参数优化以及问题汇总/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2016/01/17/hadoop-Hbase参数优化以及问题汇总/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  在工作中由于涉及高并发Hbase写入项目，对Hbase参数调优有过深入研究。当数据到了一定的量的时候会出现各种错误导致写入失败，最普遍的有，连接超时、regionServe自动下线，然而regionServer自动下线是个最头疼的问题（有的时候宁愿写入速度慢一点也不想RegionServer当掉）。下面主要讲解Hbase的一些参数调优，以及GC调优。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>在工作中由于涉及高并发Hbase写入项目，对Hbase参数调优有过深入研究。当数据到了一定的量的时候会出现各种错误导致写入失败，最普遍的有，连接超时、regionServe自动下线，然而regionServer自动下线是个最头疼的问题（有的时候宁愿写入速度慢一点也不想RegionServer当掉）。下面主要讲解Hbase的一些参数调优，以及GC调优。</p>
+<h2 id="参数调优详解"><a href="#参数调优详解" class="headerlink" title="参数调优详解"></a>参数调优详解</h2><p>以下参数，除了前面两个是在hbase-env.sh文件中，其它的都是hbase-site.xml中。</p>
+<p><strong>HBase Master Maximum Java heap size</strong></p>
+<p>Hmaster进程最大使用堆空间大小，默认1G，如果内存充裕可调到2-4G</p>
+<p><strong>RegionServers maximum Java heap size</strong></p>
+<p>RegionServer进程最大使用堆空间大小，默认2G,Cloudera专家建议内存设置不要超过18GB，Region Server管理的Region个数不要超过300个。</p>
+<p><strong>hbase.regionserver.handler.count=100</strong></p>
+<p>该配置定义了每个Region Server上的RPC Handler的数量。Region Server通过RPC Handler接收外部请求并加以处理。所以提升RPC Handler的数量可以一定程度上提高HBase接收请求的能力。当然，handler数量也不是越大越好，这要取决于节点的硬件情况。</p>
+<p><strong>hbase.hregion.max.filesize=10737418240</strong></p>
+<p>配置项的含义是当region的大小大于设定值后hbase就会开始split，可根据存储内容进行适当调整。比如是存储文件的话那应该将此值设置更大。</p>
+<p><strong>hbase.hregion.majorcompaction=0</strong><br>major、compaction的执行周期，默认是一天，可以设置为0禁用。利用后台调度，在业务不忙的时间点单独运行。</p>
+<p><strong>hbase.hregion.memstore.block.multiplier=4</strong></p>
+<p>容忍缓存中写入数据超过hbase.hregion.memstore.flush.size缓冲区最大的倍数；<br>每次写入时，判断超出缓存的倍数后，不能再写入，阻塞，等待flush完成后，会进行GC回收，regionserver会暂停完成flush，并gc回收后，则继续接收数据； 这个过程中容易出现regionserver服务暂停，与hmaster失败心跳超时，引起regionserver下线。</p>
+<p><strong>hbase.hregion.memstore.flush.size=134217728</strong></p>
+<p>当一个region里的memstore占用内存大小超过（memstore.flush * mestore.block.multiplier） 时执行flush。默认128M不建议调大（可根据硬盘的写入速度来适当调整）。</p>
+<p><strong>hbase.balancer.period=1800000</strong></p>
+<p>RegionServer负载均衡特定时间间隔，默认5分钟，可是稍微调长至半个小时。</p>
+<p><strong>hfile.block.cache.size=0.4</strong></p>
+<p>HFile文件的块缓存大小占堆内存大小的比例，如果对读性能要求很高，可稍微调大一点。</p>
+<p><strong>hbase.regionserver.global.memstore.upperLimit=0.4</strong></p>
+<p>当ReigonServer内所有region的memstores所占用内存总和达到heap的40%时，HBase会强制block所有的更新并flush这些region以释放所有memstore占用的内存。</p>
+<p><strong>hbase.server.thread.wakefrequency=500</strong></p>
+<p>每间隔hbase.server.thread.wakefrequency时间（默认10s）检查一次regionserver缓冲区大小，超过hbase.hregion.memstore.flush.size此大小则flush刷新到hdfs文件中；<br>若此参数间隔太久，且数据写入太多，会引起长时间的阻塞等待flush；因此高并发写入时，此参数要适当调小。</p>
+<p><strong>hbase.hstore.blockingStoreFiles=20</strong></p>
+<p>在flush时,当一个region中的Store(Coulmn Family)内有超过xx个storefile时,则block所有的写请求进行compaction。设置过小会使影响系统吞吐率（使吞吐率不高）。建议将该值调大一些，（但也不应过大，经验值是20左右吧。太大的话会在系统压力很大时使storefile过多，compact一直无法完成，扫库或者数据读取的性能会受到影响）。</p>
+<p><strong>hbase.hstore.compactionThreshold=6</strong><br>hbase.hstore.compactionThreshold：HStore的storeFile数量&gt;= compactionThreshold配置的值，则可能会进行compact，默认值为3，可以调大，比如设置为6，在定期的major compact中进行剩下文件的合并。</p>
+<p><strong>hbase.hregion.memstore.mslab.enabled=true</strong></p>
+<p>启用hbase0.90x版本引入的一种高级机制来缓解region服务器内存碎片文件。</p>
+<h3 id="客户端参数"><a href="#客户端参数" class="headerlink" title="客户端参数"></a>客户端参数</h3><p><strong>Write Buffer Size</strong></p>
+<figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">HTable htable = new HTable(<span class="built_in">config</span>, tablename)<span class="comment">;   </span></span><br><span class="line">htable.setWriteBufferSize(<span class="number">6</span> * <span class="number">1024</span> * <span class="number">1024</span>)<span class="comment">;   </span></span><br><span class="line">htable.setAutoFlush(false)<span class="comment">;</span></span><br></pre></td></tr></table></figure>
+
+<p>HBase Client会在数据累积到设置的阈值后才提交Region Server。这样做的好处在于可以减少RPC连接次数，达到批次效果。</p>
+<p><strong>hbase.client.keyvalue.maxsize=10485760</strong></p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="selector-tag">connection</span><span class="selector-class">.getConfiguration</span>()<span class="selector-class">.set</span>("<span class="selector-tag">hbase</span><span class="selector-class">.client</span><span class="selector-class">.keyvalue</span><span class="selector-class">.maxsize</span>", "104857600");</span><br></pre></td></tr></table></figure>
+
+<p>列族的最大值，默认10M，如果存储内容超过10M则需更改次值。</p>
+<p><strong>hfile.block.cache.size</strong></p>
+<figure class="highlight haxe"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Get <span class="keyword">get</span> = <span class="keyword">new</span> <span class="type">Get</span>(rowkey.getBytes());</span><br><span class="line"><span class="keyword">get</span>.setCacheBlocks(<span class="literal">false</span>); <span class="comment">//不进行block缓存</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>WAL</strong></p>
+<figure class="highlight gams"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">Put</span> <span class="keyword">put</span> = new <span class="keyword">Put</span>(<span class="string">"test"</span>.getBytes(<span class="string">"UTF-8"</span>));</span><br><span class="line"><span class="keyword">put</span>.setDurability(Durability.SKIP_WAL);</span><br></pre></td></tr></table></figure>
+
+<p>其实不推荐关闭WAL，关闭WAl日志后，如果RegionServer当掉的话，会导致还没有flsh到HDFS上的数据丢失。<font color="red">除非有很好的数据重跑机制，否则不推荐关闭</font></p>
+<h2 id="GC调优"><a href="#GC调优" class="headerlink" title="GC调优"></a>GC调优</h2><p>由于GC调优内容比较多，所以单独抽出来写，后续会补上。</p>
+<h2 id="表设计原理"><a href="#表设计原理" class="headerlink" title="表设计原理"></a>表设计原理</h2><p><strong>尽量只使用一个列族</strong></p>
+<p>Hbase进行合并是会对所有列族进行合并</p>
+<p><strong>列族采用压缩算法</strong></p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">alter <span class="string">'test'</span>,&#123;<span class="function"><span class="params">NAME</span>=&gt;</span><span class="string">'INFO'</span>,<span class="function"><span class="params">COMPRESSION</span>=&gt;</span><span class="string">'SNAPPY'</span>&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>rowKey设计尽量不要用时间或者自然顺序的字段作为开始</strong></p>
+<p>这样能保证，写入性能。如果某些业务场景必须这样，可以使用Salt方式来实现。</p>
+<p>Salt：<br>rowKey前面加上3位随机码，查询的时候多线程并行查询100次（rowKey前面加上0-99）。仅限于根据rowKey精确查询。</p>
+<p>下面还介绍了通过timestamp来解决，用时间作为RowKey前缀写入性能慢的问题。</p>
+<p><strong>预分区</strong></p>
+<p>可以根据预先固定好的需求来进行预先分区，提高写入性能。</p>
+<figure class="highlight processing"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="built_in">boolean</span> createTable(Admin admin, HTableDescriptor table, <span class="built_in">byte</span>[][] splits)</span><br><span class="line"><span class="keyword">throws</span> IOException &#123;</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    admin.createTable( table, splits );</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">  &#125; <span class="keyword">catch</span> (TableExistsException e) &#123;</span><br><span class="line">    logger.info(<span class="string">"table "</span> + table.getNameAsString() + <span class="string">" already exists"</span>);</span><br><span class="line">    <span class="comment">// the table already exists...</span></span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="built_in">byte</span>[][] getHexSplits(<span class="keyword">String</span> startKey, <span class="keyword">String</span> endKey, <span class="built_in">int</span> numRegions) &#123;</span><br><span class="line">  <span class="built_in">byte</span>[][] splits = <span class="keyword">new</span> <span class="built_in">byte</span>[numRegions<span class="number">-1</span>][];</span><br><span class="line">  BigInteger lowestKey = <span class="keyword">new</span> BigInteger(startKey, <span class="number">16</span>);</span><br><span class="line">  BigInteger highestKey = <span class="keyword">new</span> BigInteger(endKey, <span class="number">16</span>);</span><br><span class="line">  BigInteger range = highestKey.subtract(lowestKey);</span><br><span class="line">  BigInteger regionIncrement = range.divide(BigInteger.valueOf(numRegions));</span><br><span class="line">  lowestKey = lowestKey.<span class="built_in">add</span>(regionIncrement);</span><br><span class="line">  <span class="keyword">for</span>(<span class="built_in">int</span> i=<span class="number">0</span>; i &lt; numRegions<span class="number">-1</span>;i++) &#123;</span><br><span class="line">    BigInteger <span class="built_in">key</span> = lowestKey.<span class="built_in">add</span>(regionIncrement.multiply(BigInteger.valueOf(i)));</span><br><span class="line">    <span class="built_in">byte</span>[] b = <span class="keyword">String</span>.format(<span class="string">"%016x"</span>, <span class="built_in">key</span>).getBytes();</span><br><span class="line">    splits[i] = b;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> splits;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Hbase的TTL字段超时设置测试"><a href="#Hbase的TTL字段超时设置测试" class="headerlink" title="Hbase的TTL字段超时设置测试"></a>Hbase的TTL字段超时设置测试</h2><p><strong>首先disable这个表，否则记录会丢失。我们建立一个测试表test，有一个列簇fa</strong></p>
+<figure class="highlight puppet"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">hbase(main):011:0&gt; create <span class="string">'test'</span>,<span class="string">'fa'</span></span><br><span class="line">hbase(main):011:0&gt; describe <span class="string">'test'</span></span><br><span class="line">Table test is ENABLED                                                                                                        </span><br><span class="line">test                                                                                                                         </span><br><span class="line">COLUMN FAMILIES DESCRIPTION                                                                                                  </span><br><span class="line">&#123;NAME =&gt; <span class="string">'fa'</span>, DATA_BLOCK_ENCODING =&gt; <span class="string">'NONE'</span>, BLOOMFILTER =&gt; <span class="string">'ROW'</span>, REPLICATION_SCOPE =&gt; <span class="string">'0'</span>, VERSIONS =&gt; <span class="string">'1'</span>, COMPRESSION =&gt;</span><br><span class="line"> <span class="string">'NONE'</span>, MIN_VERSIONS =&gt; <span class="string">'0'</span>, TTL =&gt; <span class="string">'FOREVER'</span>, KEEP_DELETED_CELLS =&gt; <span class="string">'FALSE'</span>, BLOCKSIZE =&gt; <span class="string">'65536'</span>, IN_MEMORY =&gt; <span class="string">'false'</span>, BL</span><br><span class="line">OCKCACHE =&gt; <span class="string">'true'</span>&#125;                                                                                                          </span><br><span class="line">1 row(s) in 0.0230 seconds</span><br></pre></td></tr></table></figure>
+
+<p>表默认的<code>TTL =&gt; FOREVER</code>超时时间为永久存活（hbase1.0之前好像是多少年去了）。<br>那么对于某些列，我存储一段时间后，需要该列值失效。那如何设置？下面我们做一个测试：</p>
+<p><strong>我们先向test表中插入一下记录：</strong></p>
+<figure class="highlight subunit"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">1           2015<span class="string">-11</span><span class="string">-11</span> 14:09:40</span><br><span class="line">2           2015<span class="string">-11</span><span class="string">-12</span> 14:09:40</span><br><span class="line">3           2015<span class="string">-11</span><span class="string">-13</span> 14:09:40</span><br><span class="line">4           2015<span class="string">-11</span><span class="string">-14</span> 14:09:40</span><br><span class="line">5           2015<span class="string">-11</span><span class="string">-15</span> 14:09:40</span><br><span class="line"></span><br><span class="line">hbase(main):082:0&gt; put 'test',1,'fa:uptime','2015<span class="string">-11</span><span class="string">-11</span> 14:09:40'</span><br><span class="line">。。。。。。。。。。。。。</span><br><span class="line">hbase(main):123:0&gt;  scan 'test'</span><br><span class="line">ROW                        COLUMN+CELL                                                              </span><br><span class="line"> 1                         column=fa:uptime, timestamp=1415688066815, value=2015<span class="string">-11</span><span class="string">-11</span> 14:09:40     </span><br><span class="line"> 2                         column=fa:uptime, timestamp=1415688082648, value=2015<span class="string">-11</span><span class="string">-12</span> 14:09:40     </span><br><span class="line"> 3                         column=fa:uptime, timestamp=1415688092101, value=2015<span class="string">-11</span><span class="string">-13</span> 14:09:40     </span><br><span class="line"> 4                         column=fa:uptime, timestamp=1415688101473, value=2015<span class="string">-11</span><span class="string">-14</span> 14:09:40     </span><br><span class="line"> 5                         column=fa:uptime, timestamp=1415688115318, value=2015<span class="string">-11</span><span class="string">-15</span> 14:09:40     </span><br><span class="line">5 row(s) in 0.0400 seconds</span><br></pre></td></tr></table></figure>
+
+<p><strong>我们修改过期时间为200s 查看记录</strong></p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="title">hbase</span><span class="params">(main)</span></span>:<span class="number">126</span>:<span class="number">0</span>&gt; disable <span class="string">'test'</span>           <span class="comment">//修改表前，需要先disable 表</span></span><br><span class="line"><span class="function"><span class="title">hbase</span><span class="params">(main)</span></span>:<span class="number">114</span>:<span class="number">0</span>&gt; alter <span class="string">"test"</span>,NAME=&gt;<span class="string">'fa'</span>,TTL=&gt;<span class="string">'200'</span>  <span class="comment">//修改表的列簇超时时间为200s</span></span><br><span class="line"><span class="function"><span class="title">hbase</span><span class="params">(main)</span></span>:<span class="number">114</span>:<span class="number">0</span>&gt; enable  <span class="string">"test"</span>          <span class="comment">//使表可用，以供查询</span></span><br><span class="line"><span class="function"><span class="title">hbase</span><span class="params">(main)</span></span>:<span class="number">129</span>:<span class="number">0</span>&gt;  scan <span class="string">'test'</span>           <span class="comment">//此时查询时，表中原来的5条，记录均存在，接下来我们更新其中一条。再查看。</span></span><br><span class="line">ROW                        COLUMN+CELL                                                              </span><br><span class="line"> <span class="number">1</span>                         column=fa:uptime, timestamp=<span class="number">1415688066815</span>, value=<span class="number">2015</span>-<span class="number">11</span>-<span class="number">11</span> <span class="number">14</span>:<span class="number">09</span>:<span class="number">40</span>     </span><br><span class="line"> <span class="number">2</span>                         column=fa:uptime, timestamp=<span class="number">1415688082648</span>, value=<span class="number">2015</span>-<span class="number">11</span>-<span class="number">12</span> <span class="number">14</span>:<span class="number">09</span>:<span class="number">40</span>     </span><br><span class="line"> <span class="number">3</span>                         column=fa:uptime, timestamp=<span class="number">1415688092101</span>, value=<span class="number">2015</span>-<span class="number">11</span>-<span class="number">13</span> <span class="number">14</span>:<span class="number">09</span>:<span class="number">40</span>     </span><br><span class="line"> <span class="number">4</span>                         column=fa:uptime, timestamp=<span class="number">1415688101473</span>, value=<span class="number">2015</span>-<span class="number">11</span>-<span class="number">14</span> <span class="number">14</span>:<span class="number">09</span>:<span class="number">40</span>     </span><br><span class="line"> <span class="number">5</span>                         column=fa:uptime, timestamp=<span class="number">1415688115318</span>, value=<span class="number">2015</span>-<span class="number">11</span>-<span class="number">15</span> <span class="number">14</span>:<span class="number">09</span>:<span class="number">40</span>     </span><br><span class="line"><span class="number">5</span> row(s) <span class="keyword">in</span> <span class="number">0.0420</span> seconds</span><br></pre></td></tr></table></figure>
+
+<p>由于200s时间很短，我们选择跟新第三条记录：跟新为：</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">3</span>           <span class="number">2015</span>-<span class="number">11</span>-<span class="number">16</span> <span class="number">14</span>:<span class="number">09</span>:<span class="number">40</span></span><br><span class="line"><span class="function"><span class="title">hbase</span><span class="params">(main)</span></span>:<span class="number">130</span>:<span class="number">0</span>&gt; put <span class="string">'test'</span>,<span class="number">3</span>,<span class="string">'fa:uptime'</span>,<span class="string">'2015-11-16 14:09:40'</span></span><br><span class="line"><span class="number">0</span> row(s) <span class="keyword">in</span> <span class="number">0.0200</span> seconds</span><br></pre></td></tr></table></figure>
+
+<p>更新后等待200秒再去查看，发现表中的记录只剩下一条了：也就是我们最后跟新的这条。为什么前面的会消失呢，是因为TTL生效记录过期了。</p>
+<figure class="highlight excel"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">hbase(main)<span class="symbol">:131</span><span class="symbol">:0</span>&gt; scan 'test'</span><br><span class="line"><span class="built_in">ROW</span>                        <span class="built_in">COLUMN</span>+<span class="built_in">CELL</span>                                                              </span><br><span class="line"> <span class="number">3</span>                         <span class="built_in">column</span>=<span class="symbol">fa:up</span><span class="built_in">time</span>, timestamp=<span class="number">1415688323548</span>, <span class="built_in">value</span>=<span class="number">2015</span>-<span class="number">11</span>-<span class="number">16</span> <span class="symbol">14:09</span><span class="symbol">:40</span>     </span><br><span class="line"><span class="number">1</span> <span class="built_in">row</span>(s) in <span class="number">0.0140</span> seconds</span><br></pre></td></tr></table></figure>
+
+<p>再过200秒后查看，表中的记录数为空，所有的记录都超时，被删除。</p>
+<p><strong>总结</strong></p>
+<p>测试说明，我们可用对hbase的某些列簇，做一些高级设置，例如超时，压索，等设置。注意在设置之前需要先disable表，否则，表中记录会被清空。另外，TTL=&gt;的更新超时时间是指：该列最后更新的时间，到超时时间的限制，而不是第一次创建，到超时时间。</p>
+<p><strong>通过设置属性可以禁用TTL：</strong><br><code>hbase.store.delete.expired.storefile=false</code></p>
+<p><strong>hbase1.0中加入了行的ttl设置，可以通过代码设置：</strong></p>
+<figure class="highlight gams"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">Put</span> <span class="keyword">put</span> = new <span class="keyword">Put</span>(<span class="string">"test"</span>.getBytes(<span class="string">"UTF-8"</span>));</span><br><span class="line"><span class="comment">// 单位：毫秒(milliseconds)</span></span><br><span class="line"><span class="keyword">put</span>.setTTL(<span class="number">200</span> * <span class="number">100</span>);</span><br></pre></td></tr></table></figure>
+
+<p><font color="red">代码中TTLS表示单位毫秒而不是秒，如果代码中设置的TTL时间比列族设置的要长，以列族设置的为准。并且如果列族没有设置TTL超时时间，则以代码中设置为准。</font></p>
+<h2 id="保留删除数据"><a href="#保留删除数据" class="headerlink" title="保留删除数据"></a>保留删除数据</h2><p>默认情况下，删除标记延长回到时间的起点。因此，获取或扫描操作将无法看到已删除的单元格（行或列），甚至当获取或扫描操作指示的时间范围内删除标记放在前。列族可以选择保留已删除单元格。在这种情况下，删除的细胞仍然可以检索到的，只要这些操作指定结束之前的任何时间戳删除会影响细胞一个时间范围。这允许点在时间查询甚至在删除的存在。</p>
+<p>删除单元格仍受到TTL和永远不会有更多的不是删除单元格“版本的最大数”。一种新的“原始”扫描选项返回所有被删除的行，并删除标记。</p>
+<h3 id="设置删除仍然保留"><a href="#设置删除仍然保留" class="headerlink" title="设置删除仍然保留"></a>设置删除仍然保留</h3><p>shell：</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hbase&gt; hbase&gt; alter ‘t1′, <span class="function"><span class="params">NAME</span> =&gt;</span> ‘f1′, <span class="function"><span class="params">KEEP_DELETED_CELLS</span> =&gt;</span> <span class="literal">true</span></span><br></pre></td></tr></table></figure>
+
+<p>java：</p>
+<figure class="highlight abnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">HColumnDescriptor.setKeepDeletedCells(true)<span class="comment">;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="示例"><a href="#示例" class="headerlink" title="示例"></a>示例</h3><p><strong>不设置删除保留属性</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">create</span> <span class="string">'test'</span>, &#123;<span class="keyword">NAME</span>=&gt;<span class="string">'e'</span>, <span class="keyword">VERSIONS</span>=&gt;<span class="number">2147483647</span>&#125;</span><br><span class="line">put <span class="string">'test'</span>, <span class="string">'r1'</span>, <span class="string">'e:c1'</span>, <span class="string">'value'</span>, <span class="number">10</span></span><br><span class="line">put <span class="string">'test'</span>, <span class="string">'r1'</span>, <span class="string">'e:c1'</span>, <span class="string">'value'</span>, <span class="number">12</span></span><br><span class="line">put <span class="string">'test'</span>, <span class="string">'r1'</span>, <span class="string">'e:c1'</span>, <span class="string">'value'</span>, <span class="number">14</span></span><br><span class="line"><span class="keyword">delete</span> <span class="string">'test'</span>, <span class="string">'r1'</span>, <span class="string">'e:c1'</span>,  <span class="number">11</span></span><br><span class="line"></span><br><span class="line">hbase(<span class="keyword">main</span>):<span class="number">017</span>:<span class="number">0</span>&gt; <span class="keyword">scan</span> <span class="string">'test'</span>, &#123;<span class="keyword">RAW</span>=&gt;<span class="literal">true</span>, <span class="keyword">VERSIONS</span>=&gt;<span class="number">1000</span>&#125;</span><br><span class="line"><span class="keyword">ROW</span>                                              <span class="keyword">COLUMN</span>+CELL</span><br><span class="line"> r1                                              <span class="keyword">column</span>=e:c1, <span class="built_in">timestamp</span>=<span class="number">14</span>, <span class="keyword">value</span>=<span class="keyword">value</span></span><br><span class="line"> r1                                              <span class="keyword">column</span>=e:c1, <span class="built_in">timestamp</span>=<span class="number">12</span>, <span class="keyword">value</span>=<span class="keyword">value</span></span><br><span class="line"> r1                                              <span class="keyword">column</span>=e:c1, <span class="built_in">timestamp</span>=<span class="number">11</span>, <span class="keyword">type</span>=DeleteColumn</span><br><span class="line"> r1                                              <span class="keyword">column</span>=e:c1, <span class="built_in">timestamp</span>=<span class="number">10</span>, <span class="keyword">value</span>=<span class="keyword">value</span></span><br><span class="line"><span class="number">1</span> <span class="keyword">row</span>(s) <span class="keyword">in</span> <span class="number">0.0120</span> <span class="keyword">seconds</span></span><br><span class="line"></span><br><span class="line">hbase(<span class="keyword">main</span>):<span class="number">018</span>:<span class="number">0</span>&gt; <span class="keyword">flush</span> <span class="string">'test'</span></span><br><span class="line"><span class="number">0</span> <span class="keyword">row</span>(s) <span class="keyword">in</span> <span class="number">0.0350</span> <span class="keyword">seconds</span></span><br><span class="line"></span><br><span class="line">hbase(<span class="keyword">main</span>):<span class="number">019</span>:<span class="number">0</span>&gt; <span class="keyword">scan</span> <span class="string">'test'</span>, &#123;<span class="keyword">RAW</span>=&gt;<span class="literal">true</span>, <span class="keyword">VERSIONS</span>=&gt;<span class="number">1000</span>&#125;</span><br><span class="line"><span class="keyword">ROW</span>                                              <span class="keyword">COLUMN</span>+CELL</span><br><span class="line"> r1                                              <span class="keyword">column</span>=e:c1, <span class="built_in">timestamp</span>=<span class="number">14</span>, <span class="keyword">value</span>=<span class="keyword">value</span></span><br><span class="line"> r1                                              <span class="keyword">column</span>=e:c1, <span class="built_in">timestamp</span>=<span class="number">12</span>, <span class="keyword">value</span>=<span class="keyword">value</span></span><br><span class="line"> r1                                              <span class="keyword">column</span>=e:c1, <span class="built_in">timestamp</span>=<span class="number">11</span>, <span class="keyword">type</span>=DeleteColumn</span><br><span class="line"> r1                                              <span class="keyword">column</span>=e:c1, <span class="built_in">timestamp</span>=<span class="number">10</span>, <span class="keyword">value</span>=<span class="keyword">value</span></span><br><span class="line"><span class="number">1</span> <span class="keyword">row</span>(s) <span class="keyword">in</span> <span class="number">0.0120</span> <span class="keyword">seconds</span></span><br><span class="line"></span><br><span class="line">hbase(<span class="keyword">main</span>):<span class="number">020</span>:<span class="number">0</span>&gt; major_compact <span class="string">'test'</span></span><br><span class="line"><span class="number">0</span> <span class="keyword">row</span>(s) <span class="keyword">in</span> <span class="number">0.0260</span> <span class="keyword">seconds</span></span><br><span class="line"></span><br><span class="line">hbase(<span class="keyword">main</span>):<span class="number">021</span>:<span class="number">0</span>&gt; <span class="keyword">scan</span> <span class="string">'test'</span>, &#123;<span class="keyword">RAW</span>=&gt;<span class="literal">true</span>, <span class="keyword">VERSIONS</span>=&gt;<span class="number">1000</span>&#125;</span><br><span class="line"><span class="keyword">ROW</span>                                              <span class="keyword">COLUMN</span>+CELL</span><br><span class="line"> r1                                              <span class="keyword">column</span>=e:c1, <span class="built_in">timestamp</span>=<span class="number">14</span>, <span class="keyword">value</span>=<span class="keyword">value</span></span><br><span class="line"> r1                                              <span class="keyword">column</span>=e:c1, <span class="built_in">timestamp</span>=<span class="number">12</span>, <span class="keyword">value</span>=<span class="keyword">value</span></span><br><span class="line"> r1                                              <span class="keyword">column</span>=e:c1, <span class="built_in">timestamp</span>=<span class="number">10</span>, <span class="keyword">value</span>=<span class="keyword">value</span></span><br><span class="line"><span class="number">1</span> <span class="keyword">row</span>(s) <span class="keyword">in</span> <span class="number">0.0120</span> <span class="keyword">seconds</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>设置删除保留属性</strong></p>
+<figure class="highlight ocaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line">hbase(main):<span class="number">005</span>:<span class="number">0</span>&gt; create <span class="symbol">'test'</span>, &#123;<span class="type">NAME</span>=&gt;<span class="string">'e'</span>, <span class="type">VERSIONS</span>=&gt;<span class="number">2147483647</span>, <span class="type">KEEP_DELETED_CELLS</span> =&gt; <span class="literal">true</span>&#125;</span><br><span class="line"><span class="number">0</span> row(s) <span class="keyword">in</span> <span class="number">0.2160</span> seconds</span><br><span class="line"></span><br><span class="line">=&gt; <span class="type">Hbase</span>::<span class="type">Table</span> - test</span><br><span class="line">hbase(main):<span class="number">006</span>:<span class="number">0</span>&gt; put <span class="symbol">'test'</span>, <span class="symbol">'r1'</span>, <span class="symbol">'e</span>:c1', <span class="symbol">'value'</span>, <span class="number">10</span></span><br><span class="line"><span class="number">0</span> row(s) <span class="keyword">in</span> <span class="number">0.1070</span> seconds</span><br><span class="line"></span><br><span class="line">hbase(main):<span class="number">007</span>:<span class="number">0</span>&gt; put <span class="symbol">'test'</span>, <span class="symbol">'r1'</span>, <span class="symbol">'e</span>:c1', <span class="symbol">'value'</span>, <span class="number">12</span></span><br><span class="line"><span class="number">0</span> row(s) <span class="keyword">in</span> <span class="number">0.0140</span> seconds</span><br><span class="line"></span><br><span class="line">hbase(main):<span class="number">008</span>:<span class="number">0</span>&gt; put <span class="symbol">'test'</span>, <span class="symbol">'r1'</span>, <span class="symbol">'e</span>:c1', <span class="symbol">'value'</span>, <span class="number">14</span></span><br><span class="line"><span class="number">0</span> row(s) <span class="keyword">in</span> <span class="number">0.0160</span> seconds</span><br><span class="line"></span><br><span class="line">hbase(main):<span class="number">009</span>:<span class="number">0</span>&gt; delete <span class="symbol">'test'</span>, <span class="symbol">'r1'</span>, <span class="symbol">'e</span>:c1',  <span class="number">11</span></span><br><span class="line"><span class="number">0</span> row(s) <span class="keyword">in</span> <span class="number">0.0290</span> seconds</span><br><span class="line"></span><br><span class="line">hbase(main):<span class="number">010</span>:<span class="number">0</span>&gt; scan <span class="symbol">'test'</span>, &#123;<span class="type">RAW</span>=&gt;<span class="literal">true</span>, <span class="type">VERSIONS</span>=&gt;<span class="number">1000</span>&#125;</span><br><span class="line"><span class="type">ROW</span>                                                                                          <span class="type">COLUMN</span>+<span class="type">CELL</span></span><br><span class="line"> r1                                                                                          column=e:c1, timestamp=<span class="number">14</span>, <span class="keyword">value</span>=<span class="keyword">value</span></span><br><span class="line"> r1                                                                                          column=e:c1, timestamp=<span class="number">12</span>, <span class="keyword">value</span>=<span class="keyword">value</span></span><br><span class="line"> r1                                                                                          column=e:c1, timestamp=<span class="number">11</span>, <span class="keyword">type</span>=<span class="type">DeleteColumn</span></span><br><span class="line"> r1                                                                                          column=e:c1, timestamp=<span class="number">10</span>, <span class="keyword">value</span>=<span class="keyword">value</span></span><br><span class="line"><span class="number">1</span> row(s) <span class="keyword">in</span> <span class="number">0.0550</span> seconds</span><br><span class="line"></span><br><span class="line">hbase(main):<span class="number">011</span>:<span class="number">0</span>&gt; flush <span class="symbol">'test'</span></span><br><span class="line"><span class="number">0</span> row(s) <span class="keyword">in</span> <span class="number">0.2780</span> seconds</span><br><span class="line"></span><br><span class="line">hbase(main):<span class="number">012</span>:<span class="number">0</span>&gt; scan <span class="symbol">'test'</span>, &#123;<span class="type">RAW</span>=&gt;<span class="literal">true</span>, <span class="type">VERSIONS</span>=&gt;<span class="number">1000</span>&#125;</span><br><span class="line"><span class="type">ROW</span>                                                                                          <span class="type">COLUMN</span>+<span class="type">CELL</span></span><br><span class="line"> r1                                                                                          column=e:c1, timestamp=<span class="number">14</span>, <span class="keyword">value</span>=<span class="keyword">value</span></span><br><span class="line"> r1                                                                                          column=e:c1, timestamp=<span class="number">12</span>, <span class="keyword">value</span>=<span class="keyword">value</span></span><br><span class="line"> r1                                                                                          column=e:c1, timestamp=<span class="number">11</span>, <span class="keyword">type</span>=<span class="type">DeleteColumn</span></span><br><span class="line"> r1                                                                                          column=e:c1, timestamp=<span class="number">10</span>, <span class="keyword">value</span>=<span class="keyword">value</span></span><br><span class="line"><span class="number">1</span> row(s) <span class="keyword">in</span> <span class="number">0.0620</span> seconds</span><br><span class="line"></span><br><span class="line">hbase(main):<span class="number">013</span>:<span class="number">0</span>&gt; major_compact <span class="symbol">'test'</span></span><br><span class="line"><span class="number">0</span> row(s) <span class="keyword">in</span> <span class="number">0.0530</span> seconds</span><br><span class="line"></span><br><span class="line">hbase(main):<span class="number">014</span>:<span class="number">0</span>&gt; scan <span class="symbol">'test'</span>, &#123;<span class="type">RAW</span>=&gt;<span class="literal">true</span>, <span class="type">VERSIONS</span>=&gt;<span class="number">1000</span>&#125;</span><br><span class="line"><span class="type">ROW</span>                                                                                          <span class="type">COLUMN</span>+<span class="type">CELL</span></span><br><span class="line"> r1                                                                                          column=e:c1, timestamp=<span class="number">14</span>, <span class="keyword">value</span>=<span class="keyword">value</span></span><br><span class="line"> r1                                                                                          column=e:c1, timestamp=<span class="number">12</span>, <span class="keyword">value</span>=<span class="keyword">value</span></span><br><span class="line"> r1                                                                                          column=e:c1, timestamp=<span class="number">11</span>, <span class="keyword">type</span>=<span class="type">DeleteColumn</span></span><br><span class="line"> r1                                                                                          column=e:c1, timestamp=<span class="number">10</span>, <span class="keyword">value</span>=<span class="keyword">value</span></span><br><span class="line"><span class="number">1</span> row(s) <span class="keyword">in</span> <span class="number">0.0650</span> seconds</span><br></pre></td></tr></table></figure>
+
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>保留已删除值是为了避免HBase的删除单元格时将其删除的唯一原因是删除标记。因此，与KEEP_DELETED_CELLS启用，<font color="red">只有超过版本个数或则TTL超时，否则这条记录将不会删除。</font></p>
+<h2 id="利用TimeStamp来解决RowKey前缀为时间写入性能慢问题"><a href="#利用TimeStamp来解决RowKey前缀为时间写入性能慢问题" class="headerlink" title="利用TimeStamp来解决RowKey前缀为时间写入性能慢问题"></a>利用TimeStamp来解决RowKey前缀为时间写入性能慢问题</h2><h3 id="RowKey设计"><a href="#RowKey设计" class="headerlink" title="RowKey设计"></a>RowKey设计</h3><p>由时间前缀替换成TimeStamp，如：</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#时间前缀</span></span><br><span class="line"><span class="attr">rowKey</span>=<span class="number">20160125215720</span>_zrh</span><br><span class="line"></span><br><span class="line"><span class="comment">#修改后</span></span><br><span class="line"><span class="attr">rowKey</span>=zrh</span><br><span class="line"><span class="attr">timeStamp</span>=<span class="number">1453730240000</span></span><br></pre></td></tr></table></figure>
+
+<p><code>timeStamp=1453730240000</code>为20160125215720表示的毫秒数。</p>
+<h3 id="通过代码设置timeStamp"><a href="#通过代码设置timeStamp" class="headerlink" title="通过代码设置timeStamp"></a>通过代码设置timeStamp</h3><figure class="highlight arduino"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Put <span class="built_in">put</span> = <span class="keyword">new</span> Put(<span class="string">"test"</span>.getBytes(<span class="string">"UTF-8"</span>));</span><br><span class="line">SimpleDateFormat format = <span class="keyword">new</span> SimpleDateFormat(<span class="string">"yyyyMMddHHmmss"</span>);</span><br><span class="line"><span class="keyword">long</span> ts = format.parse(<span class="string">"20160125215720"</span>).getTime();</span><br><span class="line">System.out.<span class="built_in">println</span>(ts);</span><br><span class="line"><span class="built_in">put</span>.addColumn(<span class="string">"INFO"</span>.getBytes(), <span class="string">"sex"</span>.getBytes(), <span class="number">1</span>l, <span class="string">"男"</span>.getBytes());</span><br></pre></td></tr></table></figure>
+
+<h3 id="代码查询"><a href="#代码查询" class="headerlink" title="代码查询"></a>代码查询</h3><figure class="highlight haxe"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">SimpleDateFormat format = <span class="keyword">new</span> <span class="type">SimpleDateFormat</span>(<span class="string">"yyyyMMddHHmmss"</span>);</span><br><span class="line">long ts = format.parse(<span class="string">"20160125215720"</span>).getTime();</span><br><span class="line">Scan scan = <span class="keyword">new</span> <span class="type">Scan</span>();</span><br><span class="line">scan.setTimeStamp(ts);</span><br><span class="line"><span class="comment">// 或者</span></span><br><span class="line"><span class="comment">// scan.setTimeRange(ts, ts + 1);</span></span><br></pre></td></tr></table></figure>
+
+<p>通过setTimeRange设置时间范围。</p>
+<h3 id="需要注意的两个地方"><a href="#需要注意的两个地方" class="headerlink" title="需要注意的两个地方"></a>需要注意的两个地方</h3><p>在hbase scan中为了提高效率，一般采用setStartRow和setStopRow或者采用filter的方式来减少结果集。还有一种方式就是用setTimeRange，它可以指定返回指定时间范围内的columns数据。对setTimeRange函数的使用，有两个特别需要注意的地方：</p>
+<p>(1)  setTimeRange指定的是columns（列，也叫qualify）的时间范围，而不是columns family（列族）的范围。</p>
+<p>这样如果一个表的多个columns的时间不一致，那么scan的返回结果就可能只包含一个columns的数据，其他columns的数据并不会返回。原因是：hbase中插入数据时，数据的列和值是存在KeyValue中，KeyValue的时间就是当前时间。KeyValue会被加入到columns family中，而columns family是不带时间戳的。</p>
+<p>对于这种情况，在程序中需要特别注意不要遗漏某个column的数据。</p>
+<p>(2)  scan如果指定了TimeRange，那么可能返回旧版本的数据。</p>
+<p>先创建一张表，注意在创建表的时候故意只指定了一个版本：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">create</span> <span class="string">'zhangrenhua'</span>,&#123;<span class="keyword">NAME</span>=&gt;<span class="string">'cf'</span>,<span class="keyword">VERSION</span>=&gt;<span class="number">1</span>&#125; // 一个版本</span><br><span class="line">put <span class="string">'zhangrenhua'</span>,<span class="string">'row1'</span>,<span class="string">'cf:a'</span>,<span class="string">'value1'</span></span><br><span class="line">put <span class="string">'zhangrenhua'</span>,<span class="string">'row2'</span>,<span class="string">'cf:a'</span>,<span class="string">'value2'</span></span><br><span class="line">put <span class="string">'zhangrenhua'</span>,<span class="string">'row3'</span>,<span class="string">'cf:a'</span>,<span class="string">'value3'</span></span><br><span class="line">put <span class="string">'zhangrenhua'</span>,<span class="string">'row3'</span>,<span class="string">'cf:a'</span>,<span class="string">'value4'</span></span><br><span class="line"></span><br><span class="line">hbase(<span class="keyword">main</span>):<span class="number">045</span>:<span class="number">0</span>&gt; <span class="keyword">scan</span> <span class="string">'zhangrenhua'</span></span><br><span class="line"><span class="keyword">ROW</span>                                      <span class="keyword">COLUMN</span>+CELL</span><br><span class="line"> row1                                    <span class="keyword">column</span>=cf:a, <span class="built_in">timestamp</span>=<span class="number">1362663065599</span>, <span class="keyword">value</span>=value1</span><br><span class="line"> row2                                    <span class="keyword">column</span>=cf:a, <span class="built_in">timestamp</span>=<span class="number">1362663072949</span>, <span class="keyword">value</span>=value2</span><br><span class="line"> row3                                    <span class="keyword">column</span>=cf:a, <span class="built_in">timestamp</span>=<span class="number">1362663086941</span>, <span class="keyword">value</span>=value4</span><br><span class="line"><span class="number">3</span> <span class="keyword">row</span>(s) <span class="keyword">in</span> <span class="number">0.0170</span> <span class="keyword">seconds</span></span><br></pre></td></tr></table></figure>
+
+<p>如果指定了时间范围呢？试一下：</p>
+<figure class="highlight nix"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">hbase(main):<span class="number">046</span>:<span class="number">0</span>&gt; scan 'zhangrenhua',&#123;<span class="attr">TIMERANGE=&gt;[1362663065599,1362663086941]&#125;</span></span><br><span class="line">ROW                                      COLUMN+CELL                                                                                                         </span><br><span class="line"> row1                                    <span class="attr">column=cf:a,</span> <span class="attr">timestamp=1362663065599,</span> <span class="attr">value=value1</span>                                                                  </span><br><span class="line"> row2                                    <span class="attr">column=cf:a,</span> <span class="attr">timestamp=1362663072949,</span> <span class="attr">value=value2</span>                                                                  </span><br><span class="line"> row3                                    <span class="attr">column=cf:a,</span> <span class="attr">timestamp=1362663084573,</span> <span class="attr">value=value3</span>                                                                  </span><br><span class="line"><span class="number">3</span> row(s) <span class="keyword">in</span> <span class="number">0.0110</span> seconds</span><br></pre></td></tr></table></figure>
+
+<p>可以看到，row3这条记录返回的值是value3。再试一下：</p>
+<figure class="highlight nix"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">hbase(main):<span class="number">048</span>:<span class="number">0</span>&gt; scan 'zhangrenhua',&#123;<span class="attr">TIMERANGE=&gt;[1362663065599,1362663086942]&#125;</span></span><br><span class="line">ROW                                      COLUMN+CELL                                                                                                         </span><br><span class="line"> row1                                    <span class="attr">column=cf:a,</span> <span class="attr">timestamp=1362663065599,</span> <span class="attr">value=value1</span>                                                                  </span><br><span class="line"> row2                                    <span class="attr">column=cf:a,</span> <span class="attr">timestamp=1362663072949,</span> <span class="attr">value=value2</span>                                                                  </span><br><span class="line"> row3                                    <span class="attr">column=cf:a,</span> <span class="attr">timestamp=1362663086941,</span> <span class="attr">value=value4</span>                                                                  </span><br><span class="line"><span class="number">3</span> row(s) <span class="keyword">in</span> <span class="number">0.0100</span> seconds</span><br></pre></td></tr></table></figure>
+
+<p>这时是和预期的一样，row3这条记录返回的是最新的值value4了。</p>
+<p>为什么明明只指定了一个版本，但是设置不同的时间条件，竟然可以分别返回两个版本的数据？这是因为(row3, value3)这行记录虽然被hbase标记为”需要删除”，但是真正的删除在compaction阶段才会进行。(row3, value3)这条记录通过get和普通的scan都是无法访问到的，只有当设置了TimeRange才能访问到。</p>
+<p>所以，对于scan时设置了TimeRange的程序来说，要注意可能会得到一些旧版本的数据。</p>
+<p>此外：scan的时候可以通过<code>setMaxVersions()</code>来对每个column返回指定版本个数的数据<br><code>Result.getColumn()</code>是返回指定列上的所有版本数据<br><code>Result.getColumnLatest()</code>可以返回最新版本的数据</p>
+<h2 id="如何将一个HBase-CF指定为IN-MEMORY"><a href="#如何将一个HBase-CF指定为IN-MEMORY" class="headerlink" title="如何将一个HBase CF指定为IN_MEMORY"></a>如何将一个HBase CF指定为IN_MEMORY</h2><p>通过指定列族的<code>IN_MEMORY=true</code>属性，来让该列族的数据缓存在内存中，以提高查询性能。<font color="red">一些保存元数据的小表可以使用该属性来提升性能。</font></p>
+<h3 id="创建table的时候可以指定列族的属性"><a href="#创建table的时候可以指定列族的属性" class="headerlink" title="创建table的时候可以指定列族的属性"></a>创建table的时候可以指定列族的属性</h3><p>shell：</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">create <span class="string">'test'</span>, &#123;<span class="function"><span class="params">NAME</span> =&gt;</span> <span class="string">'edp'</span>, <span class="function"><span class="params">IN_MEMORY</span> =&gt;</span> <span class="literal">true</span>&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Java：</p>
+<figure class="highlight abnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">HColumnDescriptor.setInMemory(true)<span class="comment">;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="使用N-MEMORY需注意的地方"><a href="#使用N-MEMORY需注意的地方" class="headerlink" title="使用N_MEMORY需注意的地方"></a>使用N_MEMORY需注意的地方</h3><p>1、标记<code>IN_MEMORY=&gt;&#39;true&#39;</code>的column family的总体积最好不要超过in-memory cache的大小（in-memory cache = heap size * hfile.block.cache.size * 0.85 * 0.25），特别是当总体积远远大于了in-memory cache时，会在in-memory cache上发生严重的颠簸。</p>
+<p>2、换个角度再看，普遍提到的使用in-memory cache的场景是把元数据表的column family声明为<code>IN_MEMORY=&gt;true</code>。实际上这里的潜台词是：元数据表都很小。其时我们也可以大胆地把一些需要经常访问的，总体积不会超过in-memory cache的column family都设为IN_MEMORY=&gt;’true’从而更加充分地利用cache空间。就像前面提到的，普通的block永远是不会被放入in-memory cache的，只存放少量metadata是对in-memory cache资源的浪费（未来的版本应该提供三种区段的比例配置功能）。</p>
+<h2 id="总结-1"><a href="#总结-1" class="headerlink" title="总结"></a>总结</h2><p><strong>建表的一些默认参数值</strong></p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">hbase&gt; describe <span class="string">'test'</span></span><br><span class="line">DESCRIPTION                                          ENABLED</span><br><span class="line"> <span class="string">'test'</span>, &#123;NAME =&gt; <span class="string">'cf'</span>, DATA_BLOCK_ENCODING =&gt; <span class="string">'NONE false</span></span><br><span class="line"><span class="string"> '</span>, BLOOMFILTER =&gt; <span class="string">'ROW'</span>, REPLICATION_SCOPE =&gt; <span class="string">'0'</span>,</span><br><span class="line"> VERSIONS =&gt; <span class="string">'1'</span>, COMPRESSION =&gt; <span class="string">'GZ'</span>, MIN_VERSIONS</span><br><span class="line"> =&gt; <span class="string">'0'</span>, TTL =&gt; <span class="string">'FOREVER'</span>, KEEP_DELETED_CELLS =&gt; <span class="string">'fa</span></span><br><span class="line"><span class="string"> lse'</span>, BLOCKSIZE =&gt; <span class="string">'65536'</span>, IN_MEMORY =&gt; <span class="string">'false'</span>, B</span><br><span class="line"> LOCKCACHE =&gt; <span class="string">'true'</span>&#125;</span><br><span class="line"><span class="number">1</span> row(s) in <span class="number">0.1070</span> seconds</span><br></pre></td></tr></table></figure>
+
+<p>1、 客户端以表格的形式读取数据<br>2、 一张表是被划分成多个Hregion区域<br>3、 Hregion是被Hregion服务器管理的，当客户端需要访问某行数据的时候，需要访问对应的Hregion服务器。<br>4、 Hregions服务器里面有三种方式保存数据：<br>A、 Hmemcache高速缓存，保留是最新写入的数据<br>B、 Hlog记录文件，保留的是提交成功了，但未被写入文件的数据<br>C、 Hstores文件，数据的物理存放形式。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a href="http://hbase.apache.org/book.html" target="_blank" rel="noopener">http://hbase.apache.org/book.html</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/hadoop生态圈/" rel="tag"># hadoop生态圈</a>
+          
+            <a href="/tags/hbase/" rel="tag"># hbase</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/01/15/hadoop-Hbase1.xAPI开发以及过滤器详解/" rel="next" title="Hbase1.0API开发以及过滤器详解">
+                <i class="fa fa-chevron-left"></i> Hbase1.0API开发以及过滤器详解
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/01/20/hadoop-HbaseGC调优原理分析/" rel="prev" title="Hbase GC调优原理分析">
+                Hbase GC调优原理分析 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+<span class="jiathis_txt">分享到：</span>
+<a class="jiathis_button_fav">收藏夹</a>
+<a class="jiathis_button_copy">复制网址</a>
+<a class="jiathis_button_email">邮件</a>
+<a class="jiathis_button_weixin">微信</a>
+<a class="jiathis_button_qzone">QQ空间</a>
+<a class="jiathis_button_tqq">腾讯微博</a>
+<a class="jiathis_button_douban">豆瓣</a>
+<a class="jiathis_button_share">一键分享</a>
+
+<a href="http://www.jiathis.com/share?uid=2140465" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank">更多</a>
+<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+var jiathis_config={
+  data_track_clickback:true,
+  summary:"",
+  shortUrl:false,
+  hideMore:false
+}
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  <p>热评文章</p>
+  <div class="ds-top-threads" data-range="weekly" data-num-items="4"></div>
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div class="ds-thread" data-thread-key="2016/01/17/hadoop-Hbase参数优化以及问题汇总/" data-title="Hbase参数优化以及问题汇总" data-url="http://www.zhangrenhua.com/2016/01/17/hadoop-Hbase参数优化以及问题汇总/">
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="http://www.zhangrenhua.com/back_images/avatar.jpg" alt="张仁华">
+            
+              <p class="site-author-name" itemprop="name">张仁华</p>
+              <p class="site-description motion-element" itemprop="description">记录软件生涯中的点点滴滴</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">76</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">17</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/zhangrenhua/" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://weibo.com/huaHBrother" target="_blank" title="Weibo">
+                      
+                        <i class="fa fa-fw fa-globe"></i>Weibo</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://douban.com/people/huaHBrother" target="_blank" title="douban">
+                      
+                        <i class="fa fa-fw fa-globe"></i>douban</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://zhihu.com/people/huaHBrother" target="_blank" title="zhihu">
+                      
+                        <i class="fa fa-fw fa-globe"></i>zhihu</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参数调优详解"><span class="nav-number">2.</span> <span class="nav-text">参数调优详解</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#客户端参数"><span class="nav-number">2.1.</span> <span class="nav-text">客户端参数</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#GC调优"><span class="nav-number">3.</span> <span class="nav-text">GC调优</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#表设计原理"><span class="nav-number">4.</span> <span class="nav-text">表设计原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Hbase的TTL字段超时设置测试"><span class="nav-number">5.</span> <span class="nav-text">Hbase的TTL字段超时设置测试</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#保留删除数据"><span class="nav-number">6.</span> <span class="nav-text">保留删除数据</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#设置删除仍然保留"><span class="nav-number">6.1.</span> <span class="nav-text">设置删除仍然保留</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#示例"><span class="nav-number">6.2.</span> <span class="nav-text">示例</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#总结"><span class="nav-number">6.3.</span> <span class="nav-text">总结</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#利用TimeStamp来解决RowKey前缀为时间写入性能慢问题"><span class="nav-number">7.</span> <span class="nav-text">利用TimeStamp来解决RowKey前缀为时间写入性能慢问题</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#RowKey设计"><span class="nav-number">7.1.</span> <span class="nav-text">RowKey设计</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#通过代码设置timeStamp"><span class="nav-number">7.2.</span> <span class="nav-text">通过代码设置timeStamp</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#代码查询"><span class="nav-number">7.3.</span> <span class="nav-text">代码查询</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#需要注意的两个地方"><span class="nav-number">7.4.</span> <span class="nav-text">需要注意的两个地方</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#如何将一个HBase-CF指定为IN-MEMORY"><span class="nav-number">8.</span> <span class="nav-text">如何将一个HBase CF指定为IN_MEMORY</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#创建table的时候可以指定列族的属性"><span class="nav-number">8.1.</span> <span class="nav-text">创建table的时候可以指定列族的属性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#使用N-MEMORY需注意的地方"><span class="nav-number">8.2.</span> <span class="nav-text">使用N_MEMORY需注意的地方</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结-1"><span class="nav-number">9.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考"><span class="nav-number">10.</span> <span class="nav-text">参考</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">张仁华</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"iissnan-notes"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="google-site-verification" content="zUNgN8yGBtBZ8194JTl7PXh7YvztVw494zGKJ_8qH00">
+
+
+
+
+
+
+
+
+  <meta name="baidu-site-verification" content="kqLgluU8lc">
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/favicon.ico?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="k8s,docker,rancher,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="hua的博客" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="本文主要目的在于记录rancher ha集群搭建步骤，内容包括系统配置、docker安装、k8s安装、rancher ha安装等。">
+<meta name="keywords" content="k8s,docker,rancher">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Rancher2.1 HA部署k8s">
+<meta property="og:url" content="http://www.zhangrenhua.com/2019/01/09/Rancher2.1 HA部署k8s/index.html">
+<meta property="og:site_name" content="hua的博客">
+<meta property="og:description" content="本文主要目的在于记录rancher ha集群搭建步骤，内容包括系统配置、docker安装、k8s安装、rancher ha安装等。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/rancher.jpg">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/rancher-page1.jpg">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/rancher-page2.jpg">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/rancher-page3.jpg">
+<meta property="og:updated_time" content="2019-07-11T06:43:13.761Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Rancher2.1 HA部署k8s">
+<meta name="twitter:description" content="本文主要目的在于记录rancher ha集群搭建步骤，内容包括系统配置、docker安装、k8s安装、rancher ha安装等。">
+<meta name="twitter:image" content="http://www.zhangrenhua.com/back_images/rancher.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.zhangrenhua.com/2019/01/09/Rancher2.1 HA部署k8s/">
+
+
+
+
+
+  <title>Rancher2.1 HA部署k8s | hua的博客</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-69647002-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?954f429681a4cd6dee6095ddaa2aac9a";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">hua的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">关注技术和人文的原创IT博客</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-schedule">
+          <a href="/schedule/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            日程表
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sitemap">
+          <a href="/sitemap.xml" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            站点地图
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="st-search-show-outputs">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <form class="site-search-form">
+  <input type="text" id="st-search-input" class="st-search-input st-default-search-input">
+</form>
+
+<script type="text/javascript">
+  (function(w,d,t,u,n,s,e){w['SwiftypeObject']=n;w[n]=w[n]||function(){
+    (w[n].q=w[n].q||[]).push(arguments);};s=d.createElement(t);
+    e=d.getElementsByTagName(t)[0];s.async=1;s.src=u;e.parentNode.insertBefore(s,e);
+  })(window,document,'script','//s.swiftypecdn.com/install/v2/st.js','_st');
+
+  _st('install', 'BAacTgC1f_bLy6kngppZ','2.0.0');
+</script>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.zhangrenhua.com/2019/01/09/Rancher2.1 HA部署k8s/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="张仁华">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="http://www.zhangrenhua.com/back_images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hua的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Rancher2.1 HA部署k8s</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-01-09T10:55:57+08:00">
+                2019-01-09
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/rancher/" itemprop="url" rel="index">
+                    <span itemprop="name">rancher</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2019/01/09/Rancher2.1 HA部署k8s/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2019/01/09/Rancher2.1 HA部署k8s/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  本文主要目的在于记录rancher ha集群搭建步骤，内容包括系统配置、docker安装、k8s安装、rancher ha安装等。<br><img src="http://www.zhangrenhua.com/back_images/rancher.jpg" alt="rancher">
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>本文主要目的在于记录rancher ha集群搭建步骤，内容包括系统配置、docker安装、k8s安装、rancher ha安装等。</p>
+<p><img src="http://www.zhangrenhua.com/back_images/rancher.jpg" alt></p>
+<p>服务器环境信息：</p>
+<table>
+<thead>
+<tr>
+<th>节点名称</th>
+<th>IP</th>
+<th>OS</th>
+<th>安装软件</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Master</td>
+<td>192.168.100.22</td>
+<td>Centos7.6</td>
+<td>nginx</td>
+</tr>
+<tr>
+<td>Node1</td>
+<td>192.168.100.31</td>
+<td>Centos7.6</td>
+<td>etcd, docker, k8s</td>
+</tr>
+<tr>
+<td>Node2</td>
+<td>192.168.100.32</td>
+<td>Centos7.6</td>
+<td>etcd, docker, k8s</td>
+</tr>
+<tr>
+<td>Node3</td>
+<td>192.168.100.33</td>
+<td>Centos7.6</td>
+<td>etcd, docker, k8s</td>
+</tr>
+</tbody></table>
+<h2 id="环境设置"><a href="#环境设置" class="headerlink" title="环境设置"></a>环境设置</h2><h3 id="操作系统文件限制"><a href="#操作系统文件限制" class="headerlink" title="操作系统文件限制"></a>操作系统文件限制</h3><p>vi /etc/security/limits.conf<br>在文件末尾添加以下内容：</p>
+<figure class="highlight lsl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">root soft nofile <span class="number">655350</span></span><br><span class="line">root hard nofile <span class="number">655350</span></span><br><span class="line">* soft nofile <span class="number">655350</span></span><br><span class="line">* hard nofile <span class="number">655350</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="关闭防火墙"><a href="#关闭防火墙" class="headerlink" title="关闭防火墙"></a>关闭防火墙</h3><figure class="highlight gauss"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">systemctl <span class="keyword">stop</span> firewalld</span><br><span class="line">systemctl <span class="keyword">disable</span> firewalld</span><br></pre></td></tr></table></figure>
+
+<h3 id="关闭setlinx"><a href="#关闭setlinx" class="headerlink" title="关闭setlinx"></a>关闭setlinx</h3><p>将<code>SELINUX</code>值设置为disabled：</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">vim /etc/selinux/config</span><br><span class="line"><span class="attribute">SELINUX</span>=disabled</span><br></pre></td></tr></table></figure>
+
+<h3 id="关闭swap"><a href="#关闭swap" class="headerlink" title="关闭swap"></a>关闭swap</h3><p>注释或删除swap交换分区：vi /etc/fstab</p>
+<figure class="highlight vala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span></span><br><span class="line"><span class="meta"># /etc/fstab</span></span><br><span class="line"><span class="meta"># Created by anaconda on Fri Jun  2 14:11:50 2017</span></span><br><span class="line"><span class="meta">#</span></span><br><span class="line"><span class="meta"># Accessible filesystems, by reference, are maintained under '/dev/disk'</span></span><br><span class="line"><span class="meta"># See man pages fstab(5), findfs(8), mount(8) and/or blkid(8) for more info</span></span><br><span class="line"><span class="meta">#</span></span><br><span class="line">/dev/mapper/centos-root /                       xfs     defaults        <span class="number">0</span> <span class="number">0</span></span><br><span class="line">UUID=f5b4435a<span class="number">-77</span>bc<span class="number">-48</span>f4<span class="number">-8</span>d22<span class="number">-6</span>fa55e9e04a2 /boot                   xfs     defaults        <span class="number">0</span> <span class="number">0</span></span><br><span class="line">/dev/mapper/centos-grid0 /grid0                  xfs     defaults        <span class="number">0</span> <span class="number">0</span></span><br><span class="line"><span class="meta">#/dev/mapper/centos-swap swap                    swap    defaults        0 0</span></span><br></pre></td></tr></table></figure>
+
+<p>临时关闭：</p>
+<figure class="highlight ebnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">swapoff -a</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="kernel调优"><a href="#kernel调优" class="headerlink" title="kernel调优"></a>kernel调优</h3><p>添加如下内容，vi /etc/sysctl.conf：</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">net.ipv4.ip_forward</span>=<span class="number">1</span></span><br><span class="line"><span class="attr">net.bridge.bridge-nf-call-iptables</span>=<span class="number">1</span></span><br><span class="line"><span class="attr">net.bridge.bridge-nf-call-ip6tables</span>=<span class="number">1</span></span><br><span class="line"><span class="attr">vm.swappiness</span>=<span class="number">0</span></span><br><span class="line"><span class="attr">vm.max_map_count</span>=<span class="number">655360</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="创建用户"><a href="#创建用户" class="headerlink" title="创建用户"></a>创建用户</h3><p>创建用户并且添加到docker组：</p>
+<figure class="highlight ebnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">useradd rancher -G docker</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="ssh免密登录"><a href="#ssh免密登录" class="headerlink" title="ssh免密登录"></a>ssh免密登录</h3><p>在31-33服务器上执行下面命令：</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">su - rancher</span><br><span class="line">ssh-keygen -t rsa</span><br><span class="line">ssh-copy-id -<span class="selector-tag">i</span> .ssh/id_rsa<span class="selector-class">.pub</span> rancher@<span class="number">192.168</span>.<span class="number">100.31</span></span><br><span class="line">ssh-copy-id -<span class="selector-tag">i</span> .ssh/id_rsa<span class="selector-class">.pub</span> rancher@<span class="number">192.168</span>.<span class="number">100.32</span></span><br><span class="line">ssh-copy-id -<span class="selector-tag">i</span> .ssh/id_rsa<span class="selector-class">.pub</span> rancher@<span class="number">192.168</span>.<span class="number">100.33</span></span><br></pre></td></tr></table></figure>
+
+<p>可能root用户也需要ssh免密登录，命令参考：</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">su - root</span><br><span class="line">ssh-keygen -t rsa</span><br><span class="line">ssh-copy-id -<span class="selector-tag">i</span> .ssh/id_rsa<span class="selector-class">.pub</span> root@<span class="number">192.168</span>.<span class="number">100.31</span></span><br><span class="line">ssh-copy-id -<span class="selector-tag">i</span> .ssh/id_rsa<span class="selector-class">.pub</span> root@<span class="number">192.168</span>.<span class="number">100.32</span></span><br><span class="line">ssh-copy-id -<span class="selector-tag">i</span> .ssh/id_rsa<span class="selector-class">.pub</span> root@<span class="number">192.168</span>.<span class="number">100.33</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="docker安装"><a href="#docker安装" class="headerlink" title="docker安装"></a>docker安装</h2><p><font color="red">rke工具目前只支持docker v17.03.2，请务必保持版本一致，否则后续安装会报错。</font></p>
+<p>1、安装repo源：</p>
+<figure class="highlight vim"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum-config-manager --<span class="built_in">add</span>-repo http://mirrors.aliyun.<span class="keyword">com</span>/docker-<span class="keyword">ce</span>/linux/centos/docker-<span class="keyword">ce</span>.repo</span><br></pre></td></tr></table></figure>
+
+<p>卸载旧docker版本：</p>
+<figure class="highlight livescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">yum remove -y docker <span class="string">\</span></span><br><span class="line">              docker-client <span class="string">\</span></span><br><span class="line">              docker-client-latest <span class="string">\</span></span><br><span class="line">              docker-common <span class="string">\</span></span><br><span class="line">              docker-latest <span class="string">\</span></span><br><span class="line">              docker-latest-logrotate <span class="string">\</span></span><br><span class="line">              docker-logrotate <span class="string">\</span></span><br><span class="line">              docker-selinux <span class="string">\</span></span><br><span class="line">              docker-engine-selinux <span class="string">\</span></span><br><span class="line">              docker-engine <span class="string">\</span></span><br><span class="line">              container*</span><br></pre></td></tr></table></figure>
+
+<p>2、安装自定义版本</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="builtin-name">export</span> <span class="attribute">docker_version</span>=17.03.2</span><br></pre></td></tr></table></figure>
+
+<p>3、安装必要的一些系统工具</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="title">yum</span> install -y yum-utils device-mapper-persistent-<span class="class"><span class="keyword">data</span> lvm2 bash-completion</span></span><br></pre></td></tr></table></figure>
+
+<p>4、添加软件源信息</p>
+<figure class="highlight vim"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum-config-manager --<span class="built_in">add</span>-repo http://mirrors.aliyun.<span class="keyword">com</span>/docker-<span class="keyword">ce</span>/linux/centos/docker-<span class="keyword">ce</span>.repo</span><br></pre></td></tr></table></figure>
+
+<p>5、安装docker-ce</p>
+<figure class="highlight vim"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">version</span>=$(yum <span class="keyword">list</span> docker-<span class="keyword">ce</span>.x86_64 --showduplicates | <span class="keyword">sort</span> -r|<span class="keyword">grep</span> $&#123;docker_version&#125;|awk <span class="string">'&#123;print $2&#125;'</span>)</span><br><span class="line">yum -<span class="keyword">y</span> install --setopt=obsoletes=<span class="number">0</span> docker-<span class="keyword">ce</span>-$&#123;<span class="keyword">version</span>&#125; docker-<span class="keyword">ce</span>-selinux-$&#123;<span class="keyword">version</span>&#125;</span><br></pre></td></tr></table></figure>
+
+<p>6、开机自启动</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">systemctl <span class="builtin-name">enable</span> docker</span><br></pre></td></tr></table></figure>
+
+<p>7、添加国内加速代理，设置storage-driver<br>vi /etc/docker/daemon.json</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  <span class="attr">"registry-mirrors"</span>: [<span class="string">"https://39r65dar.mirror.aliyuncs.com"</span>],</span><br><span class="line">    <span class="attr">"storage-driver"</span>: <span class="string">"overlay2"</span>,</span><br><span class="line">    <span class="attr">"storage-opts"</span>: [</span><br><span class="line">    <span class="string">"overlay2.override_kernel_check=true"</span></span><br><span class="line">    ]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>8、重启docker</p>
+<figure class="highlight ebnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">systemctl restart docker</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="nginx安装"><a href="#nginx安装" class="headerlink" title="nginx安装"></a>nginx安装</h2><p>在192.168.100.22服务器上安装nginx用户rancher-server负载均衡。</p>
+<p>安装nginx：</p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">sudo rpm -Uvh http:<span class="regexp">//</span>nginx.org<span class="regexp">/packages/</span>centos<span class="regexp">/7/</span>noarch<span class="regexp">/RPMS/</span>nginx-release-centos-<span class="number">7</span>-<span class="number">0</span>.el7.ngx.noarch.rpm</span><br><span class="line">yum install nginx -y</span><br><span class="line">sudo systemctl enable nginx.service</span><br></pre></td></tr></table></figure>
+
+<p>修改配置文件：vi /etc/nginx/nginx.conf</p>
+<figure class="highlight crmsh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">user</span> <span class="title">nginx</span>;</span><br><span class="line">worker_processes <span class="number">4</span>;</span><br><span class="line">worker_rlimit_nofile <span class="number">40000</span>;</span><br><span class="line"></span><br><span class="line">events &#123;</span><br><span class="line">    worker_connections <span class="number">8192</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">http &#123;</span><br><span class="line">    <span class="comment"># Gzip Settings</span></span><br><span class="line">    gzip on;</span><br><span class="line">    gzip_disable <span class="string">"msie6"</span>;</span><br><span class="line">    gzip_disable <span class="string">"MSIE [1-6]\.(?!.*SV1)"</span>;</span><br><span class="line">    gzip_vary on;</span><br><span class="line">    gzip_static on;</span><br><span class="line">    gzip_proxied any;</span><br><span class="line">    gzip_min_length <span class="number">0</span>;</span><br><span class="line">    gzip_comp_level <span class="number">8</span>;</span><br><span class="line">    gzip_buffers <span class="number">16</span> <span class="number">8</span>k;</span><br><span class="line">    gzip_http_version <span class="number">1.1</span>;</span><br><span class="line">    gzip_types text/<span class="keyword">xml</span> <span class="title">application</span>/<span class="keyword">xml</span> <span class="title">application</span>/atom+<span class="keyword">xml</span> <span class="title">application</span>/rss+<span class="keyword">xml</span> <span class="title">application</span>/xhtml+<span class="keyword">xml</span> <span class="title">image</span>/svg+<span class="keyword">xml</span> <span class="title">application</span>/font-woff text/javascript application/javascript application/x-javascript text/x-json application/json application/x-web-app-manifest+json text/css text/plain text/x-component font/opentype application/x-font-ttf application/vnd.ms-fontobject font/woff2 image/x-icon image/png image/jpeg;</span><br><span class="line"></span><br><span class="line">    server &#123;</span><br><span class="line">        listen         <span class="number">80</span>;</span><br><span class="line">        return <span class="number">301</span> https://$host$request_uri;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">stream &#123;</span><br><span class="line">    upstream rancher_servers &#123;</span><br><span class="line">        least_conn;</span><br><span class="line">        server <span class="number">192.168</span>.<span class="number">100.31</span>:<span class="number">443</span> <span class="attr">max_fails=</span><span class="number">3</span> <span class="attr">fail_timeout=</span><span class="number">5s</span>;</span><br><span class="line">        server <span class="number">192.168</span>.<span class="number">100.32</span>:<span class="number">443</span> <span class="attr">max_fails=</span><span class="number">3</span> <span class="attr">fail_timeout=</span><span class="number">5s</span>;</span><br><span class="line">        server <span class="number">192.168</span>.<span class="number">100.33</span>:<span class="number">443</span> <span class="attr">max_fails=</span><span class="number">3</span> <span class="attr">fail_timeout=</span><span class="number">5s</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    server &#123;</span><br><span class="line">        listen     <span class="number">443</span>;</span><br><span class="line">        proxy_pass rancher_servers;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>启动nginx：</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="selector-tag">sudo</span> <span class="selector-tag">systemctl</span> <span class="selector-tag">restart</span> <span class="selector-tag">nginx</span><span class="selector-class">.service</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Rancher集群部署"><a href="#Rancher集群部署" class="headerlink" title="Rancher集群部署"></a>Rancher集群部署</h2><h3 id="安装必要工具"><a href="#安装必要工具" class="headerlink" title="安装必要工具"></a>安装必要工具</h3><p>在291.168.100.31服务器上进行下面操作。<br>安装rke:</p>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">su root</span><br><span class="line">wget <span class="string">https:</span><span class="comment">//www.cnrancher.com/download/rke/rke_linux-amd64</span></span><br><span class="line">chmod +x rke_linux-amd64</span><br><span class="line">mv rke_linux-amd64 <span class="regexp">/usr/</span>bin/rke</span><br></pre></td></tr></table></figure>
+
+<p>安装kubectl：</p>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">wget <span class="string">https:</span><span class="comment">//www.cnrancher.com/download/kubectl/kubectl_amd64-linux</span></span><br><span class="line">chmod +x kubectl_amd64-linux</span><br><span class="line">mv kubectl_amd64-linux <span class="regexp">/usr/</span>bin/kubectl</span><br></pre></td></tr></table></figure>
+
+<p>安装helm：</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">wget https:<span class="comment">//storage.googleapis.com/kubernetes-helm/helm-v2.11.0-linux-amd64.tar.gz</span></span><br><span class="line">tar zxvf helm-v2.<span class="number">12.0</span>-linux-amd64<span class="selector-class">.tar</span><span class="selector-class">.gz</span></span><br><span class="line">mv linux-amd64/helm /usr/bin/helm</span><br><span class="line">mv linux-amd64/tiller /usr/bin/tiller</span><br><span class="line">rm -rf helm-v2.<span class="number">12.0</span>-linux-amd64<span class="selector-class">.tar</span><span class="selector-class">.gz</span> linux-amd64/</span><br></pre></td></tr></table></figure>
+
+<p>其它工具下载地址：<a href="https://www.cnrancher.com/docs/rancher/v2.x/cn/installation/download/" target="_blank" rel="noopener">https://www.cnrancher.com/docs/rancher/v2.x/cn/installation/download/</a></p>
+<h3 id="安装k8s"><a href="#安装k8s" class="headerlink" title="安装k8s"></a>安装k8s</h3><p>1、切换到rancher用户</p>
+<figure class="highlight ebnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">su - rancher</span></span><br></pre></td></tr></table></figure>
+
+<p>2、创建rancher集群配置文件：<br>vi rancher-cluster.yml</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">nodes:</span></span><br><span class="line"><span class="attr">  - address:</span> <span class="number">192.168</span><span class="number">.100</span><span class="number">.31</span></span><br><span class="line"><span class="attr">    user:</span> <span class="string">rancher</span></span><br><span class="line"><span class="attr">    role:</span> <span class="string">[controlplane,worker,etcd]</span></span><br><span class="line"><span class="attr">  - address:</span> <span class="number">192.168</span><span class="number">.100</span><span class="number">.32</span></span><br><span class="line"><span class="attr">    user:</span> <span class="string">rancher</span></span><br><span class="line"><span class="attr">    role:</span> <span class="string">[controlplane,worker,etcd]</span></span><br><span class="line"><span class="attr">  - address:</span> <span class="number">192.168</span><span class="number">.100</span><span class="number">.33</span></span><br><span class="line"><span class="attr">    user:</span> <span class="string">rancher</span></span><br><span class="line"><span class="attr">    role:</span> <span class="string">[controlplane,worker,etcd]</span></span><br><span class="line"></span><br><span class="line"><span class="attr">services:</span></span><br><span class="line"><span class="attr">  etcd:</span></span><br><span class="line"><span class="attr">    snapshot:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">    creation:</span> <span class="number">6</span><span class="string">h</span></span><br><span class="line"><span class="attr">    retention:</span> <span class="number">24</span><span class="string">h</span></span><br></pre></td></tr></table></figure>
+
+<p>如果之前操作失败，重新安装需要清理数据：</p>
+<figure class="highlight crystal"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">su - root</span><br><span class="line">rm -rf /var/<span class="class"><span class="keyword">lib</span>/<span class="title">rancher</span>/<span class="title">etcd</span>/*</span></span><br><span class="line">rm -rf /etc/kubernetes/*</span><br><span class="line">su - rancher</span><br><span class="line">rke remove --config ./rancher-cluster.yml</span><br></pre></td></tr></table></figure>
+
+<p>3、启动集群</p>
+<figure class="highlight jboss-cli"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rke up <span class="params">--config</span> <span class="string">./rancher-cluster.yml</span></span><br></pre></td></tr></table></figure>
+
+<p>完成后，它应显示：Finished building Kubernetes cluster successfully。</p>
+<p>4、配置环境变量：<br>切换到root用户su - root</p>
+<p>vi /etc/profile</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="builtin-name">export</span> <span class="attribute">KUBECONFIG</span>=/home/rancher/kube_config_rancher-cluster.yml</span><br></pre></td></tr></table></figure>
+
+<p>保存，并执行：</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">source</span> <span class="regexp">/etc/</span>profilesour</span><br></pre></td></tr></table></figure>
+
+<p>5、通过kubectl测试您的连接，并查看您的所有节点是否处于Ready状态</p>
+<figure class="highlight lsl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[rancher@bigman-s1 ~]$ kubectl get nodes</span><br><span class="line">NAME             STATUS   ROLES                      AGE   VERSION</span><br><span class="line"><span class="number">192.168</span><span class="number">.100</span><span class="number">.31</span>   Ready    controlplane,etcd,worker   <span class="number">3</span>m    v1<span class="number">.11</span><span class="number">.6</span></span><br><span class="line"><span class="number">192.168</span><span class="number">.100</span><span class="number">.32</span>   Ready    controlplane,etcd,worker   <span class="number">3</span>m    v1<span class="number">.11</span><span class="number">.6</span></span><br><span class="line"><span class="number">192.168</span><span class="number">.100</span><span class="number">.33</span>   Ready    controlplane,etcd,worker   <span class="number">3</span>m    v1<span class="number">.11</span><span class="number">.6</span></span><br></pre></td></tr></table></figure>
+
+<p>由于需要联网下载docker镜像文件，所以需要一段时间才能安装好，10-30分钟左右。</p>
+<p>6、检查集群Pod的运行状况</p>
+<figure class="highlight lsl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">[rancher@bigman-s1 ~]$ kubectl get pods --all-namespaces</span><br><span class="line">NAMESPACE       NAME                                      READY   STATUS      RESTARTS   AGE</span><br><span class="line">ingress-nginx   <span class="section">default</span>-http-backend<span class="number">-797</span>c5bc547-z4gj5     <span class="number">1</span>/<span class="number">1</span>     Running     <span class="number">0</span>          <span class="number">3</span>m</span><br><span class="line">ingress-nginx   nginx-ingress-controller-bvgxm            <span class="number">1</span>/<span class="number">1</span>     Running     <span class="number">0</span>          <span class="number">3</span>m</span><br><span class="line">ingress-nginx   nginx-ingress-controller-rjrss            <span class="number">1</span>/<span class="number">1</span>     Running     <span class="number">0</span>          <span class="number">3</span>m</span><br><span class="line">ingress-nginx   nginx-ingress-controller-z5nmf            <span class="number">1</span>/<span class="number">1</span>     Running     <span class="number">0</span>          <span class="number">3</span>m</span><br><span class="line">kube-system     canal-cwb9g                               <span class="number">3</span>/<span class="number">3</span>     Running     <span class="number">0</span>          <span class="number">4</span>m</span><br><span class="line">kube-system     canal-lnvmt                               <span class="number">3</span>/<span class="number">3</span>     Running     <span class="number">0</span>          <span class="number">4</span>m</span><br><span class="line">kube-system     canal-xfft6                               <span class="number">3</span>/<span class="number">3</span>     Running     <span class="number">0</span>          <span class="number">4</span>m</span><br><span class="line">kube-system     kube-dns<span class="number">-7588</span>d5b5f5<span class="number">-5</span>lql6                 <span class="number">3</span>/<span class="number">3</span>     Running     <span class="number">0</span>          <span class="number">4</span>m</span><br><span class="line">kube-system     kube-dns-autoscaler<span class="number">-5</span>db9bbb766-qlskd      <span class="number">1</span>/<span class="number">1</span>     Running     <span class="number">0</span>          <span class="number">4</span>m</span><br><span class="line">kube-system     metrics-server<span class="number">-97</span>bc649d5-vx7p7            <span class="number">1</span>/<span class="number">1</span>     Running     <span class="number">0</span>          <span class="number">4</span>m</span><br><span class="line">kube-system     rke-ingress-controller-deploy-job-ghz5d   <span class="number">0</span>/<span class="number">1</span>     Completed   <span class="number">0</span>          <span class="number">3</span>m</span><br><span class="line">kube-system     rke-kubedns-addon-deploy-job-snkfq        <span class="number">0</span>/<span class="number">1</span>     Completed   <span class="number">0</span>          <span class="number">4</span>m</span><br><span class="line">kube-system     rke-metrics-addon-deploy-job-kzlwb        <span class="number">0</span>/<span class="number">1</span>     Completed   <span class="number">0</span>          <span class="number">4</span>m</span><br><span class="line">kube-system     rke-network-plugin-deploy-job<span class="number">-4</span>f8ms       <span class="number">0</span>/<span class="number">1</span>     Completed   <span class="number">0</span>          <span class="number">4</span>m</span><br></pre></td></tr></table></figure>
+
+<p>保存kube_config_rancher-cluster.yml和rancher-cluster.yml文件的副本,您将需要这些文件来维护和升级Rancher实例。</p>
+<h3 id="Helm"><a href="#Helm" class="headerlink" title="Helm"></a>Helm</h3><p>使用Helm在集群上安装tiller服务以管理charts，由于RKE默认启用RBAC, 因此我们需要使用kubectl来创建一个serviceaccount，clusterrolebinding才能让tiller具有部署到集群的权限。</p>
+<p>1、在kube-system命名空间中创建ServiceAccount：</p>
+<figure class="highlight gauss"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl -n kube-<span class="keyword">system</span> <span class="keyword">create</span> serviceaccount tiller</span><br></pre></td></tr></table></figure>
+
+<p>2、创建ClusterRoleBinding以授予tiller帐户对集群的访问权限：</p>
+<figure class="highlight n1ql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl <span class="keyword">create</span> clusterrolebinding tiller --clusterrole <span class="keyword">cluster</span>-admin --serviceaccount=kube-<span class="keyword">system</span>:tiller</span><br></pre></td></tr></table></figure>
+
+<p>3、安装Helm Server(Tiller)</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">helm init --service-account tiller   --tiller-image registry<span class="selector-class">.cn-hangzhou</span><span class="selector-class">.aliyuncs</span><span class="selector-class">.com</span>/google_containers/tiller:v2.<span class="number">12.0</span> --stable-repo-url https:<span class="comment">//kubernetes.oss-cn-hangzhou.aliyuncs.com/charts</span></span><br></pre></td></tr></table></figure>
+
+<p>4、安装Tiller金丝雀版本</p>
+<figure class="highlight brainfuck"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">helm</span> <span class="comment">init</span> <span class="literal">-</span><span class="literal">-</span><span class="comment">service</span><span class="literal">-</span><span class="comment">account</span> <span class="comment">tiller</span> <span class="literal">-</span><span class="literal">-</span><span class="comment">canary</span><span class="literal">-</span><span class="comment">image</span></span><br></pre></td></tr></table></figure>
+
+<p>需要修改成国内镜像（可能需要delete再重新init）</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="builtin-name">export</span> <span class="attribute">TILLER_TAG</span>=v2.12.0 ;</span><br><span class="line">kubectl <span class="attribute">--namespace</span>=kube-system <span class="builtin-name">set</span> image deployments/tiller-deploy <span class="attribute">tiller</span>=hongxiaolu/tiller:$TILLER_TAG</span><br></pre></td></tr></table></figure>
+
+<h3 id="helm安装rancher"><a href="#helm安装rancher" class="headerlink" title="helm安装rancher"></a>helm安装rancher</h3><h4 id="添加Chart仓库地址"><a href="#添加Chart仓库地址" class="headerlink" title="添加Chart仓库地址"></a>添加Chart仓库地址</h4><p>使用helm repo add命令添加Rancher chart仓库地址,访问Rancher tag和Chart版本<br>替换<chart_repo>为您要使用的Helm仓库分支(即latest或stable）。</chart_repo></p>
+<figure class="highlight vim"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">helm repo <span class="built_in">add</span> rancher-stable http<span class="variable">s:</span>//releases.rancher.<span class="keyword">com</span>/server-charts/stable</span><br></pre></td></tr></table></figure>
+
+<h4 id="安装证书管理器"><a href="#安装证书管理器" class="headerlink" title="安装证书管理器"></a>安装证书管理器</h4><p>1、只有Rancher自动生成的证书和LetsEncrypt颁发的证书才需要cert-manager。如果是你自己的证书，可使用ingress.tls.source=secret参数指定证书，并跳过此步骤。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">helm <span class="keyword">install</span> stable/cert-manager \</span><br><span class="line">  <span class="comment">--name cert-manager \</span></span><br><span class="line">  <span class="comment">--namespace kube-system</span></span><br></pre></td></tr></table></figure>
+
+<p>Rancher自动生成证书<br>默认情况下，Rancher会自动生成CA根证书并使用cert-manager颁发证书以访问Rancher server界面。<br>唯一的要求是将hostname配置为访问Rancher的域名地址，使用这种SSL证书配置方式需提前安装证书管理器。</p>
+<figure class="highlight vim"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">helm install rancher-stable/rancher \</span><br><span class="line">  --name rancher \</span><br><span class="line">  --namespace cattle-<span class="built_in">system</span> \</span><br><span class="line">  --<span class="keyword">set</span> <span class="built_in">hostname</span>=<span class="keyword">hi</span>.rancher.<span class="keyword">cn</span></span><br></pre></td></tr></table></figure>
+
+<p><code>hi.rancher.cn</code>就是后面访问rancher的域名，需要在/etc/hosts文件中添加关联（<font color="red">所有主机</font>）：</p>
+<p>vi /etc/hosts</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">192<span class="selector-class">.168</span><span class="selector-class">.100</span><span class="selector-class">.22</span> <span class="selector-tag">hi</span><span class="selector-class">.rancher</span><span class="selector-class">.cn</span></span><br></pre></td></tr></table></figure>
+
+<p>由于我们通过hosts文件来添加映射，所以需要为Agent Pod添加主机别名(/etc/hosts)：</p>
+<figure class="highlight jboss-cli"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">kubectl -n cattle-system <span class="keyword">patch</span>  deployments cattle-cluster-agent <span class="params">--patch</span> '&#123;</span><br><span class="line">    <span class="string">"spec"</span>: &#123;</span><br><span class="line">        <span class="string">"template"</span>: &#123;</span><br><span class="line">            <span class="string">"spec"</span>: &#123;</span><br><span class="line">                <span class="string">"hostAliases"</span>: [</span><br><span class="line">                    &#123;</span><br><span class="line">                        <span class="string">"hostnames"</span>:</span><br><span class="line">                        [</span><br><span class="line">                            <span class="string">"hi.rancher.cn"</span></span><br><span class="line">                        ],</span><br><span class="line">                            <span class="string">"ip"</span>: <span class="string">"192.168.100.22"</span></span><br><span class="line">                    &#125;</span><br><span class="line">                ]</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;'</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight crmsh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">kubectl -n cattle-system patch  daemonsets cattle-<span class="keyword">node</span><span class="title">-agent</span> --patch '&#123;</span><br><span class="line">    <span class="string">"spec"</span>: &#123;</span><br><span class="line">        <span class="string">"template"</span>: &#123;</span><br><span class="line">            <span class="string">"spec"</span>: &#123;</span><br><span class="line">                <span class="string">"hostAliases"</span>: [</span><br><span class="line">                    &#123;</span><br><span class="line">                        <span class="string">"hostnames"</span>:</span><br><span class="line">                        [</span><br><span class="line">                            <span class="string">"hi.rancher.cn"</span></span><br><span class="line">                        ],</span><br><span class="line">                            <span class="string">"ip"</span>: <span class="string">"192.168.100.22"</span></span><br><span class="line">                    &#125;</span><br><span class="line">                ]</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;'</span><br></pre></td></tr></table></figure>
+
+<h3 id="登录rancher管理端"><a href="#登录rancher管理端" class="headerlink" title="登录rancher管理端"></a>登录rancher管理端</h3><p>1、需要在/etc/hosts文件中添加关联（<font color="red">所有主机</font>）：<br>vi /etc/hosts</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">192<span class="selector-class">.168</span><span class="selector-class">.100</span><span class="selector-class">.22</span> <span class="selector-tag">hi</span><span class="selector-class">.rancher</span><span class="selector-class">.cn</span></span><br></pre></td></tr></table></figure>
+
+<p>2、使用域名登录<code>https://hi.rancher.cn</code></p>
+<p><img src="http://www.zhangrenhua.com/back_images/rancher-page1.jpg" alt="rancher"></p>
+<p>输入：admin/admin，设置用户密码。</p>
+<p>3、登录之后，此时可以看到已经创建好的k8s集群</p>
+<p><img src="http://www.zhangrenhua.com/back_images/rancher-page2.jpg" alt="rancher"></p>
+<h3 id="安装rancher-cli"><a href="#安装rancher-cli" class="headerlink" title="安装rancher-cli"></a>安装rancher-cli</h3><p>1、下载rancher-cli工具</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">wget https://releases.rancher.com/cli2/v2<span class="meta">.0</span><span class="meta">.6</span>/rancher-linux-amd64-v2<span class="meta">.0</span><span class="meta">.6</span>.tar.gz</span><br><span class="line">tar zxvf rancher-linux-amd64-v2<span class="meta">.0</span><span class="meta">.6</span>.tar.gz</span><br></pre></td></tr></table></figure>
+
+<p>2、配置变量</p>
+<figure class="highlight lsl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mv rancher-v2<span class="number">.0</span><span class="number">.6</span>/rancher /usr/bin/rancher</span><br><span class="line">rm -rf rancher-v2<span class="number">.0</span><span class="number">.6</span>/</span><br></pre></td></tr></table></figure>
+
+<p>3、测试登录</p>
+<p>新建用户获取tonken：<br><img src="http://www.zhangrenhua.com/back_images/rancher-page3.jpg" alt="rancher-key"></p>
+<p>使用创建好的用户token登录：</p>
+<figure class="highlight vim"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rancher login http<span class="variable">s:</span>//<span class="keyword">hi</span>.rancher.<span class="keyword">cn</span>/v3  --token token-jpf2f:sjmptntdn6k7rf9mqz7k7c9w77q6pfxmxmr7fvtdjwswbprpjhzvq8</span><br></pre></td></tr></table></figure>
+
+<h2 id="其它帮助"><a href="#其它帮助" class="headerlink" title="其它帮助"></a>其它帮助</h2><h3 id="docker-xfs-type问题"><a href="#docker-xfs-type问题" class="headerlink" title="docker xfs type问题"></a>docker xfs type问题</h3><p>在运行docker info 命令时，如果你的文件系统使用了xfs，那么Docker会检测ftype的值，如果ftype=0，那么会有警告出现。<br>具体警告如下：</p>
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="symbol">WARNING: </span>overlay: the backing xfs filesystem is formatted without d<span class="emphasis">_type support, which leads to incorrect behavior.</span></span><br><span class="line"><span class="emphasis">Reformat the filesystem with ftype=1 to enable d_</span>type support.</span><br><span class="line">Running without d<span class="emphasis">_type support will not be supported in future releases.</span></span><br></pre></td></tr></table></figure>
+
+<p>这个问题需要解决，否则后续容器会出现异常退出等情况，具体docker为什么这么关系ftype值，可以去百度或者查阅官方文档。</p>
+<p>由于docker默认是安装在系统盘的，那么重新格式化分区并挂盘肯定是行不通的，我这边环境正好还有多余的盘，所以讲docker切换到新的分区，并将分区参数调成成ftype=1。</p>
+<p>1、查看分区信息</p>
+<figure class="highlight lsl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">[root@bigman-s1 ~]# df</span><br><span class="line">文件系统                     <span class="number">1</span>K-块     已用       可用 已用% 挂载点</span><br><span class="line">devtmpfs                  <span class="number">32858088</span>        <span class="number">0</span>   <span class="number">32858088</span>    <span class="number">0</span>% /dev</span><br><span class="line">tmpfs                     <span class="number">32871880</span>        <span class="number">8</span>   <span class="number">32871872</span>    <span class="number">1</span>% /dev/shm</span><br><span class="line">tmpfs                     <span class="number">32871880</span>    <span class="number">61024</span>   <span class="number">32810856</span>    <span class="number">1</span>% /run</span><br><span class="line">tmpfs                     <span class="number">32871880</span>        <span class="number">0</span>   <span class="number">32871880</span>    <span class="number">0</span>% /sys/fs/cgroup</span><br><span class="line">/dev/mapper/centos-root  <span class="number">598661528</span> <span class="number">81105212</span>  <span class="number">517556316</span>   <span class="number">14</span>% /</span><br><span class="line">/dev/mapper/centos-grid0 <span class="number">1227397576</span> <span class="number">66398088</span> <span class="number">1160999488</span>    <span class="number">6</span>% /grid0</span><br></pre></td></tr></table></figure>
+
+<p>2、重新格式化磁盘（<font color="red">注意备份数据</font>）</p>
+<figure class="highlight jboss-cli"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">umount <span class="string">/dev/mapper/centos-grid0</span></span><br><span class="line">mkfs.xfs -n ftype=1 -f <span class="string">/dev/mapper/centos-grid0</span></span><br><span class="line">mount <span class="string">/dev/mapper/centos-grid0</span> <span class="string">/grid0</span></span><br><span class="line">xfs_info  <span class="string">/grid0</span></span><br></pre></td></tr></table></figure>
+
+<p>3、修改docker数据目录<br>vi /usr/lib/systemd/system/docker.service</p>
+<figure class="highlight jboss-cli"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ExecStart=<span class="string">/usr/bin/dockerd</span> <span class="params">--graph</span> <span class="string">/grid0/docker</span></span><br></pre></td></tr></table></figure>
+
+<p>4、修改docker storage-driver驱动</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  <span class="attr">"registry-mirrors"</span>: [<span class="string">"https://39r65dar.mirror.aliyuncs.com"</span>],</span><br><span class="line">    <span class="attr">"storage-driver"</span>: <span class="string">"overlay2"</span>,</span><br><span class="line">    <span class="attr">"storage-opts"</span>: [</span><br><span class="line">    <span class="string">"overlay2.override_kernel_check=true"</span></span><br><span class="line">    ]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>5、重启docker</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">systemctl <span class="builtin-name">disable</span> docker</span><br><span class="line">systemctl <span class="builtin-name">enable</span> docker</span><br><span class="line">systemctl daemon-reload</span><br><span class="line">systemctl restart docker</span><br><span class="line">docker info</span><br></pre></td></tr></table></figure>
+
+<h3 id="docker本地仓库"><a href="#docker本地仓库" class="headerlink" title="docker本地仓库"></a>docker本地仓库</h3><p>1、启动本地仓库服务:</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker <span class="builtin-name">run</span> -d -p 5000:5000 <span class="attribute">--restart</span>=always --name registry registry:2</span><br></pre></td></tr></table></figure>
+
+<p>2、修改配置<br>vi /etc/docker/daemon.json</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  <span class="attr">"registry-mirrors"</span>: [<span class="string">"https://39r65dar.mirror.aliyuncs.com"</span>,<span class="string">"http://192.168.100.21:5000"</span>],</span><br><span class="line">    <span class="attr">"storage-driver"</span>: <span class="string">"overlay2"</span>,</span><br><span class="line">    <span class="attr">"storage-opts"</span>: [</span><br><span class="line">    <span class="string">"overlay2.override_kernel_check=true"</span></span><br><span class="line">    ],</span><br><span class="line">    <span class="attr">"insecure-registries"</span> : [<span class="string">"192.168.100.21:5000"</span>]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考文档"><a href="#参考文档" class="headerlink" title="参考文档"></a>参考文档</h2><ul>
+<li><a href="https://www.cnrancher.com/docs/rancher/v2.x/cn/installation/server-installation/ha-install/" target="_blank" rel="noopener">https://www.cnrancher.com/docs/rancher/v2.x/cn/installation/server-installation/ha-install/</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/k8s/" rel="tag"># k8s</a>
+          
+            <a href="/tags/docker/" rel="tag"># docker</a>
+          
+            <a href="/tags/rancher/" rel="tag"># rancher</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/01/04/Kubenetes-Guestbook/" rel="next" title="Kubenetes-Guestbook">
+                <i class="fa fa-chevron-left"></i> Kubenetes-Guestbook
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/01/12/Jenkins+Rancher自动化部署/" rel="prev" title="Jenkins+Rancher自动化部署">
+                Jenkins+Rancher自动化部署 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+<span class="jiathis_txt">分享到：</span>
+<a class="jiathis_button_fav">收藏夹</a>
+<a class="jiathis_button_copy">复制网址</a>
+<a class="jiathis_button_email">邮件</a>
+<a class="jiathis_button_weixin">微信</a>
+<a class="jiathis_button_qzone">QQ空间</a>
+<a class="jiathis_button_tqq">腾讯微博</a>
+<a class="jiathis_button_douban">豆瓣</a>
+<a class="jiathis_button_share">一键分享</a>
+
+<a href="http://www.jiathis.com/share?uid=2140465" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank">更多</a>
+<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+var jiathis_config={
+  data_track_clickback:true,
+  summary:"",
+  shortUrl:false,
+  hideMore:false
+}
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  <p>热评文章</p>
+  <div class="ds-top-threads" data-range="weekly" data-num-items="4"></div>
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div class="ds-thread" data-thread-key="2019/01/09/Rancher2.1 HA部署k8s/" data-title="Rancher2.1 HA部署k8s" data-url="http://www.zhangrenhua.com/2019/01/09/Rancher2.1 HA部署k8s/">
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="http://www.zhangrenhua.com/back_images/avatar.jpg" alt="张仁华">
+            
+              <p class="site-author-name" itemprop="name">张仁华</p>
+              <p class="site-description motion-element" itemprop="description">记录软件生涯中的点点滴滴</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">76</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">17</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/zhangrenhua/" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://weibo.com/huaHBrother" target="_blank" title="Weibo">
+                      
+                        <i class="fa fa-fw fa-globe"></i>Weibo</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://douban.com/people/huaHBrother" target="_blank" title="douban">
+                      
+                        <i class="fa fa-fw fa-globe"></i>douban</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://zhihu.com/people/huaHBrother" target="_blank" title="zhihu">
+                      
+                        <i class="fa fa-fw fa-globe"></i>zhihu</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#介绍"><span class="nav-number">1.</span> <span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#环境设置"><span class="nav-number">2.</span> <span class="nav-text">环境设置</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#操作系统文件限制"><span class="nav-number">2.1.</span> <span class="nav-text">操作系统文件限制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#关闭防火墙"><span class="nav-number">2.2.</span> <span class="nav-text">关闭防火墙</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#关闭setlinx"><span class="nav-number">2.3.</span> <span class="nav-text">关闭setlinx</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#关闭swap"><span class="nav-number">2.4.</span> <span class="nav-text">关闭swap</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#kernel调优"><span class="nav-number">2.5.</span> <span class="nav-text">kernel调优</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#创建用户"><span class="nav-number">2.6.</span> <span class="nav-text">创建用户</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ssh免密登录"><span class="nav-number">2.7.</span> <span class="nav-text">ssh免密登录</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#docker安装"><span class="nav-number">3.</span> <span class="nav-text">docker安装</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#nginx安装"><span class="nav-number">4.</span> <span class="nav-text">nginx安装</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Rancher集群部署"><span class="nav-number">5.</span> <span class="nav-text">Rancher集群部署</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#安装必要工具"><span class="nav-number">5.1.</span> <span class="nav-text">安装必要工具</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#安装k8s"><span class="nav-number">5.2.</span> <span class="nav-text">安装k8s</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Helm"><span class="nav-number">5.3.</span> <span class="nav-text">Helm</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#helm安装rancher"><span class="nav-number">5.4.</span> <span class="nav-text">helm安装rancher</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#添加Chart仓库地址"><span class="nav-number">5.4.1.</span> <span class="nav-text">添加Chart仓库地址</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#安装证书管理器"><span class="nav-number">5.4.2.</span> <span class="nav-text">安装证书管理器</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#登录rancher管理端"><span class="nav-number">5.5.</span> <span class="nav-text">登录rancher管理端</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#安装rancher-cli"><span class="nav-number">5.6.</span> <span class="nav-text">安装rancher-cli</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#其它帮助"><span class="nav-number">6.</span> <span class="nav-text">其它帮助</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#docker-xfs-type问题"><span class="nav-number">6.1.</span> <span class="nav-text">docker xfs type问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#docker本地仓库"><span class="nav-number">6.2.</span> <span class="nav-text">docker本地仓库</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考文档"><span class="nav-number">7.</span> <span class="nav-text">参考文档</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">张仁华</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"iissnan-notes"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

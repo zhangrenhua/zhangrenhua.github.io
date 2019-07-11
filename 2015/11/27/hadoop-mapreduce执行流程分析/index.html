@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="google-site-verification" content="zUNgN8yGBtBZ8194JTl7PXh7YvztVw494zGKJ_8qH00">
+
+
+
+
+
+
+
+
+  <meta name="baidu-site-verification" content="kqLgluU8lc">
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/favicon.ico?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="java,hadoop生态圈,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="hua的博客" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="当MapReduce启动的时候，我们可知hadoop内部做了些什么？下面将详细介绍MapReduce的执行流程。">
+<meta name="keywords" content="java,hadoop生态圈">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MapReduce执行流程分析">
+<meta property="og:url" content="http://www.zhangrenhua.com/2015/11/27/hadoop-mapreduce执行流程分析/index.html">
+<meta property="og:site_name" content="hua的博客">
+<meta property="og:description" content="当MapReduce启动的时候，我们可知hadoop内部做了些什么？下面将详细介绍MapReduce的执行流程。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/hadoop-mapreduce-cllc.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/hadoop-shuffle.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/hadoop-shuffle-map.jpg">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/hadoop-shuffle-reduce.jpg">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/hadoop-shuffle-compression.png">
+<meta property="og:updated_time" content="2019-07-11T06:43:13.731Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="MapReduce执行流程分析">
+<meta name="twitter:description" content="当MapReduce启动的时候，我们可知hadoop内部做了些什么？下面将详细介绍MapReduce的执行流程。">
+<meta name="twitter:image" content="http://www.zhangrenhua.com/back_images/hadoop-mapreduce-cllc.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.zhangrenhua.com/2015/11/27/hadoop-mapreduce执行流程分析/">
+
+
+
+
+
+  <title>MapReduce执行流程分析 | hua的博客</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-69647002-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?954f429681a4cd6dee6095ddaa2aac9a";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">hua的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">关注技术和人文的原创IT博客</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-schedule">
+          <a href="/schedule/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            日程表
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sitemap">
+          <a href="/sitemap.xml" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            站点地图
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="st-search-show-outputs">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <form class="site-search-form">
+  <input type="text" id="st-search-input" class="st-search-input st-default-search-input">
+</form>
+
+<script type="text/javascript">
+  (function(w,d,t,u,n,s,e){w['SwiftypeObject']=n;w[n]=w[n]||function(){
+    (w[n].q=w[n].q||[]).push(arguments);};s=d.createElement(t);
+    e=d.getElementsByTagName(t)[0];s.async=1;s.src=u;e.parentNode.insertBefore(s,e);
+  })(window,document,'script','//s.swiftypecdn.com/install/v2/st.js','_st');
+
+  _st('install', 'BAacTgC1f_bLy6kngppZ','2.0.0');
+</script>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.zhangrenhua.com/2015/11/27/hadoop-mapreduce执行流程分析/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="张仁华">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="http://www.zhangrenhua.com/back_images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hua的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">MapReduce执行流程分析</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2015-11-27T20:20:00+08:00">
+                2015-11-27
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/hadoop/" itemprop="url" rel="index">
+                    <span itemprop="name">hadoop</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2015/11/27/hadoop-mapreduce执行流程分析/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2015/11/27/hadoop-mapreduce执行流程分析/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  当MapReduce启动的时候，我们可知hadoop内部做了些什么？下面将详细介绍MapReduce的执行流程。<br><img alt="Alt text" src="http://www.zhangrenhua.com/back_images/hadoop-mapreduce-cllc.png">
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>当MapReduce启动的时候，我们可知hadoop内部做了些什么？下面将详细介绍MapReduce的执行流程。</p>
+<p><img src="http://www.zhangrenhua.com/back_images/hadoop-mapreduce-cllc.png" alt="Alt text"></p>
+<h2 id="Block块"><a href="#Block块" class="headerlink" title="Block块"></a>Block块</h2><p>由于hadoop启动首先会对文件进行逻辑上的split，split的个数取决于block块大小，所以在此先介绍hadoop中的文件block。</p>
+<p>当我们把文件上传到HDFS中，第一步就是数据的划分，这个是真实物理上的划分，数据文件上传到HDFS后，要把文件划分成一块一块，每块的大小可以有hadoop-default.xml里配置选项进行划分。现在默认每块128MB以前是(64M)，一个文件被分成多个256MB大小的小文件，最后一个可能小于128MB。注意：128MB只是默认，是可以更改的，修改hdfs-site.xml里dfs.block.size属性即可：</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">property</span>&gt;</span> </span><br><span class="line">   <span class="tag">&lt;<span class="name">name</span>&gt;</span>dfs.block.size<span class="tag">&lt;/<span class="name">name</span>&gt;</span> </span><br><span class="line">   <span class="tag">&lt;<span class="name">value</span>&gt;</span>134217728<span class="tag">&lt;/<span class="name">value</span>&gt;</span> </span><br><span class="line">   <span class="tag">&lt;<span class="name">description</span>&gt;</span>The default block size for new files.<span class="tag">&lt;/<span class="name">description</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>数据的划分有冗余，冗余的概念来自哪儿？为了保证数据的安全，上传的文件是被复制成3份，当一份数据宕掉，其余的可以即刻补上。当然这只是默认，同样还是修改hdfs-site.xml:</p>
+<figure class="highlight vhdl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">&lt;<span class="keyword">property</span>&gt; </span><br><span class="line">   &lt;name&gt;dfs.replication&lt;/name&gt; </span><br><span class="line">   &lt;value&gt;<span class="number">3</span>&lt;/value&gt; </span><br><span class="line">   &lt;description&gt;</span><br><span class="line">     <span class="keyword">Default</span> <span class="keyword">block</span> replication.The actual number <span class="keyword">of</span> replications can be specified</span><br><span class="line">     <span class="keyword">when</span> the <span class="keyword">file</span> <span class="keyword">is</span> created.The <span class="keyword">default</span> <span class="keyword">is</span> used <span class="keyword">if</span> replication <span class="keyword">is</span> <span class="keyword">not</span> specified <span class="keyword">in</span> create <span class="built_in">time</span>. </span><br><span class="line">   &lt;/description&gt;</span><br><span class="line">&lt;/<span class="keyword">property</span>&gt;</span><br></pre></td></tr></table></figure>
+
+<p>注：<font color="red">可手动修改文件系统副本数：hadoop fs -setrep -R 2 /input<br>如果客户端写文件时就指定副本数，可以在本地代码中conf.setLong(“dfs.replication”,2l)</font></p>
+<h2 id="Split块"><a href="#Split块" class="headerlink" title="Split块"></a>Split块</h2><p>MapReduce执行前首先会预先分配Map个数，Map个数默认取决于文件的大小和block块的大小。当然Map个数也是可以通过参数要强制指定的，这里我就不做解释（后面我会另写博文来描述怎么手动指定map reduce个数）。</p>
+<p>本文我们以hadoop自带的TextInputFormat来说。由于Hadoop版本更新换代很快，不同版本中的split的划分是由不同的job任务来完成的。早先的版本split是由JobTracker端完成的，后来的版本是由JobClient完成的，JobClient划分好后，把split.file写入HDFS中，到时候Aplication Master端读这个文件，就知道split是怎样划分的了。这种数据的划分其实只是一种逻辑上的划分，目的是为了让Map Task更好的获取数据<br>例如：</p>
+<figure class="highlight armasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="symbol">File1</span>：<span class="keyword">Block11，Block12，Block13，Block14，Block15</span></span><br><span class="line"><span class="keyword">File2：Block21，Block22，Block23</span></span><br></pre></td></tr></table></figure>
+
+<p>上面有2个文件，File1有5个block,File2有3个block。首先会调用TextInputFormat的getSplits方法中，首先调用listStatus(job)</p>
+<figure class="highlight lisp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">List&lt;FileStatus&gt; files = listStatus(<span class="name">job</span>)<span class="comment">;</span></span><br></pre></td></tr></table></figure>
+
+<p>来获取需要执行的文件个数。然后循环每个文件，根据file.getLen()/blockSize来决定改文件由多少个Map指定</p>
+<figure class="highlight pf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">long <span class="built_in">block</span>Size = file.getBlockSize();</span><br><span class="line">          long splitSize = computeSplitSize(<span class="built_in">block</span>Size, <span class="keyword">min</span>Size, <span class="keyword">max</span>Size);</span><br><span class="line"></span><br><span class="line">protected long computeSplitSize(long <span class="built_in">block</span>Size, long <span class="keyword">min</span>Size,</span><br><span class="line">                                  long <span class="keyword">max</span>Size) &#123;</span><br><span class="line">    return Math.<span class="keyword">max</span>(<span class="keyword">min</span>Size, Math.<span class="keyword">min</span>(<span class="keyword">max</span>Size, <span class="built_in">block</span>Size));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>computeSplitSize方法其实默认返回就是blockSize。</p>
+<p>几个简单的结论：<br>1)一个split大于等于1的整数个Block<br>2) 一个split不会包含两个File的Block,不会跨越File边界<br>3) split和Block的关系是一对多的关系，默认一对一<br>4) maptasks的个数最终决定于splits的长度</p>
+<p>在FileSplit类中，有一项是private String[] hosts;看上去是说明这个FileSplit是放在哪些机器上的，实际上hosts里只是存储了一个Block的冗余机器列表。比如上面例子中的Split 1: Block11, Block12, Block13,Block14,这个FileSplit中的hosts里最终存储的是Block11本身和其冗余所在的机器列表，也就是说 Block12,Block13,Block14这些块存在的那些机器上没有在FileSplit中记录，并包含Block与Split之间的关系记录。</p>
+<p>FileSplit中的这个属性有利于调度作业时候的数据本地性问题（<font color="red">数据本地性：作用很大，更有利于MapReduce性能调优</font>）。如果一个NodeManger前来索取task，ApplicationMaster就会找个task给它，找到一个maptask，得先看这个task的输入的FileSplit里hosts是否包含NodeManager所在机器，也就是判断和该NodeManager同时存在一个机器上的datanode是否拥有FileSplit中某个Block的备份。</p>
+<h2 id="Map流程"><a href="#Map流程" class="headerlink" title="Map流程"></a>Map流程</h2><p>1．每个输入分片会让一个map任务来处理，默认情况下，以HDFS的一个块的大小（默认为64M）为一个分片。Map的工作就是按业务逻辑对数据进行拆分，形成key/value的键值对数据。map输出的结果会暂且放在一个环形内存缓冲区中（该缓冲区的大小默认为100M，由mapreduce.task.io.sort.mb属性控制），当该缓冲区快要溢出会在本地文件系统中创建一个溢出文件，将该缓冲区中的数据写入这个文件。</p>
+<p>2、在做Map数据拆分的同时，map线程会将本地负责的key/value数据列表按key值进行排序，并且会进行分区平均。分区的数量是根据reduce线程的个数来确定的，以便在完成map操作之后，将后续的工作平均分配给每个reduce线程，这样做是为了避免有些reduce任务分配到大量数据，而有些reduce任务却分到很少数据，甚至没有分到数据的尴尬局面。</p>
+<p>3、如果此时设置了Combiner方法，会将排序后的结果进行Combine操作，也就是将相同key值的数据进行合并，合并的过程中会不断地进行排序和combine操作，目的有两个：<br>1.尽量减少每次写入磁盘的数据量；<br>2.尽量减少下一复制阶段网络传输的数据量。最后合并成了一个已分区且已排序的文件。</p>
+<p>4．Shuffle “洗牌” ：一个map产生的数据，一般按照key值进行hash算法，平均的将各个map节点上的数据分别分配给reduce线程对应的节点。</p>
+<h2 id="Shuffle过程浅析"><a href="#Shuffle过程浅析" class="headerlink" title="Shuffle过程浅析"></a>Shuffle过程浅析</h2><p><img src="http://www.zhangrenhua.com/back_images/hadoop-shuffle.png" alt="Alt text"></p>
+<p>上图中分为Map任务和Reduce任务两个阶段，从map端输出到reduce端的红色和绿色的线表示数据流的一个过程，也我们所要了解的Shuffle过程。</p>
+<h3 id="Map端"><a href="#Map端" class="headerlink" title="Map端"></a>Map端</h3><p><img src="http://www.zhangrenhua.com/back_images/hadoop-shuffle-map.jpg" alt="Alt text"></p>
+<p>1、在map端首先接触的是InputSplit，在InputSplit中含有DataNode中的数据，每一个InputSplit都会分配一个Mapper任务，Mapper任务结束后产生&lt;K2,V2&gt;的输出， 这些输出先存放在缓存中，每个map有一个环形内存缓冲区，用于存储任务的输出。默认大小100MB（io.sort.mb属性），一旦达到阀值0.8(io.sort.spil l.percent)，一个后台线程就把内容写到(spill)Linux本地磁盘中的指定目录（mapred.local.dir）下的新建的一个溢出写文件。</p>
+<p>总结： map过程的输出是写入本地磁盘而不是HDFS，但是一开始数据并不是直接写入磁盘而是缓冲在内存中，缓存的好处就是减少磁盘I/O的开销，提高合并和排序的速度 。又因为默认的内存缓冲大小是100M（当然这个是可以配置的），所以 在编写map函数的时候要尽量减少内存的使用，为shuffle过程预留更多的内存 ，因为该过程是最耗时的过程。</p>
+<p>2、写磁盘前，要进行partition、sort和combine等操作。通过分区，将不同类型的数据分开处理，之后对不同分区的数据进行排序，如果有Combiner，还要对排序后的数据进行combine。等最后记录写完，将全部溢出文件合并为一个分区且排序的文件。</p>
+<p>3、最后将磁盘中的数据送到Reduce中，从图中可以看出Map输出有三个分区，有一个分区数据被送到图示的Reduce任务中，剩下的两个分区被送到其他Reducer任务中。而图示的Reducer任务的其他的三个输入则来自其他节点的Map输出。</p>
+<p>补充： 在写磁盘的时候采用压缩的方式将map的输出结果进行压缩是一个减少网络开销很有效的方法！关于如何使用压缩，在本文第三部分会有介绍。</p>
+<h3 id="Reduce端"><a href="#Reduce端" class="headerlink" title="Reduce端"></a>Reduce端</h3><p><img src="http://www.zhangrenhua.com/back_images/hadoop-shuffle-reduce.jpg" alt="Alt text"></p>
+<p>1、Copy阶段：Reducer通过Http方式得到输出文件的分区。<br>reduce端可能从n个map的结果中获取数据，而这些map的执行速度不尽相同，当其中一个map运行结束时，reduce就会从 JobTracker中获取该信息。map运行结束后TaskTracker会得到消息，进而将消息汇报给JobTracker，reduce定时从 JobTracker获取该信息，reduce端默认有5个数据复制线程从map端复制数据。</p>
+<p>2、Merge阶段：如果形成多个磁盘文件会进行合并<br>从map端复制来的数据首先写到reduce端的缓存中，同样缓存占用到达一定阈值后会将数据写到磁盘中，同样会进行partition、 combine、排序等过程。如果形成了多个磁盘文件还会进行合并，最后一次合并的结果作为reduce的输入而不是写入到磁盘中。（3）Reducer的参数：最后将合并后的结果作为输入传入Reduce任务中。</p>
+<p>总结： 当Reducer的输入文件确定后，整个Shuffle操作才最终结束。之后就是Reducer的执行了，最后Reducer会把结果存到HDFS上(可以通过自定义output来控制输出)。</p>
+<h2 id="Reduce流程"><a href="#Reduce流程" class="headerlink" title="Reduce流程"></a>Reduce流程</h2><p>1．Reduce会接收到不同map任务传来的数据，并且每个map传来的数据都是有序的。如果reduce端接受的数据量相当小，则直接存储在内存中<br>如果数据量超过了该缓冲区大小的一定比例（由mapreduce.map.sort.spill.percent决定），则对数据合并后溢写到磁盘中。</p>
+<p>2、Reduce线程在接收到各节点的key/value数据之后，会按照预先编写的reduce算法，对每个key/value值进行处理计算。</p>
+<p>3．最终reduce端会将所有处理过的数据同样的以key/value的形式合并写入同一个文件存放hdfs系统。</p>
+<p>在我们进行map/reduce操作时，一般只需要写map和reduce的算法；并且对key/value值进行合理的定义，即可以实现各种业务逻辑的分布式算法。</p>
+<h2 id="Hadoop中的压缩"><a href="#Hadoop中的压缩" class="headerlink" title="Hadoop中的压缩"></a>Hadoop中的压缩</h2><p>刚刚我们在了解Shuffle过程中看到，map端在写磁盘的时候采用压缩的方式将map的输出结果进行压缩是一个减少网络开销很有效的方法。其实，在Hadoop中早已为我们提供了一些压缩算法的实现，我们不用重复造轮子了。</p>
+<h3 id="解压缩算法的实现：Codec"><a href="#解压缩算法的实现：Codec" class="headerlink" title="解压缩算法的实现：Codec"></a>解压缩算法的实现：Codec</h3><p>Codec是Hadoop中关于压缩，解压缩的算法的实现，在Hadoop中，codec由CompressionCode的实现来表示。下面是一些常见压缩算法实现，如下图所示：<br><img src="http://www.zhangrenhua.com/back_images/hadoop-shuffle-compression.png" alt="Alt text"></p>
+<h3 id="Map端压缩输出到Reduce"><a href="#Map端压缩输出到Reduce" class="headerlink" title="Map端压缩输出到Reduce"></a>Map端压缩输出到Reduce</h3><figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="selector-tag">conf</span><span class="selector-class">.setBoolean</span>("<span class="selector-tag">mapreduce</span><span class="selector-class">.map</span><span class="selector-class">.output</span><span class="selector-class">.compress</span>", <span class="selector-tag">true</span>);</span><br><span class="line"><span class="selector-tag">conf</span><span class="selector-class">.setClass</span>("<span class="selector-tag">mapreduce</span><span class="selector-class">.map</span><span class="selector-class">.output</span><span class="selector-class">.compress</span><span class="selector-class">.codec</span>", <span class="selector-tag">SnappyCodec</span><span class="selector-class">.class</span>, <span class="selector-tag">CompressionCodec</span><span class="selector-class">.class</span>);</span><br></pre></td></tr></table></figure>
+
+<h3 id="MapReduce输出文件进行压缩"><a href="#MapReduce输出文件进行压缩" class="headerlink" title="MapReduce输出文件进行压缩"></a>MapReduce输出文件进行压缩</h3><figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="selector-tag">conf</span><span class="selector-class">.setBoolean</span>("<span class="selector-tag">mapreduce</span><span class="selector-class">.output</span><span class="selector-class">.fileoutputformat</span><span class="selector-class">.compress</span>", <span class="selector-tag">true</span>);</span><br><span class="line"><span class="selector-tag">conf</span><span class="selector-class">.setClass</span>("<span class="selector-tag">mapreduce</span><span class="selector-class">.output</span><span class="selector-class">.fileoutputformat</span><span class="selector-class">.compress</span><span class="selector-class">.codec</span>",<span class="selector-tag">SnappyCodec</span><span class="selector-class">.class</span>, <span class="selector-tag">CompressionCodec</span><span class="selector-class">.class</span>);</span><br></pre></td></tr></table></figure>
+
+<p>上面代码中在reduce端输出压缩使用了刚刚Codec中的Snappy算法，当然你也可以使用bzip2\lzo算法。<br>注：<font color="red">lzo/Snappy算法在开源hadoop中默认是没有的，得自己手动安装</font></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>主要有两个方面影响shuffle阶段的性能：<br>1、数据完全是远程拷贝<br>2、采用HTTP协议进行数据传输。对于第一个方面，如果采用某种策略（修改框架），让你reduce task也能有locality就好了；对于第二个方面，用新的更快的数据传输协议替换HTTP，也许能更快些, 如UDT协议， 它在MapReduce的另一个C++开源实现Sector/Sphere中被使用，效果不错！</p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
+<li><a href="http://www.tuicool.com/articles/2YjeIne" target="_blank" rel="noopener">http://www.tuicool.com/articles/2YjeIne</a></li>
+<li><a href="http://dongxicheng.org/mapreduce/hadoop-shuffle-phase/" target="_blank" rel="noopener">http://dongxicheng.org/mapreduce/hadoop-shuffle-phase/</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/java/" rel="tag"># java</a>
+          
+            <a href="/tags/hadoop生态圈/" rel="tag"># hadoop生态圈</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2015/11/22/hadoop-你该学习的常用命令/" rel="next" title="hadoop-你该学习的常用命令">
+                <i class="fa fa-chevron-left"></i> hadoop-你该学习的常用命令
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2015/11/28/hadoop-spark-dataFrame操作hive/" rel="prev" title="Spark DataFrme操作Hive">
+                Spark DataFrme操作Hive <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+<span class="jiathis_txt">分享到：</span>
+<a class="jiathis_button_fav">收藏夹</a>
+<a class="jiathis_button_copy">复制网址</a>
+<a class="jiathis_button_email">邮件</a>
+<a class="jiathis_button_weixin">微信</a>
+<a class="jiathis_button_qzone">QQ空间</a>
+<a class="jiathis_button_tqq">腾讯微博</a>
+<a class="jiathis_button_douban">豆瓣</a>
+<a class="jiathis_button_share">一键分享</a>
+
+<a href="http://www.jiathis.com/share?uid=2140465" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank">更多</a>
+<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+var jiathis_config={
+  data_track_clickback:true,
+  summary:"",
+  shortUrl:false,
+  hideMore:false
+}
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  <p>热评文章</p>
+  <div class="ds-top-threads" data-range="weekly" data-num-items="4"></div>
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div class="ds-thread" data-thread-key="2015/11/27/hadoop-mapreduce执行流程分析/" data-title="MapReduce执行流程分析" data-url="http://www.zhangrenhua.com/2015/11/27/hadoop-mapreduce执行流程分析/">
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="http://www.zhangrenhua.com/back_images/avatar.jpg" alt="张仁华">
+            
+              <p class="site-author-name" itemprop="name">张仁华</p>
+              <p class="site-description motion-element" itemprop="description">记录软件生涯中的点点滴滴</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">76</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">17</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/zhangrenhua/" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://weibo.com/huaHBrother" target="_blank" title="Weibo">
+                      
+                        <i class="fa fa-fw fa-globe"></i>Weibo</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://douban.com/people/huaHBrother" target="_blank" title="douban">
+                      
+                        <i class="fa fa-fw fa-globe"></i>douban</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://zhihu.com/people/huaHBrother" target="_blank" title="zhihu">
+                      
+                        <i class="fa fa-fw fa-globe"></i>zhihu</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Block块"><span class="nav-number">2.</span> <span class="nav-text">Block块</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Split块"><span class="nav-number">3.</span> <span class="nav-text">Split块</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Map流程"><span class="nav-number">4.</span> <span class="nav-text">Map流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Shuffle过程浅析"><span class="nav-number">5.</span> <span class="nav-text">Shuffle过程浅析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Map端"><span class="nav-number">5.1.</span> <span class="nav-text">Map端</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Reduce端"><span class="nav-number">5.2.</span> <span class="nav-text">Reduce端</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Reduce流程"><span class="nav-number">6.</span> <span class="nav-text">Reduce流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Hadoop中的压缩"><span class="nav-number">7.</span> <span class="nav-text">Hadoop中的压缩</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#解压缩算法的实现：Codec"><span class="nav-number">7.1.</span> <span class="nav-text">解压缩算法的实现：Codec</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Map端压缩输出到Reduce"><span class="nav-number">7.2.</span> <span class="nav-text">Map端压缩输出到Reduce</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#MapReduce输出文件进行压缩"><span class="nav-number">7.3.</span> <span class="nav-text">MapReduce输出文件进行压缩</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">8.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">9.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">张仁华</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"iissnan-notes"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

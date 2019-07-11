@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="google-site-verification" content="zUNgN8yGBtBZ8194JTl7PXh7YvztVw494zGKJ_8qH00">
+
+
+
+
+
+
+
+
+  <meta name="baidu-site-verification" content="kqLgluU8lc">
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/favicon.ico?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="hadoop生态圈,hbase,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="hua的博客" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="在 2015 年，HBase 迎来了一个里程碑——HBase 1.0 release，这也代表着 HBase 走向了稳定">
+<meta name="keywords" content="hadoop生态圈,hbase">
+<meta property="og:type" content="article">
+<meta property="og:title" content="转-Apache HBase 2015年发展回顾与未来展望">
+<meta property="og:url" content="http://www.zhangrenhua.com/2016/01/12/hadoop-hbase2015年发展回顾与未来展望/index.html">
+<meta property="og:site_name" content="hua的博客">
+<meta property="og:description" content="在 2015 年，HBase 迎来了一个里程碑——HBase 1.0 release，这也代表着 HBase 走向了稳定">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/hadoop-hbase-new-interface.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/hadoop-hbase-old-api.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/hadoop-hbase-new-api.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/hadoop-hbase-new-mutator.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/hadoop-hbase-region-new-jg.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/hadoop-hbase-new-jg.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/hadoop-hbase-new-lct.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/hadoop-hbase-jqgh.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/hadoop-hbase-hydrabase.png">
+<meta property="og:updated_time" content="2019-07-11T06:43:13.717Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="转-Apache HBase 2015年发展回顾与未来展望">
+<meta name="twitter:description" content="在 2015 年，HBase 迎来了一个里程碑——HBase 1.0 release，这也代表着 HBase 走向了稳定">
+<meta name="twitter:image" content="http://www.zhangrenhua.com/back_images/hadoop-hbase-new-interface.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.zhangrenhua.com/2016/01/12/hadoop-hbase2015年发展回顾与未来展望/">
+
+
+
+
+
+  <title>转-Apache HBase 2015年发展回顾与未来展望 | hua的博客</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-69647002-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?954f429681a4cd6dee6095ddaa2aac9a";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">hua的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">关注技术和人文的原创IT博客</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-schedule">
+          <a href="/schedule/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            日程表
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sitemap">
+          <a href="/sitemap.xml" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            站点地图
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="st-search-show-outputs">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <form class="site-search-form">
+  <input type="text" id="st-search-input" class="st-search-input st-default-search-input">
+</form>
+
+<script type="text/javascript">
+  (function(w,d,t,u,n,s,e){w['SwiftypeObject']=n;w[n]=w[n]||function(){
+    (w[n].q=w[n].q||[]).push(arguments);};s=d.createElement(t);
+    e=d.getElementsByTagName(t)[0];s.async=1;s.src=u;e.parentNode.insertBefore(s,e);
+  })(window,document,'script','//s.swiftypecdn.com/install/v2/st.js','_st');
+
+  _st('install', 'BAacTgC1f_bLy6kngppZ','2.0.0');
+</script>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.zhangrenhua.com/2016/01/12/hadoop-hbase2015年发展回顾与未来展望/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="张仁华">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="http://www.zhangrenhua.com/back_images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hua的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">转-Apache HBase 2015年发展回顾与未来展望</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-01-12T19:41:41+08:00">
+                2016-01-12
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/hbase/" itemprop="url" rel="index">
+                    <span itemprop="name">hbase</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2016/01/12/hadoop-hbase2015年发展回顾与未来展望/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2016/01/12/hadoop-hbase2015年发展回顾与未来展望/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  在 2015 年，HBase 迎来了一个里程碑——HBase 1.0 release，这也代表着 HBase 走向了稳定
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="HBase-2015-年技术发展"><a href="#HBase-2015-年技术发展" class="headerlink" title="HBase 2015 年技术发展"></a>HBase 2015 年技术发展</h2><p>在 2015 年，HBase 迎来了一个里程碑——HBase 1.0 release，这也代表着 HBase 走向了稳定</p>
+<h3 id="New-Interface（更加清晰的接口定义）"><a href="#New-Interface（更加清晰的接口定义）" class="headerlink" title="New Interface（更加清晰的接口定义）"></a>New Interface（更加清晰的接口定义）</h3><p>旧的 HBase 接口逻辑与传统 JDBC 方式很不相同，新的接口与传统 JDBC 的逻辑更加相像，具有更加清晰的 Connection 管理方式。同时，在旧的接口中，客户端何时将 Put 写到服务端也需要设置，一个 Put 马上写到服务端，还是攒到一批写到服务端，新用户往往对此不太清楚。在新的接口中，引入了 BufferedMutator，可以提供更加高效清晰的写操作。</p>
+<p>HBase 0.98 与 HBase 1.0 接口名称对比:<br><img src="http://www.zhangrenhua.com/back_images/hadoop-hbase-new-interface.png" alt="Alt text"></p>
+<p>举一个例子，旧的 API 写入操作的代码：<br><img src="http://www.zhangrenhua.com/back_images/hadoop-hbase-old-api.png" alt="Alt text"></p>
+<p>新的 API 写入操作的代码：<br><img src="http://www.zhangrenhua.com/back_images/hadoop-hbase-new-api.png" alt="Alt text"></p>
+<p>可以看到，在操作前，首先建立连接，然后拿到一个对应表的句柄，之后再进行一系列操作。以上两个是同步写操作。下面看一下批量异步写入接口：<br><img src="http://www.zhangrenhua.com/back_images/hadoop-hbase-new-mutator.png" alt="Alt text"></p>
+<p>代码有相应的注释，可见新的接口显得更加清晰。</p>
+<h3 id="多个-Region-副本（读操作高可用-HBASE-10070）"><a href="#多个-Region-副本（读操作高可用-HBASE-10070）" class="headerlink" title="多个 Region 副本（读操作高可用 HBASE-10070）"></a>多个 Region 副本（读操作高可用 HBASE-10070）</h3><p><img src="http://www.zhangrenhua.com/back_images/hadoop-hbase-region-new-jg.png" alt="Alt text"></p>
+<p>如图所示，在 HBase 中，Table 被横向划分为 Region，它是一段数据的管理者，Region 被分发到 RegionServer 上进行管理，一个 Region 只被一个 RegionServer 管理，它的数据存储在 HDFS 上，是可以有多个副本的。</p>
+<p>也就是说：管理者 (Region) 只有一个，数据有多个副本。</p>
+<p>HBase 的以前实现中，当一台 RegionServer 不可用时，需要数十秒甚至数分钟才可以完成发现和恢复工作，在这段时间内，这台 RegionServer 上的 Region 是不可用的。当一个 Region 不可用时，它需要一段时间才可以被其他 RegionServer 接管。</p>
+<p>在最新的实现中，一个 Region 可以有多个副本（Region 是数据的管理者，是实际数据的抽象），分布在多个 RegionServer 上。<br><img src="http://www.zhangrenhua.com/back_images/hadoop-hbase-new-jg.png" alt="Alt text"></p>
+<p>特点：<br>（a）有一个主 Region，多个从 Region。<br>（b）只有主 Region 接收写请求，并把数据持久化到 HDFS 上。<br>（c）从 Region 从 HDFS 中读取数据并服务读请求。<br>（d）从 Region 可能会读到脏数据（主 Region 内存中的数据）。<br>（e）读操作可以只读主，或者既可以读主又可读从（可配置）。</p>
+<p>这样在主 Region 不可用时，用户仍可以读从 Region 的数据。目前社区在进行的开发：主 Region 异步同步数据到从 Region，从而减少从 Region 缺少的数据量。</p>
+<h3 id="Family-粒度的-Flush（减少小文件，优化磁盘-IO，提高读性能-HBASE-10201）"><a href="#Family-粒度的-Flush（减少小文件，优化磁盘-IO，提高读性能-HBASE-10201）" class="headerlink" title="Family 粒度的 Flush（减少小文件，优化磁盘 IO，提高读性能 HBASE-10201）"></a>Family 粒度的 Flush（减少小文件，优化磁盘 IO，提高读性能 HBASE-10201）</h3><p>我们先看一下 HBase 的写流程图：<br><img src="http://www.zhangrenhua.com/back_images/hadoop-hbase-new-lct.png" alt="Alt text"></p>
+<p>数据从客户端写到 RegionServer 上的 Region 后，先写入到内存中，积攒到阈值后写入磁盘，即 LSM-tree 架构。</p>
+<p>在以前的实现中，服务端数据从内存刷写到 HDFS 上是 Region 粒度的，Region 下面所有的 Family 都会被 Flush。在很多应用场景中，HBase 中存储的是稀疏数据，在写入一行的数据中，有的 Family 具有值，有的为空，而且不同 Family 中存储的数据大小本身就不同，所以当大的 Family 到达阈值需要刷写数据时，小的 Family 也会跟着刷写，这样会导致很多小文件的产生，影响性能。</p>
+<p>在新的实现中，提供了更小粒度的 Flush——Family 级别。它的特点是：<br>（a）更加合理的使用内存的写延迟和聚合功能<br>（b）减少 Compaction 的磁盘IO<br>（c）提高读性能</p>
+<h3 id="RPC-读写队列分离（读写隔离，scan-与-get-隔离-HBASE-11355）"><a href="#RPC-读写队列分离（读写隔离，scan-与-get-隔离-HBASE-11355）" class="headerlink" title="RPC 读写队列分离（读写隔离，scan 与 get 隔离 HBASE-11355）"></a>RPC 读写队列分离（读写隔离，scan 与 get 隔离 HBASE-11355）</h3><p>之前的实现中，RegionServer 上所有操作共享队列，各种操作互相影响。比如Scan 和 Get，在 RPC Call Queue 中，如果一个大的 Scan 请求排列在 Get 之前，那么 Get 就需要等待之前的 Scan 完成才可以执行，延迟较大。</p>
+<p>在现在的实现中，RPC 可以具有多个 Call Queue，同时将它们分配给不同的操作使用，从而实现各种 Put、Scan 和 Get 等操作的隔离。具体配置的参数如下：</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">hbase<span class="selector-class">.ipc</span><span class="selector-class">.server</span><span class="selector-class">.callqueue</span><span class="selector-class">.handler</span><span class="selector-class">.factor</span></span><br><span class="line">hbase<span class="selector-class">.ipc</span><span class="selector-class">.server</span><span class="selector-class">.callqueue</span><span class="selector-class">.read</span><span class="selector-class">.ratio</span></span><br><span class="line">hbase<span class="selector-class">.ipc</span><span class="selector-class">.server</span><span class="selector-class">.callqueue</span><span class="selector-class">.scan</span><span class="selector-class">.ratio</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="在线调整配置-HBASE-12147"><a href="#在线调整配置-HBASE-12147" class="headerlink" title="在线调整配置  HBASE-12147"></a>在线调整配置  HBASE-12147</h3><p>之前的实现中，每次修改配置后都需要重启集群（Rolling Restart）</p>
+<p>现在，调整配置后不再需要重启，但是目前只支持一部分配置的在线调整，如 Load Balance 和 Compaction。Hadoop 也已经实现了此功能。</p>
+<p>目前社区的工作方向和趋势：</p>
+<h3 id="提高可用性"><a href="#提高可用性" class="headerlink" title="提高可用性"></a>提高可用性</h3><p>很多应用都要求存储具有高可用性，目前 HBase 实现的还不够优秀，Facebook 的 HydraHBase 是 Facebook 内部维护的 HBase 版本，它使用 Raft 协议管理 Region Server，从而实现高可靠，它的可用率达到 99.999%，Facebook 声称 HydraBase 能将 Facebook 全年的宕机时间缩减到不到 5 分钟。Cloudera Kudu 使用 Raft 协议管理协调 Tablet，从而也可以达到很高的可用率。</p>
+<p>HBase 与 HydraHBase 对比：</p>
+<p>HBase<br><img src="http://www.zhangrenhua.com/back_images/hadoop-hbase-jqgh.png" alt="Alt text"></p>
+<p>HydraBase<br><img src="http://www.zhangrenhua.com/back_images/hadoop-hbase-hydrabase.png" alt="Alt text"></p>
+<h3 id="对于-HDFS-多存储介质的使用"><a href="#对于-HDFS-多存储介质的使用" class="headerlink" title="对于 HDFS 多存储介质的使用"></a>对于 HDFS 多存储介质的使用</h3><p>随着 HDFS 对内存、SSD 的支持和使用，HBase 也会充分使用它们带来的高性能。比如把 WAL 和更多的热数据放到 HDFS 的内存或者 SSD上(三副本)</p>
+<h3 id="减少对-ZooKeeper-的使用"><a href="#减少对-ZooKeeper-的使用" class="headerlink" title="减少对 ZooKeeper 的使用"></a>减少对 ZooKeeper 的使用</h3><p>Zookeeper 的抖动会对 HBase 造成影响，目前已经完成对 Master 上的 Assignment Manager 的改造，使它不再依赖 ZooKeeper。</p>
+<h3 id="堆外内存的使用"><a href="#堆外内存的使用" class="headerlink" title="堆外内存的使用"></a>堆外内存的使用</h3><p>Java 管理大内存的方式还不高效，HBase 可以把 Cache 放在堆外，读取的时候不再拉到堆内中，以减少 GC 的影响。</p>
+<h2 id="Q-amp-A"><a href="#Q-amp-A" class="headerlink" title="Q &amp; A"></a>Q &amp; A</h2><p><strong>1、HBase 集群是不是尽量要读写分离（针对整个集群），我们的集群，随机写入很大，也有随机读，现在碰到随机读请求很不稳定的情况，希望有经验分享一下</strong></p>
+<p>HBase 可以支持高吞吐的写请求。对于随机读，如果写操作很多，会造成很多文件来不及 Compact，这会影响随机读的性能。同时，如果 JVM 参数没有经过调优，忙碌的 HBase 集群会有 GC 问题，也会影响随机读的性能。建议可以先调优 JVM 参数和 Cache，也可以引入 BloomFilter 等来优化查询。如果对随机读延迟要求较高，可以考虑分离读写。</p>
+<p><strong>2、对于 HBASE 脏读问题，如果只读从 region，是不是就可以避免了？</strong></p>
+<p>不能，因为从 Region 的数据就是过时的，主 Region 才是最新的数据。目前 HBase 的实现中，只有读主 Region 才可以获得最新数据，当主 Region 不可用时，如果可以忍受 stale 的数据，则可以读从 Region 来保证可用性。目前高可用实现的还不太好，这也是社区努力的方向之一。</p>
+<p><strong>3、修改 HBase 配置文件，但不重启集群是怎么实现的？*</strong></p>
+<p>Hadoop实现了一个动态载入配置的框架，修改配置后，激发服务端重新获取配置。具体可见 Hadoop-7001（<a href="https://issues.apache.org/jira/browse/HADOOP-7001）" target="_blank" rel="noopener">https://issues.apache.org/jira/browse/HADOOP-7001）</a></p>
+<p><strong>4、HBase 历史数据有好的处理办法吗？设定多少天之前的数据删除或者只对对历史数据进行压缩？</strong></p>
+<p>可以设置 TTL 来淘汰历史数据，设置的时间根据具体应用来定。HBase 可以支持 Family 级别设置压缩，原生 HBase 还不能对于一部分行做压缩，可以考虑分表或者其他上层实现。如果历史数据不再需要，可以考虑设置 TTL。</p>
+<p><strong>5、写 MapReduce job 从 HBase 中导出某张表的所有数据，默认是几个 region 产生几个 mapper，有什么可以优化提速的办法？</strong></p>
+<p>可以让多个 mapper 读取一个 region 中的数据，这时候你需要定制一下 TableInputFormat（适当修改源代码）</p>
+<p><strong>6、0.98 版本或以前的 HBase 有什么好的读写分离方案？snapshot 是不是是一种方法？</strong></p>
+<p>从 RPC 层面上讲，snapshot 不算读写分离方案，因为所有的读写都进入同一个 Call Queue。从 MVCC 和锁级别等其他方面来看，snapshot 是一种方案。</p>
+<p><strong>7、HBase multitenant 方面有解决方案没有？</strong></p>
+<p>社区已经有相应的 issue，在明年发布的 2.0 版本中会发布。</p>
+<p><strong>8、HBase 不同集群之间的数据同步在 1.0 版本之后有没有更好的解决方案？</strong></p>
+<p>目前的解决方案仍然是 copytable + replication。目前社区已经可以解决 bulk load 的数据的同步（之前 bulk load 的数据不能同步到从集群）。</p>
+<p><strong>9、基于 HBase 缓存怎么设计比较好，Hulu 是怎么做的？我的项目里用了 Cloudera 自带的 Solr，发现服务器 memory CPU 开销太大。</strong></p>
+<p>HBase 的随机读性能不足为在线服务提供缓存服务，可以考虑使用 Redis 或者 Memcache。Solr 应该是做全文索引服务，这应该和 Solr 的实现相关。如果没有设置把 HBase 的表放到内存，HBase 不会消耗很大内存。对于忙碌的 HBase 集群，还是比较消耗 CPU 。</p>
+<p><strong>10、社区版 Hadoop 2.6 没有对应的 HBase 版本支持，可以用刚才讲的 HydraBase 替代 HBase 吗？</strong></p>
+<p>HBase 1.0 应该是可以运行在 Hadoop 2.6 之上，从个人角度来看，HydraBase可以替代 HBase，Facebook 就是这么实现的，不过 HydraBase 还没有开源。从架构上来讲，HydraBase 使用 Raft 协议管理 RegionServer，写性能可能不如原生 HBase。</p>
+<p><strong>11、请问你们是否在生产环境种使用 HBase + Phoenix 的组合来提供复杂快速查询？如果使用了，并发查询的性能如何？</strong></p>
+<p>Hulu 内部还没有使用 Phoenix，以前我个人使用过 Phoenix，当时 Phoenix 对于大量并发查询支持的不好，尤其是使用了索引的复杂查询。但是 Phoenix 社区发展很快，现在的情况应该会有好转。</p>
+<p><strong>12、Off-heap 做二级 cache 能否提高随机读速度？</strong></p>
+<p>可以 。 bucket cache 实现的比较好。目前社区仍在继续优化。对于随机读，还可以增加 BloomFilter 增强性能。</p>
+<p><strong>13、HBase 的 Rowkey 如何设计才能既保持无热点又能有序便于 scan？</strong></p>
+<p>可以考虑 salt 的方式，在写入的时候为 Rowkey 加随机前缀，比如前缀范围 001 - 100，那么我可以随机为 Rowkey 加上这些前缀来消除热点，在 scan 的时候需要加上所有的前缀（001-100）来 scan，不过这样一个 scan 就要转化为并发的 100 个 scan。</p>
+<p>本文转载至：<a href="http://mp.weixin.qq.com/s?__biz=MzAwMDU1MTE1OQ==&amp;mid=403219545&amp;idx=1&amp;sn=119613ae7d52de9c033b3ed0598bae6a&amp;3rd=MzA3MDU4NTYzMw==&amp;scene=25#wechat_redirect" target="_blank" rel="noopener">http://mp.weixin.qq.com/s?__biz=MzAwMDU1MTE1OQ==&amp;mid=403219545&amp;idx=1&amp;sn=119613ae7d52de9c033b3ed0598bae6a&amp;3rd=MzA3MDU4NTYzMw==&amp;scene=25#wechat_redirect</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/hadoop生态圈/" rel="tag"># hadoop生态圈</a>
+          
+            <a href="/tags/hbase/" rel="tag"># hbase</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/01/05/hadoop-常用参数整理/" rel="next" title="Hadoop常用参数整理（HDFS/Yarn/MapReduce/GC）">
+                <i class="fa fa-chevron-left"></i> Hadoop常用参数整理（HDFS/Yarn/MapReduce/GC）
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/01/15/hadoop-Hbase1.xAPI开发以及过滤器详解/" rel="prev" title="Hbase1.0API开发以及过滤器详解">
+                Hbase1.0API开发以及过滤器详解 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+<span class="jiathis_txt">分享到：</span>
+<a class="jiathis_button_fav">收藏夹</a>
+<a class="jiathis_button_copy">复制网址</a>
+<a class="jiathis_button_email">邮件</a>
+<a class="jiathis_button_weixin">微信</a>
+<a class="jiathis_button_qzone">QQ空间</a>
+<a class="jiathis_button_tqq">腾讯微博</a>
+<a class="jiathis_button_douban">豆瓣</a>
+<a class="jiathis_button_share">一键分享</a>
+
+<a href="http://www.jiathis.com/share?uid=2140465" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank">更多</a>
+<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+var jiathis_config={
+  data_track_clickback:true,
+  summary:"",
+  shortUrl:false,
+  hideMore:false
+}
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  <p>热评文章</p>
+  <div class="ds-top-threads" data-range="weekly" data-num-items="4"></div>
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div class="ds-thread" data-thread-key="2016/01/12/hadoop-hbase2015年发展回顾与未来展望/" data-title="转-Apache HBase 2015年发展回顾与未来展望" data-url="http://www.zhangrenhua.com/2016/01/12/hadoop-hbase2015年发展回顾与未来展望/">
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="http://www.zhangrenhua.com/back_images/avatar.jpg" alt="张仁华">
+            
+              <p class="site-author-name" itemprop="name">张仁华</p>
+              <p class="site-description motion-element" itemprop="description">记录软件生涯中的点点滴滴</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">76</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">17</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/zhangrenhua/" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://weibo.com/huaHBrother" target="_blank" title="Weibo">
+                      
+                        <i class="fa fa-fw fa-globe"></i>Weibo</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://douban.com/people/huaHBrother" target="_blank" title="douban">
+                      
+                        <i class="fa fa-fw fa-globe"></i>douban</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://zhihu.com/people/huaHBrother" target="_blank" title="zhihu">
+                      
+                        <i class="fa fa-fw fa-globe"></i>zhihu</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#HBase-2015-年技术发展"><span class="nav-number">1.</span> <span class="nav-text">HBase 2015 年技术发展</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#New-Interface（更加清晰的接口定义）"><span class="nav-number">1.1.</span> <span class="nav-text">New Interface（更加清晰的接口定义）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#多个-Region-副本（读操作高可用-HBASE-10070）"><span class="nav-number">1.2.</span> <span class="nav-text">多个 Region 副本（读操作高可用 HBASE-10070）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Family-粒度的-Flush（减少小文件，优化磁盘-IO，提高读性能-HBASE-10201）"><span class="nav-number">1.3.</span> <span class="nav-text">Family 粒度的 Flush（减少小文件，优化磁盘 IO，提高读性能 HBASE-10201）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#RPC-读写队列分离（读写隔离，scan-与-get-隔离-HBASE-11355）"><span class="nav-number">1.4.</span> <span class="nav-text">RPC 读写队列分离（读写隔离，scan 与 get 隔离 HBASE-11355）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#在线调整配置-HBASE-12147"><span class="nav-number">1.5.</span> <span class="nav-text">在线调整配置  HBASE-12147</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#提高可用性"><span class="nav-number">1.6.</span> <span class="nav-text">提高可用性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#对于-HDFS-多存储介质的使用"><span class="nav-number">1.7.</span> <span class="nav-text">对于 HDFS 多存储介质的使用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#减少对-ZooKeeper-的使用"><span class="nav-number">1.8.</span> <span class="nav-text">减少对 ZooKeeper 的使用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#堆外内存的使用"><span class="nav-number">1.9.</span> <span class="nav-text">堆外内存的使用</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Q-amp-A"><span class="nav-number">2.</span> <span class="nav-text">Q &amp; A</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">张仁华</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"iissnan-notes"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

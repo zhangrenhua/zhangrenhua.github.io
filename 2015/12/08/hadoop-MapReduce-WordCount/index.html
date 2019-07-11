@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="google-site-verification" content="zUNgN8yGBtBZ8194JTl7PXh7YvztVw494zGKJ_8qH00">
+
+
+
+
+
+
+
+
+  <meta name="baidu-site-verification" content="kqLgluU8lc">
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/favicon.ico?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="java,hadoop生态圈,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="hua的博客" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="前面已经对MapReduce处理流程以及运行原理做了比较细致的讲解，下面直接进入MapReduce编程阶段。本文主要讲解官方的一个简要例子（WordCount），从这个简单的例子中贯穿整个MapReduce执行的过程，从中理解MapReduce作业的工作原理。本文采用eclipse本地运行方式，并讲解如何debug调试。">
+<meta name="keywords" content="java,hadoop生态圈">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MapReduce开发-WordCount">
+<meta property="og:url" content="http://www.zhangrenhua.com/2015/12/08/hadoop-MapReduce-WordCount/index.html">
+<meta property="og:site_name" content="hua的博客">
+<meta property="og:description" content="前面已经对MapReduce处理流程以及运行原理做了比较细致的讲解，下面直接进入MapReduce编程阶段。本文主要讲解官方的一个简要例子（WordCount），从这个简单的例子中贯穿整个MapReduce执行的过程，从中理解MapReduce作业的工作原理。本文采用eclipse本地运行方式，并讲解如何debug调试。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/hadoop-mapreduce-wordcount-1.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/hadoop-mapreduce-output.jpg">
+<meta property="og:updated_time" content="2019-07-11T06:43:13.728Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="MapReduce开发-WordCount">
+<meta name="twitter:description" content="前面已经对MapReduce处理流程以及运行原理做了比较细致的讲解，下面直接进入MapReduce编程阶段。本文主要讲解官方的一个简要例子（WordCount），从这个简单的例子中贯穿整个MapReduce执行的过程，从中理解MapReduce作业的工作原理。本文采用eclipse本地运行方式，并讲解如何debug调试。">
+<meta name="twitter:image" content="http://www.zhangrenhua.com/back_images/hadoop-mapreduce-wordcount-1.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.zhangrenhua.com/2015/12/08/hadoop-MapReduce-WordCount/">
+
+
+
+
+
+  <title>MapReduce开发-WordCount | hua的博客</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-69647002-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?954f429681a4cd6dee6095ddaa2aac9a";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">hua的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">关注技术和人文的原创IT博客</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-schedule">
+          <a href="/schedule/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            日程表
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sitemap">
+          <a href="/sitemap.xml" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            站点地图
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="st-search-show-outputs">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <form class="site-search-form">
+  <input type="text" id="st-search-input" class="st-search-input st-default-search-input">
+</form>
+
+<script type="text/javascript">
+  (function(w,d,t,u,n,s,e){w['SwiftypeObject']=n;w[n]=w[n]||function(){
+    (w[n].q=w[n].q||[]).push(arguments);};s=d.createElement(t);
+    e=d.getElementsByTagName(t)[0];s.async=1;s.src=u;e.parentNode.insertBefore(s,e);
+  })(window,document,'script','//s.swiftypecdn.com/install/v2/st.js','_st');
+
+  _st('install', 'BAacTgC1f_bLy6kngppZ','2.0.0');
+</script>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.zhangrenhua.com/2015/12/08/hadoop-MapReduce-WordCount/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="张仁华">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="http://www.zhangrenhua.com/back_images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hua的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">MapReduce开发-WordCount</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2015-12-08T19:10:00+08:00">
+                2015-12-08
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/hadoop/" itemprop="url" rel="index">
+                    <span itemprop="name">hadoop</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2015/12/08/hadoop-MapReduce-WordCount/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2015/12/08/hadoop-MapReduce-WordCount/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  前面已经对MapReduce处理流程以及运行原理做了比较细致的讲解，下面直接进入MapReduce编程阶段。本文主要讲解官方的一个简要例子（WordCount），从这个简单的例子中贯穿整个MapReduce执行的过程，从中理解MapReduce作业的工作原理。本文采用eclipse本地运行方式，并讲解如何debug调试。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>前面已经对MapReduce处理流程以及运行原理做了比较细致的讲解，下面直接进入MapReduce编程阶段。本文主要讲解官方的一个简要例子（WordCount），从这个简单的例子中贯穿整个MapReduce执行的过程，从中理解MapReduce作业的工作原理。本文采用eclipse本地运行方式，并讲解如何debug调试。</p>
+<h2 id="数据文件"><a href="#数据文件" class="headerlink" title="数据文件"></a>数据文件</h2><p>data.txt</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">hello world</span><br><span class="line"><span class="selector-tag">b</span> l c d</span><br><span class="line"><span class="selector-tag">a</span> e f h <span class="selector-tag">i</span> g</span><br><span class="line">k g m</span><br></pre></td></tr></table></figure>
+
+<p>上传文件至hdfs:</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">hadoop fs -mkdir -<span class="selector-tag">p</span> /tmp/zrh/input</span><br><span class="line">hadoop fs -put data<span class="selector-class">.txt</span> /tmp/zrh/input</span><br></pre></td></tr></table></figure>
+
+<h2 id="jar包引用"><a href="#jar包引用" class="headerlink" title="jar包引用"></a>jar包引用</h2><figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="selector-tag">avro-1</span><span class="selector-class">.7</span><span class="selector-class">.4</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">commons-cli-1</span><span class="selector-class">.2</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">commons-configuration-1</span><span class="selector-class">.6</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">commons-httpclient-3</span><span class="selector-class">.1</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">commons-lang-2</span><span class="selector-class">.6</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">commons-logging-1</span><span class="selector-class">.1</span><span class="selector-class">.1</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">guava-12</span><span class="selector-class">.0</span><span class="selector-class">.1</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">hadoop-annotations-2</span><span class="selector-class">.2</span><span class="selector-class">.0</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">hadoop-archives-2</span><span class="selector-class">.2</span><span class="selector-class">.0</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">hadoop-auth-2</span><span class="selector-class">.2</span><span class="selector-class">.0</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">hadoop-common-2</span><span class="selector-class">.2</span><span class="selector-class">.0</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">hadoop-datajoin-2</span><span class="selector-class">.2</span><span class="selector-class">.0</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">hadoop-distcp-2</span><span class="selector-class">.2</span><span class="selector-class">.0</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">hadoop-extras-2</span><span class="selector-class">.2</span><span class="selector-class">.0</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">hadoop-gridmix-2</span><span class="selector-class">.2</span><span class="selector-class">.0</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">hadoop-hdfs-2</span><span class="selector-class">.2</span><span class="selector-class">.0</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">hadoop-hdfs-nfs-2</span><span class="selector-class">.2</span><span class="selector-class">.0</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">hadoop-mapreduce-client-app-2</span><span class="selector-class">.2</span><span class="selector-class">.0</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">hadoop-mapreduce-client-common-2</span><span class="selector-class">.2</span><span class="selector-class">.0</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">hadoop-mapreduce-client-core-2</span><span class="selector-class">.2</span><span class="selector-class">.0</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">hadoop-mapreduce-client-hs-2</span><span class="selector-class">.2</span><span class="selector-class">.0</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">hadoop-mapreduce-client-hs-plugins-2</span><span class="selector-class">.2</span><span class="selector-class">.0</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">hadoop-mapreduce-client-jobclient-2</span><span class="selector-class">.2</span><span class="selector-class">.0-tests</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">hadoop-mapreduce-client-jobclient-2</span><span class="selector-class">.2</span><span class="selector-class">.0</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">hadoop-mapreduce-client-shuffle-2</span><span class="selector-class">.2</span><span class="selector-class">.0</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">hadoop-mapreduce-examples-2</span><span class="selector-class">.2</span><span class="selector-class">.0</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">hadoop-nfs-2</span><span class="selector-class">.2</span><span class="selector-class">.0</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">hadoop-rumen-2</span><span class="selector-class">.2</span><span class="selector-class">.0</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">hadoop-streaming-2</span><span class="selector-class">.2</span><span class="selector-class">.0</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">hadoop-yarn-api-2</span><span class="selector-class">.2</span><span class="selector-class">.0</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">hadoop-yarn-applications-distributedshell-2</span><span class="selector-class">.2</span><span class="selector-class">.0</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">hadoop-yarn-applications-unmanaged-am-launcher-2</span><span class="selector-class">.2</span><span class="selector-class">.0</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">hadoop-yarn-client-2</span><span class="selector-class">.2</span><span class="selector-class">.0</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">hadoop-yarn-common-2</span><span class="selector-class">.2</span><span class="selector-class">.0</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">hadoop-yarn-server-common-2</span><span class="selector-class">.2</span><span class="selector-class">.0</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">hadoop-yarn-server-nodemanager-2</span><span class="selector-class">.2</span><span class="selector-class">.0</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">hadoop-yarn-server-resourcemanager-2</span><span class="selector-class">.2</span><span class="selector-class">.0</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">hadoop-yarn-server-web-proxy-2</span><span class="selector-class">.2</span><span class="selector-class">.0</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">hadoop-yarn-site-2</span><span class="selector-class">.2</span><span class="selector-class">.0</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">jackson-core-asl-1</span><span class="selector-class">.8</span><span class="selector-class">.8</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">jackson-mapper-asl-1</span><span class="selector-class">.8</span><span class="selector-class">.8</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">log4j-1</span><span class="selector-class">.2</span><span class="selector-class">.17</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">protobuf-java-2</span><span class="selector-class">.5</span><span class="selector-class">.0</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">slf4j-api-1</span><span class="selector-class">.6</span><span class="selector-class">.4</span><span class="selector-class">.jar</span></span><br><span class="line"><span class="selector-tag">slf4j-log4j12-1</span><span class="selector-class">.6</span><span class="selector-class">.4</span><span class="selector-class">.jar</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="集群配置文件"><a href="#集群配置文件" class="headerlink" title="集群配置文件"></a>集群配置文件</h2><figure class="highlight crmsh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">core-site.xml</span><br><span class="line">hdfs-site.xml</span><br><span class="line">log4j.properties</span><br></pre></td></tr></table></figure>
+
+<p>注：将hadoop集群中的两个配置文件放到项目的src目录下，并编写log4j文件以便于执行的时候能查看到MapReduce中的日志信息（log4j可以从hadoop源码中随便拿个 比较全的）。<br><font color="red">如果不加上面两个xml文件，则以本地模式运行</font></p>
+<h2 id="WordCountTest-java"><a href="#WordCountTest-java" class="headerlink" title="WordCountTest.java"></a>WordCountTest.java</h2><figure class="highlight dart"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.io.IOException;</span><br><span class="line"><span class="keyword">import</span> java.util.StringTokenizer;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.conf.Configuration;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.fs.Path;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.io.IntWritable;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.io.Text;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.mapreduce.Job;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.mapreduce.Mapper;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.mapreduce.Reducer;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.mapreduce.lib.input.FileInputFormat;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.mapreduce.lib.partition.HashPartitioner;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.util.GenericOptionsParser;</span><br><span class="line"></span><br><span class="line">public <span class="class"><span class="keyword">class</span> <span class="title">WordCountTest</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment"><span class="markdown">/**</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="bullet">     * </span>MapReduceBase类:实现了Mapper和Reducer接口的基类（其中的方法只是实现接口，而未作任何事情） Mapper接口：</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="bullet">     * </span>WritableComparable接口：实现WritableComparable的类可以相互比较。所有被用作key的类应该实现此接口。</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="bullet">     * </span>Reporter 则可用于报告整个应用的运行进度，本例中未使用。</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="bullet">     * </span></span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="code">     */</span></span></span></span><br><span class="line">    public <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">TokenizerMapper</span> <span class="keyword">extends</span> <span class="title">Mapper</span>&lt;<span class="title">Object</span>, <span class="title">Text</span>, <span class="title">Text</span>, <span class="title">IntWritable</span>&gt; </span>&#123;</span><br><span class="line"></span><br><span class="line">        <span class="comment"><span class="markdown">/**</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="bullet">         * </span>LongWritable, IntWritable, Text 均是 Hadoop 中实现的用于封装 Java</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="bullet">         * </span>数据类型的类，这些类实现了WritableComparable接口，</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="bullet">         * </span>都能够被串行化从而便于在分布式环境中进行数据交换，你可以将它们分别视为long,int,String 的替代品。</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="code">         */</span></span></span></span><br><span class="line">        private <span class="keyword">final</span> <span class="keyword">static</span> IntWritable one = <span class="keyword">new</span> IntWritable(<span class="number">1</span>);</span><br><span class="line">        private Text word = <span class="keyword">new</span> Text();<span class="comment">// Text 实现了BinaryComparable类可以作为key值</span></span><br><span class="line"></span><br><span class="line">        <span class="comment"><span class="markdown">/**</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="bullet">         * </span>Mapper接口中的map方法： void map(K1 key, V1 value, OutputCollector</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="bullet">         * </span><span class="xml"><span class="tag">&lt;<span class="name">K2,V2</span>&gt;</span></span> output, Reporter reporter) 映射一个单个的输入k/v对到一个中间的k/v对</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="bullet">         * </span>输出对不需要和输入对是相同的类型，输入对可以映射到0个或多个输出对。</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="bullet">         * </span>OutputCollector接口：收集Mapper和Reducer输出的<span class="xml"><span class="tag">&lt;<span class="name">k,v</span>&gt;</span></span>对。</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="bullet">         * </span>OutputCollector接口的collect(k, v)方法:增加一个(k,v)对到output</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="code">         */</span></span></span></span><br><span class="line"></span><br><span class="line">        public <span class="keyword">void</span> map(<span class="built_in">Object</span> key, Text value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line"></span><br><span class="line">            <span class="comment"><span class="markdown">/**</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="bullet">             * </span>原始数据： c++ java hello world java hello </span>you<span class="markdown"> me too</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="bullet">             * </span>map阶段，数据如下形式作为map的输入值：key为偏移量 0 c++ java hello 16 world java</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="bullet">             * </span>hello 34 </span>you<span class="markdown"> me too</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="code">             */</span></span></span></span><br><span class="line"></span><br><span class="line">            <span class="comment"><span class="markdown">/**</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="bullet">             * </span>以下解析键值对 解析后以键值对格式形成输出数据 格式如下：前者是键排好序的，后者数字是值 c++ 1 java 1 hello 1</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="bullet">             * </span>world 1 java 1 hello 1 </span>you<span class="markdown"> 1 me 1 too 1 这些数据作为reduce的输出数据</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="code">             */</span></span></span></span><br><span class="line">            StringTokenizer itr = <span class="keyword">new</span> StringTokenizer(value.toString());<span class="comment">// 得到什么值</span></span><br><span class="line">            System.out.println(<span class="string">"value什么东西 ： "</span> + value.toString());</span><br><span class="line">            System.out.println(<span class="string">"key什么东西 ： "</span> + key.toString());</span><br><span class="line"></span><br><span class="line">            <span class="keyword">while</span> (itr.hasMoreTokens()) &#123;</span><br><span class="line">                word.<span class="keyword">set</span>(itr.nextToken());</span><br><span class="line"></span><br><span class="line">                context.write(word, one);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">IntSumReducer</span> <span class="keyword">extends</span> <span class="title">Reducer</span>&lt;<span class="title">Text</span>, <span class="title">IntWritable</span>, <span class="title">Text</span>, <span class="title">IntWritable</span>&gt; </span>&#123;</span><br><span class="line">        private IntWritable result = <span class="keyword">new</span> IntWritable();</span><br><span class="line"></span><br><span class="line">        <span class="comment"><span class="markdown">/**</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="bullet">         * </span>reduce过程是对输入数据解析形成如下格式数据： (c++ [1]) (java [1,1]) (hello [1,1]) (world</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="bullet">         * </span>[1]) (</span>you<span class="markdown"> [1]) (me [1]) (</span>you<span class="markdown"> [1]) 供接下来的实现的reduce程序分析数据数据</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="bullet">         * </span></span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="code">         */</span></span></span></span><br><span class="line">        public <span class="keyword">void</span> reduce(Text key, <span class="built_in">Iterable</span>&lt;IntWritable&gt; values, Context context)</span><br><span class="line">                throws IOException, InterruptedException &#123;</span><br><span class="line">            <span class="built_in">int</span> sum = <span class="number">0</span>;</span><br><span class="line">            <span class="comment"><span class="markdown">/**</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="bullet">             * </span>自己的实现的reduce方法分析输入数据 形成数据格式如下并存储 c++ 1 hello 2 java 2 me 1 too 1</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="bullet">             * </span>world 1 </span>you<span class="markdown"> 1</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="bullet">             * </span></span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="code">             */</span></span></span></span><br><span class="line">            <span class="keyword">for</span> (IntWritable val : values) &#123;</span><br><span class="line">                sum += val.<span class="keyword">get</span>();</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            result.<span class="keyword">set</span>(sum);</span><br><span class="line">            context.write(key, result);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public <span class="keyword">static</span> <span class="keyword">void</span> main(<span class="built_in">String</span>[] args) throws Exception &#123;</span><br><span class="line"></span><br><span class="line">        <span class="comment"><span class="markdown">/**</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="bullet">         * </span>JobConf：map/reduce的job配置类，向hadoop框架描述map-reduce执行的工作</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="bullet">         * </span>构造方法：JobConf()、JobConf(Class exampleClass)、JobConf(Configuration</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="bullet">         * </span>conf)等</span></span></span><br><span class="line"><span class="comment"><span class="markdown"><span class="code">         */</span></span></span></span><br><span class="line">        <span class="comment">// 根据自己的实际情况填写输入分析的目录和结果输出的目录</span></span><br><span class="line">        args = <span class="keyword">new</span> <span class="built_in">String</span>[<span class="number">2</span>];</span><br><span class="line"></span><br><span class="line">        <span class="comment">// args[0] = "hdfs://10.242.157.115:9000/tmp/zrh/input";</span></span><br><span class="line">        <span class="comment">// 使用上面这种方式指定文件位置，则不需要把core-site.xml和hdfs-site.xml放入src目录，建议将集群环境的配置文件放到src目录</span></span><br><span class="line">        args[<span class="number">0</span>] = <span class="string">"/tmp/zrh/input"</span>;</span><br><span class="line">        args[<span class="number">1</span>] = <span class="string">"/tmp/zrh/output"</span>;</span><br><span class="line"></span><br><span class="line">        Configuration conf = <span class="keyword">new</span> Configuration();</span><br><span class="line">        <span class="built_in">String</span>[] otherArgs = <span class="keyword">new</span> GenericOptionsParser(conf, args).getRemainingArgs();</span><br><span class="line">        <span class="keyword">for</span> (<span class="built_in">String</span> s : otherArgs) &#123;</span><br><span class="line">            System.out.println(s);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 这里需要配置参数即输入和输出的HDFS的文件路径</span></span><br><span class="line">        <span class="keyword">if</span> (otherArgs.length != <span class="number">2</span>) &#123;</span><br><span class="line">            System.err.println(<span class="string">"Usage: wordcount &lt;in&gt; &lt;out&gt;"</span>);</span><br><span class="line">            System.exit(<span class="number">2</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// JobConf conf1 = new JobConf(WordCount.class);</span></span><br><span class="line">        Job job = Job.getInstance(conf);<span class="comment">// Job(Configuration conf, String</span></span><br><span class="line">        job.setJobName(<span class="string">"word count"</span>); <span class="comment">// job名称</span></span><br><span class="line"></span><br><span class="line">        job.setPartitionerClass(HashPartitioner.<span class="keyword">class</span>);</span><br><span class="line">        job.setJarByClass(WordCountTest.<span class="keyword">class</span>);</span><br><span class="line">        job.setMapperClass(TokenizerMapper.<span class="keyword">class</span>); <span class="comment">// 为job设置Mapper类</span></span><br><span class="line">        job.setCombinerClass(IntSumReducer.<span class="keyword">class</span>); <span class="comment">// 为job设置Combiner类</span></span><br><span class="line">        job.setReducerClass(IntSumReducer.<span class="keyword">class</span>); <span class="comment">// 为job设置Reduce类</span></span><br><span class="line">        job.setOutputKeyClass(Text.<span class="keyword">class</span>); <span class="comment">// 设置输出key的类型</span></span><br><span class="line">        job.setOutputValueClass(IntWritable.<span class="keyword">class</span>);<span class="comment">// 设置输出value的类型</span></span><br><span class="line">        FileInputFormat.addInputPath(job, <span class="keyword">new</span> Path(otherArgs[<span class="number">0</span>])); <span class="comment">// 为map-reduce任务设置InputFormat实现类</span></span><br><span class="line">                                                                    <span class="comment">// 设置输入路径</span></span><br><span class="line"></span><br><span class="line">        FileOutputFormat.setOutputPath(job, <span class="keyword">new</span> Path(otherArgs[<span class="number">1</span>]));<span class="comment">// 为map-reduce任务设置OutputFormat实现类</span></span><br><span class="line">                                                                    <span class="comment">// 设置输出路径</span></span><br><span class="line">        System.exit(job.waitForCompletion(<span class="keyword">true</span>) ? <span class="number">0</span> : <span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>注：在eclipse中执行main函数既可。</p>
+<h2 id="项目结构"><a href="#项目结构" class="headerlink" title="项目结构"></a>项目结构</h2><p><img src="http://www.zhangrenhua.com/back_images/hadoop-mapreduce-wordcount-1.png" alt="Alt text"></p>
+<h2 id="运行程序"><a href="#运行程序" class="headerlink" title="运行程序"></a>运行程序</h2><p>将数据文件上传到HDFS指定目录(/tmp/zrh/input)后，运行WordCountTest类中的main函数即可。</p>
+<h3 id="debug调试"><a href="#debug调试" class="headerlink" title="debug调试"></a>debug调试</h3><p>与普通的java程序一样，标记断点位置，debug模式运行即可。</p>
+<h2 id="可能发生出现的异常"><a href="#可能发生出现的异常" class="headerlink" title="可能发生出现的异常"></a>可能发生出现的异常</h2><p>输出目录已经存在，使用<code>hadoop fs -rmr /tmp/zrh/output</code>删除目录即可：</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">51</span>:<span class="number">23</span> ERROR security<span class="selector-class">.UserGroupInformation</span>: PriviledgedActionException as:hua (auth:SIMPLE) cause:org<span class="selector-class">.apache</span><span class="selector-class">.hadoop</span><span class="selector-class">.mapred</span><span class="selector-class">.FileAlreadyExistsException</span>: Output directory hdfs:<span class="comment">//nameservice1/tmp/zrh/output already exists</span></span><br><span class="line">Exception <span class="keyword">in</span> thread <span class="string">"main"</span> org<span class="selector-class">.apache</span><span class="selector-class">.hadoop</span><span class="selector-class">.mapred</span><span class="selector-class">.FileAlreadyExistsException</span>: Output directory hdfs:<span class="comment">//nameservice1/tmp/zrh/output already exists</span></span><br><span class="line">    at org<span class="selector-class">.apache</span><span class="selector-class">.hadoop</span><span class="selector-class">.mapreduce</span><span class="selector-class">.lib</span><span class="selector-class">.output</span><span class="selector-class">.FileOutputFormat</span><span class="selector-class">.checkOutputSpecs</span>(FileOutputFormat<span class="selector-class">.java</span>:<span class="number">146</span>)</span><br><span class="line">    at org<span class="selector-class">.apache</span><span class="selector-class">.hadoop</span><span class="selector-class">.mapreduce</span><span class="selector-class">.JobSubmitter</span><span class="selector-class">.checkSpecs</span>(JobSubmitter<span class="selector-class">.java</span>:<span class="number">456</span>)</span><br><span class="line">    at org<span class="selector-class">.apache</span><span class="selector-class">.hadoop</span><span class="selector-class">.mapreduce</span><span class="selector-class">.JobSubmitter</span><span class="selector-class">.submitJobInternal</span>(JobSubmitter<span class="selector-class">.java</span>:<span class="number">342</span>)</span><br><span class="line">    at org<span class="selector-class">.apache</span><span class="selector-class">.hadoop</span><span class="selector-class">.mapreduce</span><span class="selector-class">.Job</span>$<span class="number">10</span>.run(Job<span class="selector-class">.java</span>:<span class="number">1268</span>)</span><br><span class="line">    at org<span class="selector-class">.apache</span><span class="selector-class">.hadoop</span><span class="selector-class">.mapreduce</span><span class="selector-class">.Job</span>$<span class="number">10</span>.run(Job<span class="selector-class">.java</span>:<span class="number">1265</span>)</span><br><span class="line">    at java<span class="selector-class">.security</span><span class="selector-class">.AccessController</span><span class="selector-class">.doPrivileged</span>(Native Method)</span><br><span class="line">    at javax<span class="selector-class">.security</span><span class="selector-class">.auth</span><span class="selector-class">.Subject</span><span class="selector-class">.doAs</span>(Subject<span class="selector-class">.java</span>:<span class="number">415</span>)</span><br><span class="line">    at org<span class="selector-class">.apache</span><span class="selector-class">.hadoop</span><span class="selector-class">.security</span><span class="selector-class">.UserGroupInformation</span><span class="selector-class">.doAs</span>(UserGroupInformation<span class="selector-class">.java</span>:<span class="number">1491</span>)</span><br><span class="line">    at org<span class="selector-class">.apache</span><span class="selector-class">.hadoop</span><span class="selector-class">.mapreduce</span><span class="selector-class">.Job</span><span class="selector-class">.submit</span>(Job<span class="selector-class">.java</span>:<span class="number">1265</span>)</span><br><span class="line">    at org<span class="selector-class">.apache</span><span class="selector-class">.hadoop</span><span class="selector-class">.mapreduce</span><span class="selector-class">.Job</span><span class="selector-class">.waitForCompletion</span>(Job<span class="selector-class">.java</span>:<span class="number">1286</span>)</span><br><span class="line">    at com<span class="selector-class">.pactera</span><span class="selector-class">.hadoop</span><span class="selector-class">.WordCountTest</span><span class="selector-class">.main</span>(WordCountTest<span class="selector-class">.java</span>:<span class="number">138</span>)</span><br></pre></td></tr></table></figure>
+
+<p><strong>如出现其它错误</strong>，请参考《hadoop2.x-Eclipse开发环境搭建》。</p>
+<h2 id="运行结果"><a href="#运行结果" class="headerlink" title="运行结果"></a>运行结果</h2><p>执行日志信息：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br></pre></td><td class="code"><pre><span class="line">/tmp/zrh/input</span><br><span class="line">/tmp/zrh/output</span><br><span class="line">15/12/10 13:52:25 INFO Configuration.deprecation: session.id is deprecated. Instead, <span class="keyword">use</span> dfs.metrics.session-<span class="keyword">id</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">25</span> INFO jvm.JvmMetrics: Initializing JVM Metrics <span class="keyword">with</span> processName=JobTracker, sessionId=</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">25</span> WARN mapreduce.JobSubmitter: <span class="keyword">No</span> job jar <span class="keyword">file</span> set.  <span class="keyword">User</span> classes may <span class="keyword">not</span> be found. See Job <span class="keyword">or</span> Job<span class="comment">#setJar(String).</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">25</span> INFO input.FileInputFormat: Total <span class="keyword">input</span> paths <span class="keyword">to</span> process : <span class="number">1</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">25</span> INFO mapreduce.JobSubmitter: <span class="built_in">number</span> <span class="keyword">of</span> splits:<span class="number">1</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">25</span> INFO Configuration.deprecation: user.name <span class="keyword">is</span> deprecated. Instead, <span class="keyword">use</span> mapreduce.job.user.name</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">25</span> INFO Configuration.deprecation: mapreduce.partitioner.class <span class="keyword">is</span> deprecated. Instead, <span class="keyword">use</span> mapreduce.job.partitioner.class</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">25</span> INFO Configuration.deprecation: mapred.output.value.class <span class="keyword">is</span> deprecated. Instead, <span class="keyword">use</span> mapreduce.job.output.value.class</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">25</span> INFO Configuration.deprecation: mapreduce.combine.class <span class="keyword">is</span> deprecated. Instead, <span class="keyword">use</span> mapreduce.job.combine.class</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">25</span> INFO Configuration.deprecation: mapreduce.map.class <span class="keyword">is</span> deprecated. Instead, <span class="keyword">use</span> mapreduce.job.map.class</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">25</span> INFO Configuration.deprecation: mapred.job.name <span class="keyword">is</span> deprecated. Instead, <span class="keyword">use</span> mapreduce.job.name</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">25</span> INFO Configuration.deprecation: mapreduce.reduce.class <span class="keyword">is</span> deprecated. Instead, <span class="keyword">use</span> mapreduce.job.reduce.class</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">25</span> INFO Configuration.deprecation: mapred.input.dir <span class="keyword">is</span> deprecated. Instead, <span class="keyword">use</span> mapreduce.input.fileinputformat.inputdir</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">25</span> INFO Configuration.deprecation: mapred.output.dir <span class="keyword">is</span> deprecated. Instead, <span class="keyword">use</span> mapreduce.output.fileoutputformat.outputdir</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">25</span> INFO Configuration.deprecation: mapred.map.tasks <span class="keyword">is</span> deprecated. Instead, <span class="keyword">use</span> mapreduce.job.maps</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">25</span> INFO Configuration.deprecation: mapred.output.key.class <span class="keyword">is</span> deprecated. Instead, <span class="keyword">use</span> mapreduce.job.output.key.class</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">25</span> INFO Configuration.deprecation: mapred.working.dir <span class="keyword">is</span> deprecated. Instead, <span class="keyword">use</span> mapreduce.job.working.dir</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">25</span> INFO mapreduce.JobSubmitter: Submitting tokens <span class="keyword">for</span> job: job_local207690334_0001</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">25</span> WARN conf.Configuration: <span class="keyword">file</span>:/tmp/hadoop-hua/mapred/staging/hua207690334/.staging/job_local207690334_0001/job.xml:an attempt <span class="keyword">to</span> override <span class="keyword">final</span> parameter: hadoop.ssl.keystores.factory.class;  Ignoring.</span><br><span class="line">15/12/10 13:52:25 WARN conf.Configuration: file:/tmp/hadoop-hua/mapred/staging/hua207690334/.staging/job_local207690334_0001/job.xml:an attempt to override final parameter: hadoop.ssl.client.conf;  Ignoring.</span><br><span class="line">15/12/10 13:52:25 WARN conf.Configuration: file:/tmp/hadoop-hua/mapred/staging/hua207690334/.staging/job_local207690334_0001/job.xml:an attempt to override final parameter: hadoop.ssl.server.conf;  Ignoring.</span><br><span class="line">15/12/10 13:52:25 WARN conf.Configuration: file:/tmp/hadoop-hua/mapred/staging/hua207690334/.staging/job_local207690334_0001/job.xml:an attempt to override final parameter: mapreduce.job.end-notification.max.retry.interval;  Ignoring.</span><br><span class="line">15/12/10 13:52:25 WARN conf.Configuration: file:/tmp/hadoop-hua/mapred/staging/hua207690334/.staging/job_local207690334_0001/job.xml:an attempt to override final parameter: mapreduce.job.end-notification.max.attempts;  Ignoring.</span><br><span class="line">15/12/10 13:52:25 WARN conf.Configuration: file:/tmp/hadoop-hua/mapred/staging/hua207690334/.staging/job_local207690334_0001/job.xml:an attempt to override final parameter: hadoop.ssl.require.client.cert;  Ignoring.</span><br><span class="line">15/12/10 13:52:26 WARN conf.Configuration: file:/tmp/hadoop-hua/mapred/local/localRunner/hua/job_local207690334_0001/job_local207690334_0001.xml:an attempt to override final parameter: hadoop.ssl.keystores.factory.class;  Ignoring.</span><br><span class="line">15/12/10 13:52:26 WARN conf.Configuration: file:/tmp/hadoop-hua/mapred/local/localRunner/hua/job_local207690334_0001/job_local207690334_0001.xml:an attempt to override final parameter: hadoop.ssl.client.conf;  Ignoring.</span><br><span class="line">15/12/10 13:52:26 WARN conf.Configuration: file:/tmp/hadoop-hua/mapred/local/localRunner/hua/job_local207690334_0001/job_local207690334_0001.xml:an attempt to override final parameter: hadoop.ssl.server.conf;  Ignoring.</span><br><span class="line">15/12/10 13:52:26 WARN conf.Configuration: file:/tmp/hadoop-hua/mapred/local/localRunner/hua/job_local207690334_0001/job_local207690334_0001.xml:an attempt to override final parameter: mapreduce.job.end-notification.max.retry.interval;  Ignoring.</span><br><span class="line">15/12/10 13:52:26 WARN conf.Configuration: file:/tmp/hadoop-hua/mapred/local/localRunner/hua/job_local207690334_0001/job_local207690334_0001.xml:an attempt to override final parameter: mapreduce.job.end-notification.max.attempts;  Ignoring.</span><br><span class="line">15/12/10 13:52:26 WARN conf.Configuration: file:/tmp/hadoop-hua/mapred/local/localRunner/hua/job_local207690334_0001/job_local207690334_0001.xml:an attempt to override final parameter: hadoop.ssl.require.client.cert;  Ignoring.</span><br><span class="line">15/12/10 13:52:26 INFO mapreduce.Job: The url to track the job: http://localhost:8080/</span><br><span class="line">15/12/10 13:52:26 INFO mapreduce.Job: Running job: job_local207690334_0001</span><br><span class="line">15/12/10 13:52:26 INFO mapred.LocalJobRunner: OutputCommitter <span class="keyword">set</span> <span class="keyword">in</span> config <span class="literal">null</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">26</span> INFO mapred.LocalJobRunner: OutputCommitter <span class="keyword">is</span> org.apache.hadoop.mapreduce.lib.output.FileOutputCommitter</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">26</span> INFO mapred.LocalJobRunner: Waiting <span class="keyword">for</span> <span class="keyword">map</span> tasks</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">26</span> INFO mapred.LocalJobRunner: <span class="keyword">Starting</span> task: attempt_local207690334_0001_m_000000_0</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">26</span> INFO util.ProcfsBasedProcessTree: ProcfsBasedProcessTree currently <span class="keyword">is</span> supported <span class="keyword">only</span> <span class="keyword">on</span> Linux.</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">26</span> INFO mapred.Task:  <span class="keyword">Using</span> ResourceCalculatorProcessTree : org.apache.hadoop.yarn.util.WindowsBasedProcessTree@<span class="number">7</span>ec3cdad</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">26</span> INFO mapred.MapTask: Processing <span class="keyword">split</span>: hdfs://nameservice1/tmp/zrh/<span class="keyword">input</span>/<span class="keyword">data</span>:<span class="number">0</span>+<span class="number">42</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">26</span> INFO mapred.MapTask: <span class="keyword">Map</span> <span class="keyword">output</span> collector <span class="keyword">class</span> = org.apache.hadoop.mapred.MapTask$MapOutputBuffer</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">26</span> INFO mapred.MapTask: (EQUATOR) <span class="number">0</span> kvi <span class="number">26214396</span>(<span class="number">104857584</span>)</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">26</span> INFO mapred.MapTask: mapreduce.task.io.sort.mb: <span class="number">100</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">26</span> INFO mapred.MapTask: soft <span class="keyword">limit</span> <span class="keyword">at</span> <span class="number">83886080</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">26</span> INFO mapred.MapTask: bufstart = <span class="number">0</span>; bufvoid = 104857600</span><br><span class="line">15/12/10 13:52:26 INFO mapred.MapTask: kvstart = 26214396; length = 6553600</span><br><span class="line">value什么东西 ： hello world</span><br><span class="line">key什么东西 ： 0</span><br><span class="line">value什么东西 ： b l c d</span><br><span class="line">key什么东西 ： 13</span><br><span class="line">value什么东西 ： a e f h i g</span><br><span class="line">key什么东西 ： 22</span><br><span class="line">value什么东西 ： k g m  </span><br><span class="line">key什么东西 ： 35</span><br><span class="line">15/12/10 13:52:26 INFO mapred.LocalJobRunner: </span><br><span class="line">15/12/10 13:52:26 INFO mapred.MapTask: Starting <span class="keyword">flush</span> <span class="keyword">of</span> <span class="keyword">map</span> <span class="keyword">output</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">26</span> INFO mapred.MapTask: Spilling <span class="keyword">map</span> <span class="keyword">output</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">26</span> INFO mapred.MapTask: bufstart = <span class="number">0</span>; bufend = 98; bufvoid = 104857600</span><br><span class="line">15/12/10 13:52:26 INFO mapred.MapTask: kvstart = 26214396(104857584); kvend = 26214340(104857360); length = 57/6553600</span><br><span class="line">15/12/10 13:52:26 INFO mapred.MapTask: Finished spill 0</span><br><span class="line">15/12/10 13:52:26 INFO mapred.Task: Task:attempt_local207690334_0001_m_000000_0 is done. And is in the process of committing</span><br><span class="line">15/12/10 13:52:26 INFO mapred.LocalJobRunner: map</span><br><span class="line">15/12/10 13:52:26 INFO mapred.Task: Task 'attempt_local207690334_0001_m_000000_0' done.</span><br><span class="line">15/12/10 13:52:26 INFO mapred.LocalJobRunner: Finishing task: attempt_local207690334_0001_m_000000_0</span><br><span class="line">15/12/10 13:52:26 INFO mapred.LocalJobRunner: Map task executor complete.</span><br><span class="line">15/12/10 13:52:26 INFO util.ProcfsBasedProcessTree: ProcfsBasedProcessTree currently is supported only on Linux.</span><br><span class="line">15/12/10 13:52:26 INFO mapred.Task:  Using ResourceCalculatorProcessTree : org.apache.hadoop.yarn.util.WindowsBasedProcessTree@1a121058</span><br><span class="line">15/12/10 13:52:26 INFO mapred.Merger: Merging 1 sorted segments</span><br><span class="line">15/12/10 13:52:26 INFO mapred.Merger: Down to the last <span class="keyword">merge</span>-pass, <span class="keyword">with</span> <span class="number">1</span> segments <span class="keyword">left</span> <span class="keyword">of</span> total <span class="keyword">size</span>: <span class="number">118</span> <span class="keyword">bytes</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">26</span> INFO mapred.LocalJobRunner: </span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">26</span> INFO Configuration.deprecation: mapred.skip.on <span class="keyword">is</span> deprecated. Instead, <span class="keyword">use</span> mapreduce.job.skiprecords</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">27</span> INFO mapreduce.Job: Job job_local207690334_0001 running <span class="keyword">in</span> uber <span class="keyword">mode</span> : <span class="literal">false</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">27</span> INFO mapreduce.Job:  <span class="keyword">map</span> <span class="number">100</span>% reduce <span class="number">0</span>%</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">27</span> INFO mapred.Task: Task:attempt_local207690334_0001_r_000000_0 <span class="keyword">is</span> done. <span class="keyword">And</span> <span class="keyword">is</span> <span class="keyword">in</span> the process <span class="keyword">of</span> committing</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">27</span> INFO mapred.LocalJobRunner: </span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">27</span> INFO mapred.Task: Task attempt_local207690334_0001_r_000000_0 <span class="keyword">is</span> allowed <span class="keyword">to</span> <span class="keyword">commit</span> <span class="keyword">now</span></span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">27</span> INFO output.FileOutputCommitter: Saved <span class="keyword">output</span> <span class="keyword">of</span> task <span class="string">'attempt_local207690334_0001_r_000000_0'</span> <span class="keyword">to</span> hdfs://nameservice1/tmp/zrh/<span class="keyword">output</span>/_temporary/<span class="number">0</span>/task_local207690334_0001_r_000000</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">27</span> INFO mapred.LocalJobRunner: reduce &gt; reduce</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">27</span> INFO mapred.Task: Task <span class="string">'attempt_local207690334_0001_r_000000_0'</span> done.</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">28</span> INFO mapreduce.Job:  <span class="keyword">map</span> <span class="number">100</span>% reduce <span class="number">100</span>%</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">28</span> INFO mapreduce.Job: Job job_local207690334_0001 completed successfully</span><br><span class="line"><span class="number">15</span>/<span class="number">12</span>/<span class="number">10</span> <span class="number">13</span>:<span class="number">52</span>:<span class="number">28</span> INFO mapreduce.Job: Counters: <span class="number">32</span></span><br><span class="line">    <span class="keyword">File</span> <span class="keyword">System</span> Counters</span><br><span class="line">        <span class="keyword">FILE</span>: <span class="built_in">Number</span> <span class="keyword">of</span> <span class="keyword">bytes</span> <span class="keyword">read</span>=<span class="number">480</span></span><br><span class="line">        <span class="keyword">FILE</span>: <span class="built_in">Number</span> <span class="keyword">of</span> <span class="keyword">bytes</span> written=<span class="number">396350</span></span><br><span class="line">        <span class="keyword">FILE</span>: <span class="built_in">Number</span> <span class="keyword">of</span> <span class="keyword">read</span> <span class="keyword">operations</span>=<span class="number">0</span></span><br><span class="line">        <span class="keyword">FILE</span>: <span class="built_in">Number</span> <span class="keyword">of</span> <span class="keyword">large</span> <span class="keyword">read</span> <span class="keyword">operations</span>=<span class="number">0</span></span><br><span class="line">        <span class="keyword">FILE</span>: <span class="built_in">Number</span> <span class="keyword">of</span> write <span class="keyword">operations</span>=<span class="number">0</span></span><br><span class="line">        HDFS: <span class="built_in">Number</span> <span class="keyword">of</span> <span class="keyword">bytes</span> <span class="keyword">read</span>=<span class="number">84</span></span><br><span class="line">        HDFS: <span class="built_in">Number</span> <span class="keyword">of</span> <span class="keyword">bytes</span> written=<span class="number">64</span></span><br><span class="line">        HDFS: <span class="built_in">Number</span> <span class="keyword">of</span> <span class="keyword">read</span> <span class="keyword">operations</span>=<span class="number">15</span></span><br><span class="line">        HDFS: <span class="built_in">Number</span> <span class="keyword">of</span> <span class="keyword">large</span> <span class="keyword">read</span> <span class="keyword">operations</span>=<span class="number">0</span></span><br><span class="line">        HDFS: <span class="built_in">Number</span> <span class="keyword">of</span> write <span class="keyword">operations</span>=<span class="number">4</span></span><br><span class="line">    <span class="keyword">Map</span>-Reduce Framework</span><br><span class="line">        <span class="keyword">Map</span> <span class="keyword">input</span> <span class="keyword">records</span>=<span class="number">4</span></span><br><span class="line">        <span class="keyword">Map</span> <span class="keyword">output</span> <span class="keyword">records</span>=<span class="number">15</span></span><br><span class="line">        <span class="keyword">Map</span> <span class="keyword">output</span> <span class="keyword">bytes</span>=<span class="number">98</span></span><br><span class="line">        <span class="keyword">Map</span> <span class="keyword">output</span> <span class="keyword">materialized</span> <span class="keyword">bytes</span>=<span class="number">126</span></span><br><span class="line">        <span class="keyword">Input</span> <span class="keyword">split</span> <span class="keyword">bytes</span>=<span class="number">103</span></span><br><span class="line">        Combine <span class="keyword">input</span> <span class="keyword">records</span>=<span class="number">15</span></span><br><span class="line">        Combine <span class="keyword">output</span> <span class="keyword">records</span>=<span class="number">14</span></span><br><span class="line">        Reduce <span class="keyword">input</span> <span class="keyword">groups</span>=<span class="number">14</span></span><br><span class="line">        Reduce shuffle <span class="keyword">bytes</span>=<span class="number">0</span></span><br><span class="line">        Reduce <span class="keyword">input</span> <span class="keyword">records</span>=<span class="number">14</span></span><br><span class="line">        Reduce <span class="keyword">output</span> <span class="keyword">records</span>=<span class="number">14</span></span><br><span class="line">        Spilled <span class="keyword">Records</span>=<span class="number">28</span></span><br><span class="line">        Shuffled Maps =<span class="number">0</span></span><br><span class="line">        <span class="keyword">Failed</span> Shuffles=<span class="number">0</span></span><br><span class="line">        Merged <span class="keyword">Map</span> outputs=<span class="number">0</span></span><br><span class="line">        GC <span class="built_in">time</span> elapsed (ms)=<span class="number">15</span></span><br><span class="line">        CPU <span class="built_in">time</span> spent (ms)=<span class="number">0</span></span><br><span class="line">        <span class="keyword">Physical</span> <span class="keyword">memory</span> (<span class="keyword">bytes</span>) <span class="keyword">snapshot</span>=<span class="number">0</span></span><br><span class="line">        <span class="keyword">Virtual</span> <span class="keyword">memory</span> (<span class="keyword">bytes</span>) <span class="keyword">snapshot</span>=<span class="number">0</span></span><br><span class="line">        Total committed <span class="keyword">heap</span> <span class="keyword">usage</span> (<span class="keyword">bytes</span>)=<span class="number">382730240</span></span><br><span class="line">    <span class="keyword">File</span> <span class="keyword">Input</span> <span class="keyword">Format</span> Counters </span><br><span class="line">        <span class="keyword">Bytes</span> <span class="keyword">Read</span>=<span class="number">42</span></span><br><span class="line">    <span class="keyword">File</span> <span class="keyword">Output</span> <span class="keyword">Format</span> Counters </span><br><span class="line">        <span class="keyword">Bytes</span> Written=<span class="number">64</span></span><br></pre></td></tr></table></figure>
+
+<p>执行结果：<br><img src="http://www.zhangrenhua.com/back_images/hadoop-mapreduce-output.jpg" alt="Alt text"></p>
+<p>注：最终输入的结果是排序好的，因为MapReduce中，在进行Reduce之前会根据key进行排序。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/java/" rel="tag"># java</a>
+          
+            <a href="/tags/hadoop生态圈/" rel="tag"># hadoop生态圈</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2015/12/05/hadoop-jar命令详解以及第三方jar包引用问题/" rel="next" title="hadoop jar命令详解以及第三方jar包引用问题">
+                <i class="fa fa-chevron-left"></i> hadoop jar命令详解以及第三方jar包引用问题
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2015/12/10/hadoop-HDFS介绍/" rel="prev" title="hadoop-HDFS介绍">
+                hadoop-HDFS介绍 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+<span class="jiathis_txt">分享到：</span>
+<a class="jiathis_button_fav">收藏夹</a>
+<a class="jiathis_button_copy">复制网址</a>
+<a class="jiathis_button_email">邮件</a>
+<a class="jiathis_button_weixin">微信</a>
+<a class="jiathis_button_qzone">QQ空间</a>
+<a class="jiathis_button_tqq">腾讯微博</a>
+<a class="jiathis_button_douban">豆瓣</a>
+<a class="jiathis_button_share">一键分享</a>
+
+<a href="http://www.jiathis.com/share?uid=2140465" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank">更多</a>
+<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+var jiathis_config={
+  data_track_clickback:true,
+  summary:"",
+  shortUrl:false,
+  hideMore:false
+}
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  <p>热评文章</p>
+  <div class="ds-top-threads" data-range="weekly" data-num-items="4"></div>
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div class="ds-thread" data-thread-key="2015/12/08/hadoop-MapReduce-WordCount/" data-title="MapReduce开发-WordCount" data-url="http://www.zhangrenhua.com/2015/12/08/hadoop-MapReduce-WordCount/">
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="http://www.zhangrenhua.com/back_images/avatar.jpg" alt="张仁华">
+            
+              <p class="site-author-name" itemprop="name">张仁华</p>
+              <p class="site-description motion-element" itemprop="description">记录软件生涯中的点点滴滴</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">76</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">17</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/zhangrenhua/" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://weibo.com/huaHBrother" target="_blank" title="Weibo">
+                      
+                        <i class="fa fa-fw fa-globe"></i>Weibo</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://douban.com/people/huaHBrother" target="_blank" title="douban">
+                      
+                        <i class="fa fa-fw fa-globe"></i>douban</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://zhihu.com/people/huaHBrother" target="_blank" title="zhihu">
+                      
+                        <i class="fa fa-fw fa-globe"></i>zhihu</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#数据文件"><span class="nav-number">2.</span> <span class="nav-text">数据文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#jar包引用"><span class="nav-number">3.</span> <span class="nav-text">jar包引用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#集群配置文件"><span class="nav-number">4.</span> <span class="nav-text">集群配置文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#WordCountTest-java"><span class="nav-number">5.</span> <span class="nav-text">WordCountTest.java</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#项目结构"><span class="nav-number">6.</span> <span class="nav-text">项目结构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#运行程序"><span class="nav-number">7.</span> <span class="nav-text">运行程序</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#debug调试"><span class="nav-number">7.1.</span> <span class="nav-text">debug调试</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#可能发生出现的异常"><span class="nav-number">8.</span> <span class="nav-text">可能发生出现的异常</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#运行结果"><span class="nav-number">9.</span> <span class="nav-text">运行结果</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">张仁华</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"iissnan-notes"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

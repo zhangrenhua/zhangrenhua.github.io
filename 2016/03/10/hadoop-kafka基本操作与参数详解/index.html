@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="google-site-verification" content="zUNgN8yGBtBZ8194JTl7PXh7YvztVw494zGKJ_8qH00">
+
+
+
+
+
+
+
+
+  <meta name="baidu-site-verification" content="kqLgluU8lc">
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/favicon.ico?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="java,hadoop生态圈,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="hua的博客" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="早在前段时间就准备把kafka的一些资料整理下的，忙于私事实在是分身乏术。今天乘上班空余时间，把kafka的一些基本资料记录下来。前一篇博客已经大概的介绍了kafka是什么东西，用来做什么，以及一些特性，本文通过参考官方文档，对kafka的一些基本操作与概念进行解释，并将broker与topic参数列举出来，对一些常用的参数给出参考值。">
+<meta name="keywords" content="java,hadoop生态圈">
+<meta property="og:type" content="article">
+<meta property="og:title" content="kafka基本操作与参数详解">
+<meta property="og:url" content="http://www.zhangrenhua.com/2016/03/10/hadoop-kafka基本操作与参数详解/index.html">
+<meta property="og:site_name" content="hua的博客">
+<meta property="og:description" content="早在前段时间就准备把kafka的一些资料整理下的，忙于私事实在是分身乏术。今天乘上班空余时间，把kafka的一些基本资料记录下来。前一篇博客已经大概的介绍了kafka是什么东西，用来做什么，以及一些特性，本文通过参考官方文档，对kafka的一些基本操作与概念进行解释，并将broker与topic参数列举出来，对一些常用的参数给出参考值。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2016-03-11T02:46:06.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="kafka基本操作与参数详解">
+<meta name="twitter:description" content="早在前段时间就准备把kafka的一些资料整理下的，忙于私事实在是分身乏术。今天乘上班空余时间，把kafka的一些基本资料记录下来。前一篇博客已经大概的介绍了kafka是什么东西，用来做什么，以及一些特性，本文通过参考官方文档，对kafka的一些基本操作与概念进行解释，并将broker与topic参数列举出来，对一些常用的参数给出参考值。">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.zhangrenhua.com/2016/03/10/hadoop-kafka基本操作与参数详解/">
+
+
+
+
+
+  <title>kafka基本操作与参数详解 | hua的博客</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-69647002-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?954f429681a4cd6dee6095ddaa2aac9a";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">hua的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">关注技术和人文的原创IT博客</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-schedule">
+          <a href="/schedule/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            日程表
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sitemap">
+          <a href="/sitemap.xml" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            站点地图
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="st-search-show-outputs">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <form class="site-search-form">
+  <input type="text" id="st-search-input" class="st-search-input st-default-search-input">
+</form>
+
+<script type="text/javascript">
+  (function(w,d,t,u,n,s,e){w['SwiftypeObject']=n;w[n]=w[n]||function(){
+    (w[n].q=w[n].q||[]).push(arguments);};s=d.createElement(t);
+    e=d.getElementsByTagName(t)[0];s.async=1;s.src=u;e.parentNode.insertBefore(s,e);
+  })(window,document,'script','//s.swiftypecdn.com/install/v2/st.js','_st');
+
+  _st('install', 'BAacTgC1f_bLy6kngppZ','2.0.0');
+</script>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.zhangrenhua.com/2016/03/10/hadoop-kafka基本操作与参数详解/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="张仁华">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="http://www.zhangrenhua.com/back_images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hua的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">kafka基本操作与参数详解</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-03-10T15:42:58+08:00">
+                2016-03-10
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/hadoop/" itemprop="url" rel="index">
+                    <span itemprop="name">hadoop</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2016/03/10/hadoop-kafka基本操作与参数详解/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2016/03/10/hadoop-kafka基本操作与参数详解/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  早在前段时间就准备把kafka的一些资料整理下的，忙于私事实在是分身乏术。今天乘上班空余时间，把kafka的一些基本资料记录下来。前一篇博客已经大概的介绍了kafka是什么东西，用来做什么，以及一些特性，本文通过参考官方文档，对kafka的一些基本操作与概念进行解释，并将broker与topic参数列举出来，对一些常用的参数给出参考值。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>早在前段时间就准备把kafka的一些资料整理下的，忙于私事实在是分身乏术。今天乘上班空余时间，把kafka的一些基本资料记录下来。前一篇博客已经大概的介绍了kafka是什么东西，用来做什么，以及一些特性，本文通过参考官方文档，对kafka的一些基本操作与概念进行解释，并将broker与topic参数列举出来，对一些常用的参数给出参考值。</p>
+<p>笔者使用kafka0.8.1.1</p>
+<h2 id="命令行操作"><a href="#命令行操作" class="headerlink" title="命令行操作"></a>命令行操作</h2><h3 id="创建topic"><a href="#创建topic" class="headerlink" title="创建topic"></a>创建topic</h3><figure class="highlight brainfuck"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">kafka</span><span class="literal">-</span><span class="comment">topics</span> <span class="literal">-</span><span class="literal">-</span><span class="comment">create</span> <span class="literal">-</span><span class="literal">-</span><span class="comment">zookeeper</span> <span class="comment">localhost:2181</span> <span class="literal">-</span><span class="literal">-</span><span class="comment">replication</span><span class="literal">-</span><span class="comment">factor</span> <span class="comment">1</span> <span class="literal">-</span><span class="literal">-</span><span class="comment">partitions</span> <span class="comment">1</span> <span class="literal">-</span><span class="literal">-</span><span class="comment">topic</span> <span class="comment">test</span></span><br></pre></td></tr></table></figure>
+
+<p><code>zookeeper</code>：指定zookeeper集群<br><code>replication-factor</code>：副本数<br><code>partitions</code>：分区数<br><code>topic</code>：topic名称</p>
+<h3 id="修改topic配置参数"><a href="#修改topic配置参数" class="headerlink" title="修改topic配置参数"></a>修改topic配置参数</h3><p>覆盖已经有topic参数，下面例子修改“test”的<code>max message</code>属性</p>
+<figure class="highlight brainfuck"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">kafka</span><span class="literal">-</span><span class="comment">topics</span> <span class="literal">-</span><span class="literal">-</span><span class="comment">zookeeper</span> <span class="comment">localhost:2181</span> <span class="literal">-</span><span class="literal">-</span><span class="comment">alter</span> <span class="literal">-</span><span class="literal">-</span><span class="comment">topic</span> <span class="comment">test</span>  <span class="literal">-</span><span class="literal">-</span><span class="comment">config</span> <span class="comment">max</span><span class="string">.</span><span class="comment">message</span><span class="string">.</span><span class="comment">bytes=128000</span></span><br></pre></td></tr></table></figure>
+
+<p>多个参数，则多个<code>--config</code></p>
+<h3 id="删除topic配置参数"><a href="#删除topic配置参数" class="headerlink" title="删除topic配置参数"></a>删除topic配置参数</h3><figure class="highlight brainfuck"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">kafka</span><span class="literal">-</span><span class="comment">topics</span> <span class="literal">-</span><span class="literal">-</span><span class="comment">zookeeper</span> <span class="comment">localhost:2181</span> <span class="literal">-</span><span class="literal">-</span><span class="comment">alter</span> <span class="literal">-</span><span class="literal">-</span><span class="comment">topic</span> <span class="comment">test</span> <span class="literal">-</span><span class="literal">-</span><span class="comment">deleteConfig</span> <span class="comment">max</span><span class="string">.</span><span class="comment">message</span><span class="string">.</span><span class="comment">bytes</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="topic删除"><a href="#topic删除" class="headerlink" title="topic删除"></a>topic删除</h3><p>1、删除zookeeper元数据：</p>
+<figure class="highlight brainfuck"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">kafka</span><span class="literal">-</span><span class="comment">topics</span> <span class="literal">-</span><span class="literal">-</span><span class="comment">delete</span> <span class="literal">-</span><span class="literal">-</span><span class="comment">zookeeper</span> <span class="comment">localhost:2181</span> <span class="literal">-</span><span class="literal">-</span><span class="comment">topic</span> <span class="comment">test</span></span><br></pre></td></tr></table></figure>
+
+<p>2、删除kafka存储目录：<br>删除server.properties文件log.dirs配置，默认为”/tmp/kafka-logs”下相关topic目录（所有与topic相关的broker机器）。</p>
+<p>建议不要轻易删除topic，手动删除数据文件可能存在误操作。</p>
+<h2 id="topic级别配置属性表"><a href="#topic级别配置属性表" class="headerlink" title="topic级别配置属性表"></a>topic级别配置属性表</h2><p>以下是topic级别配置， kafak server中默认配置为下表“Server Default Property”列，当需要设置topic级别配置时，属性设置为“Property(属性)”列</p>
+<table><tbody><tr><th>Property(属性)<br>
+</th><th>Default(默认值)<br>
+</th><th>Server Default Property(server.properties)<br>
+</th><th>说明(解释)<br>
+</th></tr>
+<tr><td>cleanup.policy<br>
+</td><td>delete<br>
+</td><td>log.cleanup.policy<br>
+</td><td>日志清理策略选择有：delete和compact主要针对过期数据的处理，或是日志文件达到限制的额度，会被 topic创建时的指定参数覆盖<br>
+</td></tr><tr><td>delete.retention.ms<br>
+</td><td>86400000 (24 hours)<br>
+</td><td>log.cleaner.delete.retention.ms<br>
+</td><td>对于压缩的日志保留的最长时间，也是客户端消费消息的最长时间，同log.retention.minutes的区别在于一个控制未压缩数据，一个控制压缩后的数据。会被topic创建时的指定参数覆盖<br>
+</td></tr><tr><td>flush.messages<br>
+</td><td>None<br>
+</td><td>log.flush.interval.messages<br>
+</td><td>log文件”sync”到磁盘之前累积的消息条数,因为磁盘IO操作是一个慢操作,但又是一个”数据可靠性"的必要手段,所以此参数的设置,需要在"数据可靠性"与"性能"之间做必要的权衡.如果此值过大,将会导致每次"fsync"的时间较长(IO阻塞),如果此值过小,将会导致"fsync"的次数较多,这也意味着整体的client请求有一定的延迟.物理server故障,将会导致没有fsync的消息丢失.<br>
+</td></tr><tr><td>flush.ms<br>
+</td><td>None<br>
+</td><td>log.flush.interval.ms<br>
+</td><td>仅仅通过interval来控制消息的磁盘写入时机,是不足的.此参数用于控制"fsync"的时间间隔,如果消息量始终没有达到阀值,但是离上一次磁盘同步的时间间隔达到阀值,也将触发.<br>
+</td></tr><tr><td>index.interval.bytes<br>
+</td><td>4096<br>
+</td><td>log.index.interval.bytes<br>
+</td><td>当执行一个fetch操作后，需要一定的空间来扫描最近的offset大小，设置越大，代表扫描速度越快，但是也更好内存，一般情况下不需要搭理这个参数<br>
+</td></tr><tr><td>max.message.bytes<br>
+</td><td>1,000,000<br>
+</td><td>message.max.bytes<br>
+</td><td>表示消息的最大大小，单位是字节<br>
+</td></tr><tr><td>min.cleanable.dirty.ratio<br>
+</td><td>0.5<br>
+</td><td>log.cleaner.min.cleanable.ratio<br>
+</td><td>日志清理的频率控制，越大意味着更高效的清理，同时会存在一些空间上的浪费，会被topic创建时的指定参数覆盖<br>
+</td></tr><tr><td>retention.bytes<br>
+</td><td>None<br>
+</td><td>log.retention.bytes<br>
+</td><td>topic每个分区的最大文件大小，一个topic的大小限制 = 分区数*log.retention.bytes。-1没有大小限log.retention.bytes和log.retention.minutes任意一个达到要求，都会执行删除，会被topic创建时的指定参数覆盖<br>
+</td></tr><tr><td>retention.ms<br>
+</td><td>7 days<br>
+</td><td>log.retention.minutes<br>
+</td><td>数据存储的最大时间超过这个时间会根据log.cleanup.policy设置的策略处理数据，也就是消费端能够多久去消费数据<br>
+log.retention.bytes和log.retention.minutes达到要求，都会执行删除，会被topic创建时的指定参数覆盖<br>
+</td></tr><tr><td>segment.bytes<br>
+</td><td>1 GB<br>
+</td><td>log.segment.bytes<br>
+</td><td>topic的分区是以一堆segment文件存储的，这个控制每个segment的大小，会被topic创建时的指定参数覆盖<br>
+</td></tr><tr><td>segment.index.bytes<br>
+</td><td>10 MB<br>
+</td><td>log.index.size.max.bytes<br>
+</td><td>对于segment日志的索引文件大小限制，会被topic创建时的指定参数覆盖<br>
+</td></tr><tr><td>segment.ms<br>
+</td><td>7 days<br>
+</td><td>log.roll.hours<br>
+</td><td>这个参数会在日志segment没有达到log.segment.bytes设置的大小，也会强制新建一个segment会被 topic创建时的指定参数覆盖<br>
+</td></tr></tbody></table>
+
+
+<p>在kafka0.9版本中加入了下面两个参数：</p>
+<p><code>segment.jitter.ms</code>=&gt;<code>log.roll.jitter.{ms,hours}</code>：The maximum jitter to subtract from logRollTimeMillis。 默认值=0</p>
+<p><code>min.insync.replicas</code>=&gt;<code>min.insync.replicas</code>：当一个生产者集request.required.acks - 1，min.insync.replicas指定最小数量的副本，必须承认一个写被认为是成功的。如果这个最低不能达到，那么生产者将抛出一个异常（无论是notenoughreplicas或notenoughreplicasafterappend）。当一起使用时，min.insync.replicas和request.required.acks允许你执行更大的耐久性保证。一个典型的情况是与3个复制因子创建主题，即min.insync.replicas 2，生产request.required.acks - 1。这将确保生产者提出了一个例外，如果大多数副本不收到一个写。</p>
+<h2 id="broker参数配置"><a href="#broker参数配置" class="headerlink" title="broker参数配置"></a>broker参数配置</h2><p>每个kafka broker中配置文件server.properties默认必须配置的属性如下：</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">broker.id=<span class="number">0</span></span><br><span class="line">num<span class="selector-class">.network</span><span class="selector-class">.threads</span>=<span class="number">2</span></span><br><span class="line">num<span class="selector-class">.io</span><span class="selector-class">.threads</span>=<span class="number">8</span></span><br><span class="line">socket<span class="selector-class">.send</span><span class="selector-class">.buffer</span><span class="selector-class">.bytes</span>=<span class="number">1048576</span></span><br><span class="line">socket<span class="selector-class">.receive</span><span class="selector-class">.buffer</span><span class="selector-class">.bytes</span>=<span class="number">1048576</span></span><br><span class="line">socket<span class="selector-class">.request</span><span class="selector-class">.max</span><span class="selector-class">.bytes</span>=<span class="number">104857600</span></span><br><span class="line">log.dirs=/tmp/kafka-logs</span><br><span class="line">num.partitions=<span class="number">2</span></span><br><span class="line">log<span class="selector-class">.retention</span><span class="selector-class">.hours</span>=<span class="number">168</span></span><br><span class="line"></span><br><span class="line">log<span class="selector-class">.segment</span><span class="selector-class">.bytes</span>=<span class="number">536870912</span></span><br><span class="line">log<span class="selector-class">.retention</span><span class="selector-class">.check</span><span class="selector-class">.interval</span><span class="selector-class">.ms</span>=<span class="number">60000</span></span><br><span class="line">log<span class="selector-class">.cleaner</span><span class="selector-class">.enable</span>=false</span><br><span class="line"></span><br><span class="line">zookeeper.connect=localhost:<span class="number">2181</span></span><br><span class="line">zookeeper<span class="selector-class">.connection</span><span class="selector-class">.timeout</span><span class="selector-class">.ms</span>=<span class="number">1000000</span></span><br></pre></td></tr></table></figure>
+
+<p>server.properties中所有配置参数说明(解释)如下列表：</p>
+<table cellspacing="0" class="t_table"><tbody><tr><td>参数<br>
+</td><td>说明(解释)<br>
+</td></tr><tr><td>broker.id =0<br>
+</td><td>每一个broker在集群中的唯一表示，要求是正数。当该服务器的IP地址发生改变时，broker.id没有变化，则不会影响consumers的消息情况<br>
+</td></tr><tr><td>log.dirs=/data/kafka-logs<br>
+</td><td>kafka数据的存放地址，多个地址的话用逗号分割,多个目录分布在不同磁盘上可以提高读写性能&nbsp;&nbsp;/data/kafka-logs-1，/data/kafka-logs-2<br>
+</td></tr><tr><td>port =9092<br>
+</td><td>broker server服务端口<br>
+</td></tr><tr><td>message.max.bytes =6525000<br>
+</td><td>表示消息体的最大大小，单位是字节<br>
+</td></tr><tr><td>num.network.threads =4<br>
+</td><td>broker处理消息的最大线程数，一般情况下不需要去修改<br>
+</td></tr><tr><td>num.io.threads =8<br>
+</td><td>broker处理磁盘IO的线程数，数值应该大于你的硬盘数<br>
+</td></tr><tr><td>background.threads =4<br>
+</td><td>一些后台任务处理的线程数，例如过期消息文件的删除等，一般情况下不需要去做修改<br>
+</td></tr><tr><td>queued.max.requests =500<br>
+</td><td>等待IO线程处理的请求队列最大数，若是等待IO的请求超过这个数值，那么会停止接受外部消息，应该是一种自我保护机制。<br>
+</td></tr><tr><td>host.name<br>
+</td><td>broker的主机地址，若是设置了，那么会绑定到这个地址上，若是没有，会绑定到所有的接口上，并将其中之一发送到ZK，一般不设置<br>
+</td></tr><tr><td>socket.send.buffer.bytes=100*1024<br>
+</td><td>socket的发送缓冲区，socket的调优参数SO_SNDBUFF<br>
+</td></tr><tr><td>socket.receive.buffer.bytes =100*1024<br>
+</td><td>socket的接受缓冲区，socket的调优参数SO_RCVBUFF<br>
+</td></tr><tr><td>socket.request.max.bytes =100*1024*1024<br>
+</td><td>socket请求的最大数值，防止serverOOM，message.max.bytes必然要小于socket.request.max.bytes，会被topic创建时的指定参数覆盖<br>
+</td></tr><tr><td>log.segment.bytes =1024*1024*1024<br>
+</td><td>topic的分区是以一堆segment文件存储的，这个控制每个segment的大小，会被topic创建时的指定参数覆盖<br>
+</td></tr><tr><td>log.roll.hours =24*7<br>
+</td><td>这个参数会在日志segment没有达到log.segment.bytes设置的大小，也会强制新建一个segment会被 topic创建时的指定参数覆盖<br>
+</td></tr><tr><td>log.cleanup.policy = delete<br>
+</td><td>日志清理策略选择有：delete和compact主要针对过期数据的处理，或是日志文件达到限制的额度，会被 topic创建时的指定参数覆盖<br>
+</td></tr><tr><td>log.retention.minutes=3days<br>
+</td><td>数据存储的最大时间超过这个时间会根据log.cleanup.policy设置的策略处理数据，也就是消费端能够多久去消费数据<br>
+log.retention.bytes和log.retention.minutes任意一个达到要求，都会执行删除，会被topic创建时的指定参数覆盖<br>
+</td></tr><tr><td>log.retention.bytes=-1<br>
+</td><td>topic每个分区的最大文件大小，一个topic的大小限制 =分区数*log.retention.bytes。-1没有大小限log.retention.bytes和log.retention.minutes任意一个达到要求，都会执行删除，会被topic创建时的指定参数覆盖<br>
+</td></tr><tr><td>log.retention.check.interval.ms=5minutes<br>
+</td><td>文件大小检查的周期时间，是否处罚 log.cleanup.policy中设置的策略<br>
+</td></tr><tr><td>log.cleaner.enable=false<br>
+</td><td>是否开启日志压缩<br>
+</td></tr><tr><td>log.cleaner.threads = 2<br>
+</td><td>日志压缩运行的线程数<br>
+</td></tr><tr><td>log.cleaner.io.max.bytes.per.second=None<br>
+</td><td>日志压缩时候处理的最大大小<br>
+</td></tr><tr><td>log.cleaner.dedupe.buffer.size=500*1024*1024<br>
+</td><td>日志压缩去重时候的缓存空间，在空间允许的情况下，越大越好<br>
+</td></tr><tr><td>log.cleaner.io.buffer.size=512*1024<br>
+</td><td>日志清理时候用到的IO块大小一般不需要修改<br>
+</td></tr><tr><td>log.cleaner.io.buffer.load.factor =0.9<br>
+</td><td>日志清理中hash表的扩大因子一般不需要修改<br>
+</td></tr><tr><td>log.cleaner.backoff.ms =15000<br>
+</td><td>检查是否处罚日志清理的间隔<br>
+</td></tr><tr><td>log.cleaner.min.cleanable.ratio=0.5<br>
+</td><td>日志清理的频率控制，越大意味着更高效的清理，同时会存在一些空间上的浪费，会被topic创建时的指定参数覆盖<br>
+</td></tr><tr><td>log.cleaner.delete.retention.ms =1day<br>
+</td><td>对于压缩的日志保留的最长时间，也是客户端消费消息的最长时间，同log.retention.minutes的区别在于一个控制未压缩数据，一个控制压缩后的数据。会被topic创建时的指定参数覆盖<br>
+</td></tr><tr><td>log.index.size.max.bytes =10*1024*1024<br>
+</td><td>对于segment日志的索引文件大小限制，会被topic创建时的指定参数覆盖<br>
+</td></tr><tr><td>log.index.interval.bytes =4096<br>
+</td><td>当执行一个fetch操作后，需要一定的空间来扫描最近的offset大小，设置越大，代表扫描速度越快，但是也更好内存，一般情况下不需要搭理这个参数<br>
+</td></tr><tr><td>log.flush.interval.messages=None<br>
+</td><td>log文件”sync”到磁盘之前累积的消息条数,因为磁盘IO操作是一个慢操作,但又是一个”数据可靠性"的必要手段,所以此参数的设置,需要在"数据可靠性"与"性能"之间做必要的权衡.如果此值过大,将会导致每次"fsync"的时间较长(IO阻塞),如果此值过小,将会导致"fsync"的次数较多,这也意味着整体的client请求有一定的延迟.物理server故障,将会导致没有fsync的消息丢失.<br>
+</td></tr><tr><td>log.flush.scheduler.interval.ms =3000<br>
+</td><td>检查是否需要固化到硬盘的时间间隔<br>
+</td></tr><tr><td>log.flush.interval.ms = None<br>
+</td><td>仅仅通过interval来控制消息的磁盘写入时机,是不足的.此参数用于控制"fsync"的时间间隔,如果消息量始终没有达到阀值,但是离上一次磁盘同步的时间间隔达到阀值,也将触发.<br>
+</td></tr><tr><td>log.delete.delay.ms =60000<br>
+</td><td>文件在索引中清除后保留的时间一般不需要去修改<br>
+</td></tr><tr><td>log.flush.offset.checkpoint.interval.ms =60000<br>
+</td><td>控制上次固化硬盘的时间点，以便于数据恢复一般不需要去修改<br>
+</td></tr><tr><td>auto.create.topics.enable =true<br>
+</td><td>是否允许自动创建topic，若是false，就需要通过命令创建topic<br>
+</td></tr><tr><td>default.replication.factor =1<br>
+</td><td>是否允许自动创建topic，若是false，就需要通过命令创建topic<br>
+</td></tr><tr><td>num.partitions =1<br>
+</td><td>每个topic的分区个数，若是在topic创建时候没有指定的话会被topic创建时的指定参数覆盖<br>
+</td></tr><tr><td><br>
+</td><td><br>
+</td></tr><tr><td>以下是kafka中Leader,replicas配置参数<br>
+</td><td><br>
+</td></tr><tr><td>controller.socket.timeout.ms =30000<br>
+</td><td>partition leader与replicas之间通讯时,socket的超时时间<br>
+</td></tr><tr><td>controller.message.queue.size=10<br>
+</td><td>partition leader与replicas数据同步时,消息的队列尺寸<br>
+</td></tr><tr><td>replica.lag.time.max.ms =10000<br>
+</td><td>replicas响应partition leader的最长等待时间，若是超过这个时间，就将replicas列入ISR(in-sync replicas)，并认为它是死的，不会再加入管理中<br>
+</td></tr><tr><td>replica.lag.max.messages =4000<br>
+</td><td>如果follower落后与leader太多,将会认为此follower[或者说partition relicas]已经失效<br>
+##通常,在follower与leader通讯时,因为网络延迟或者链接断开,总会导致replicas中消息同步滞后<br>
+##如果消息之后太多,leader将认为此follower网络延迟较大或者消息吞吐能力有限,将会把此replicas迁移<br>
+##到其他follower中.<br>
+##在broker数量较少,或者网络不足的环境中,建议提高此值.<br>
+</td></tr><tr><td>replica.socket.timeout.ms=30*1000<br>
+</td><td>follower与leader之间的socket超时时间<br>
+</td></tr><tr><td>replica.socket.receive.buffer.bytes=64*1024<br>
+</td><td>leader复制时候的socket缓存大小<br>
+</td></tr><tr><td>replica.fetch.max.bytes =1024*1024<br>
+</td><td>replicas每次获取数据的最大大小<br>
+</td></tr><tr><td>replica.fetch.wait.max.ms =500<br>
+</td><td>replicas同leader之间通信的最大等待时间，失败了会重试<br>
+</td></tr><tr><td>replica.fetch.min.bytes =1<br>
+</td><td>fetch的最小数据尺寸,如果leader中尚未同步的数据不足此值,将会阻塞,直到满足条件<br>
+</td></tr><tr><td>num.replica.fetchers=1<br>
+</td><td>leader进行复制的线程数，增大这个数值会增加follower的IO<br>
+</td></tr><tr><td>replica.high.watermark.checkpoint.interval.ms =5000<br>
+</td><td>每个replica检查是否将最高水位进行固化的频率<br>
+</td></tr><tr><td>controlled.shutdown.enable =false<br>
+</td><td>是否允许控制器关闭broker ,若是设置为true,会关闭所有在这个broker上的leader，并转移到其他broker<br>
+</td></tr><tr><td>controlled.shutdown.max.retries =3<br>
+</td><td>控制器关闭的尝试次数<br>
+</td></tr><tr><td>controlled.shutdown.retry.backoff.ms =5000<br>
+</td><td>每次关闭尝试的时间间隔<br>
+</td></tr><tr><td>leader.imbalance.per.broker.percentage =10<br>
+</td><td>leader的不平衡比例，若是超过这个数值，会对分区进行重新的平衡<br>
+</td></tr><tr><td>leader.imbalance.check.interval.seconds =300<br>
+</td><td>检查leader是否不平衡的时间间隔<br>
+</td></tr><tr><td>offset.metadata.max.bytes<br>
+</td><td>客户端保留offset信息的最大空间大小<br>
+</td></tr><tr><td>kafka中zookeeper参数配置<br>
+</td><td><br>
+</td></tr><tr><td>zookeeper.connect = localhost:2181<br>
+</td><td>zookeeper集群的地址，可以是多个，多个之间用逗号分割hostname1:port1,hostname2:port2,hostname3:port3<br>
+</td></tr><tr><td>zookeeper.session.timeout.ms=6000<br>
+</td><td>ZooKeeper的最大超时时间，就是心跳的间隔，若是没有反映，那么认为已经死了，不易过大<br>
+</td></tr><tr><td>zookeeper.connection.timeout.ms =6000<br>
+</td><td>ZooKeeper的连接超时时间<br>
+</td></tr><tr><td>zookeeper.sync.time.ms =2000<br>
+</td><td>ZooKeeper集群中leader和follower之间的同步实际那<br>
+</td></tr></tbody></table>
+
+<h3 id="broker服务端参数优化"><a href="#broker服务端参数优化" class="headerlink" title="broker服务端参数优化"></a>broker服务端参数优化</h3><p>配置优化都是修改server.properties文件中参数值</p>
+<p>1、网络和io操作线程配置优化</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># broker处理消息的最大线程数</span></span><br><span class="line"><span class="attr">num.network.threads</span>=xxx</span><br><span class="line"><span class="comment"># broker处理磁盘IO的线程数</span></span><br><span class="line"><span class="attr">num.io.threads</span>=xxx</span><br></pre></td></tr></table></figure>
+
+<p>建议配置：<br>一般num.network.threads主要处理网络io，读写缓冲区数据，基本没有io等待，配置线程数量为cpu核数加1。<br>num.io.threads主要进行磁盘io操作，高峰期可能有些io等待，broker处理磁盘IO的线程数，数值应该大于你的硬盘数。</p>
+<p>2、log数据文件刷新策略<br>为了大幅度提高producer写入吞吐量，需要定期批量写文件。</p>
+<p>建议配置：</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 每当producer写入10000条消息时，刷数据到磁盘</span></span><br><span class="line"><span class="attr">log.flush.interval.messages</span>=<span class="number">10000</span></span><br><span class="line"><span class="comment"># 每间隔1秒钟时间，刷数据到磁盘</span></span><br><span class="line"><span class="attr">log.flush.interval.ms</span>=<span class="number">1000</span></span><br></pre></td></tr></table></figure>
+
+<p>3、日志保留策略配置<br>当kafka server的被写入海量消息后，会生成很多数据文件，且占用大量磁盘空间，如果不及时清理，可能磁盘空间不够用，kafka默认是保留7天。</p>
+<p>建议配置：</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 保留三天，也可以更短 </span></span><br><span class="line"><span class="attr">log.retention.hours</span>=<span class="number">72</span></span><br><span class="line"><span class="comment"># 段文件配置1GB，有利于快速回收磁盘空间，重启kafka加载也会加快(如果文件过小，则文件数量比较多，</span></span><br><span class="line"><span class="comment"># kafka启动时是单线程扫描目录(log.dir)下所有数据文件)</span></span><br><span class="line"><span class="attr">log.segment.bytes</span>=<span class="number">1073741824</span></span><br></pre></td></tr></table></figure>
+
+<p>可以配置jmx监控服务：<br>kafka server中默认是不启动jmx端口的，需要用户自己配置</p>
+<figure class="highlight applescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">vim bin/kafka-<span class="built_in">run</span>-<span class="built_in">class</span>.sh</span><br><span class="line"><span class="comment">#最前面添加一行</span></span><br><span class="line">JMX_PORT=<span class="number">8060</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a href="http://kafka.apache.org/081/documentation.html#configuration" target="_blank" rel="noopener">http://kafka.apache.org/081/documentation.html#configuration</a></li>
+<li><a href="http://www.aboutyun.com/thread-10882-1-1.html" target="_blank" rel="noopener">http://www.aboutyun.com/thread-10882-1-1.html</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/java/" rel="tag"># java</a>
+          
+            <a href="/tags/hadoop生态圈/" rel="tag"># hadoop生态圈</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/02/29/hadoop-转-kafka介绍/" rel="next" title="转-kafka介绍">
+                <i class="fa fa-chevron-left"></i> 转-kafka介绍
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/03/16/hadoop-kafka生产者消费者示例详解/" rel="prev" title="kafka生产者消费者示例详解">
+                kafka生产者消费者示例详解 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+<span class="jiathis_txt">分享到：</span>
+<a class="jiathis_button_fav">收藏夹</a>
+<a class="jiathis_button_copy">复制网址</a>
+<a class="jiathis_button_email">邮件</a>
+<a class="jiathis_button_weixin">微信</a>
+<a class="jiathis_button_qzone">QQ空间</a>
+<a class="jiathis_button_tqq">腾讯微博</a>
+<a class="jiathis_button_douban">豆瓣</a>
+<a class="jiathis_button_share">一键分享</a>
+
+<a href="http://www.jiathis.com/share?uid=2140465" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank">更多</a>
+<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+var jiathis_config={
+  data_track_clickback:true,
+  summary:"",
+  shortUrl:false,
+  hideMore:false
+}
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  <p>热评文章</p>
+  <div class="ds-top-threads" data-range="weekly" data-num-items="4"></div>
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div class="ds-thread" data-thread-key="2016/03/10/hadoop-kafka基本操作与参数详解/" data-title="kafka基本操作与参数详解" data-url="http://www.zhangrenhua.com/2016/03/10/hadoop-kafka基本操作与参数详解/">
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="http://www.zhangrenhua.com/back_images/avatar.jpg" alt="张仁华">
+            
+              <p class="site-author-name" itemprop="name">张仁华</p>
+              <p class="site-description motion-element" itemprop="description">记录软件生涯中的点点滴滴</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">76</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">17</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/zhangrenhua/" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://weibo.com/huaHBrother" target="_blank" title="Weibo">
+                      
+                        <i class="fa fa-fw fa-globe"></i>Weibo</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://douban.com/people/huaHBrother" target="_blank" title="douban">
+                      
+                        <i class="fa fa-fw fa-globe"></i>douban</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://zhihu.com/people/huaHBrother" target="_blank" title="zhihu">
+                      
+                        <i class="fa fa-fw fa-globe"></i>zhihu</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#命令行操作"><span class="nav-number">2.</span> <span class="nav-text">命令行操作</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#创建topic"><span class="nav-number">2.1.</span> <span class="nav-text">创建topic</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#修改topic配置参数"><span class="nav-number">2.2.</span> <span class="nav-text">修改topic配置参数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#删除topic配置参数"><span class="nav-number">2.3.</span> <span class="nav-text">删除topic配置参数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#topic删除"><span class="nav-number">2.4.</span> <span class="nav-text">topic删除</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#topic级别配置属性表"><span class="nav-number">3.</span> <span class="nav-text">topic级别配置属性表</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#broker参数配置"><span class="nav-number">4.</span> <span class="nav-text">broker参数配置</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#broker服务端参数优化"><span class="nav-number">4.1.</span> <span class="nav-text">broker服务端参数优化</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考"><span class="nav-number">5.</span> <span class="nav-text">参考</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">张仁华</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"iissnan-notes"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

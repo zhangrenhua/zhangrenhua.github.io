@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="google-site-verification" content="zUNgN8yGBtBZ8194JTl7PXh7YvztVw494zGKJ_8qH00">
+
+
+
+
+
+
+
+
+  <meta name="baidu-site-verification" content="kqLgluU8lc">
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/favicon.ico?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="hadoop生态圈,hbase,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="hua的博客" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="Hbase使用Solr二级索引(Lily Hbase Index)">
+<meta name="keywords" content="hadoop生态圈,hbase">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Hbase使用Solr二级索引(Lily Hbase Index)">
+<meta property="og:url" content="http://www.zhangrenhua.com/2017/02/10/Hbase使用Solr二级索引(Lily Hbase Index)/index.html">
+<meta property="og:site_name" content="hua的博客">
+<meta property="og:description" content="Hbase使用Solr二级索引(Lily Hbase Index)">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/hbase-solr-index2.jpg">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/hbase-solr-index1.jpg">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/hbase-solr-index3.jpg">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/hbase-solr-index3.jpg">
+<meta property="og:updated_time" content="2019-07-11T06:43:13.746Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Hbase使用Solr二级索引(Lily Hbase Index)">
+<meta name="twitter:description" content="Hbase使用Solr二级索引(Lily Hbase Index)">
+<meta name="twitter:image" content="http://www.zhangrenhua.com/back_images/hbase-solr-index2.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.zhangrenhua.com/2017/02/10/Hbase使用Solr二级索引(Lily Hbase Index)/">
+
+
+
+
+
+  <title>Hbase使用Solr二级索引(Lily Hbase Index) | hua的博客</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-69647002-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?954f429681a4cd6dee6095ddaa2aac9a";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">hua的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">关注技术和人文的原创IT博客</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-schedule">
+          <a href="/schedule/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            日程表
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sitemap">
+          <a href="/sitemap.xml" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            站点地图
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="st-search-show-outputs">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <form class="site-search-form">
+  <input type="text" id="st-search-input" class="st-search-input st-default-search-input">
+</form>
+
+<script type="text/javascript">
+  (function(w,d,t,u,n,s,e){w['SwiftypeObject']=n;w[n]=w[n]||function(){
+    (w[n].q=w[n].q||[]).push(arguments);};s=d.createElement(t);
+    e=d.getElementsByTagName(t)[0];s.async=1;s.src=u;e.parentNode.insertBefore(s,e);
+  })(window,document,'script','//s.swiftypecdn.com/install/v2/st.js','_st');
+
+  _st('install', 'BAacTgC1f_bLy6kngppZ','2.0.0');
+</script>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.zhangrenhua.com/2017/02/10/Hbase使用Solr二级索引(Lily Hbase Index)/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="张仁华">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="http://www.zhangrenhua.com/back_images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hua的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Hbase使用Solr二级索引(Lily Hbase Index)</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-02-10T17:23:53+08:00">
+                2017-02-10
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/hbase/" itemprop="url" rel="index">
+                    <span itemprop="name">hbase</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2017/02/10/Hbase使用Solr二级索引(Lily Hbase Index)/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2017/02/10/Hbase使用Solr二级索引(Lily Hbase Index)/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  Hbase使用Solr二级索引(Lily Hbase Index)
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="Solr部署"><a href="#Solr部署" class="headerlink" title="Solr部署"></a>Solr部署</h2><h3 id="安装Solr集群"><a href="#安装Solr集群" class="headerlink" title="安装Solr集群"></a>安装Solr集群</h3><p>如果是Cloudera或者其它hadoop商业发行版，可自行参考官方操作手册，<br>如果是自己手动离线安装，可以参考 <a href="http://www.zhangrenhua.com/categories/solr/">solr相关文档</a>。</p>
+<h3 id="创建collection"><a href="#创建collection" class="headerlink" title="创建collection"></a>创建collection</h3><h4 id="创建默认的collection配置文件"><a href="#创建默认的collection配置文件" class="headerlink" title="创建默认的collection配置文件"></a>创建默认的collection配置文件</h4><figure class="highlight verilog"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">solrctl instancedir --<span class="keyword">generate</span> enterprise_list</span><br></pre></td></tr></table></figure>
+
+<p>注：此命令会在当前目录下生成enterprise_list文件夹，下面对应默认的solr配置。</p>
+<h4 id="修改solr-schema-xml配置文件"><a href="#修改solr-schema-xml配置文件" class="headerlink" title="修改solr schema.xml配置文件"></a>修改solr schema.xml配置文件</h4><figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">fields</span>&gt;</span></span><br><span class="line">  <span class="comment">&lt;!-- </span></span><br><span class="line"><span class="comment">       必须字段 </span></span><br><span class="line"><span class="comment">   --&gt;</span>   </span><br><span class="line">  <span class="comment">&lt;!-- hbase rowKey --&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">field</span> <span class="attr">name</span>=<span class="string">"id"</span> <span class="attr">type</span>=<span class="string">"string"</span> <span class="attr">indexed</span>=<span class="string">"true"</span> <span class="attr">stored</span>=<span class="string">"true"</span> <span class="attr">multiValued</span>=<span class="string">"false"</span> /&gt;</span> </span><br><span class="line">  <span class="comment">&lt;!-- hbase version --&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">field</span> <span class="attr">name</span>=<span class="string">"_version_"</span> <span class="attr">type</span>=<span class="string">"long"</span> <span class="attr">indexed</span>=<span class="string">"true"</span> <span class="attr">stored</span>=<span class="string">"true"</span>/&gt;</span></span><br><span class="line">  <span class="comment">&lt;!-- solr默认需要字段 --&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">field</span> <span class="attr">name</span>=<span class="string">"text"</span> <span class="attr">type</span>=<span class="string">"string"</span> <span class="attr">indexed</span>=<span class="string">"true"</span> <span class="attr">stored</span>=<span class="string">"true"</span>/&gt;</span></span><br><span class="line">  </span><br><span class="line">   <span class="comment">&lt;!-- </span></span><br><span class="line"><span class="comment">       基本字段，使用string</span></span><br><span class="line"><span class="comment">   --&gt;</span></span><br><span class="line">   <span class="comment">&lt;!-- 统一社会信用代码 --&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">field</span> <span class="attr">name</span>=<span class="string">"uniform_social_credit_code"</span> <span class="attr">required</span>=<span class="string">"true"</span> <span class="attr">type</span>=<span class="string">"string"</span> <span class="attr">stored</span>=<span class="string">"true"</span> <span class="attr">indexed</span>=<span class="string">"true"</span>/&gt;</span></span><br><span class="line">   <span class="comment">&lt;!-- 注册号 --&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">field</span> <span class="attr">name</span>=<span class="string">"registration_no"</span> <span class="attr">type</span>=<span class="string">"string"</span> <span class="attr">indexed</span>=<span class="string">"true"</span> <span class="attr">stored</span>=<span class="string">"false"</span>/&gt;</span></span><br><span class="line">   <span class="comment">&lt;!-- 纳税人识别号 --&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">field</span> <span class="attr">name</span>=<span class="string">"taxpayer_identification_no"</span> <span class="attr">type</span>=<span class="string">"string"</span> <span class="attr">indexed</span>=<span class="string">"true"</span> <span class="attr">stored</span>=<span class="string">"false"</span>/&gt;</span></span><br><span class="line">   <span class="comment">&lt;!-- 税务登记证 --&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">field</span> <span class="attr">name</span>=<span class="string">"tax_registration_cert"</span> <span class="attr">type</span>=<span class="string">"string"</span> <span class="attr">indexed</span>=<span class="string">"true"</span> <span class="attr">stored</span>=<span class="string">"false"</span>/&gt;</span></span><br><span class="line">   <span class="comment">&lt;!-- 组织机构代码 --&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">field</span> <span class="attr">name</span>=<span class="string">"organization_code"</span> <span class="attr">type</span>=<span class="string">"string"</span> <span class="attr">indexed</span>=<span class="string">"true"</span> <span class="attr">stored</span>=<span class="string">"false"</span>/&gt;</span></span><br><span class="line"></span><br><span class="line">   <span class="comment">&lt;!-- </span></span><br><span class="line"><span class="comment">       法人代表、股东、高管信息、联系方式，</span></span><br><span class="line"><span class="comment">       通过WhitespaceTokenizerFactory切分，索引。</span></span><br><span class="line"><span class="comment">   --&gt;</span></span><br><span class="line">   <span class="comment">&lt;!-- 法人代表 --&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">field</span> <span class="attr">name</span>=<span class="string">"legal_representative_name"</span> <span class="attr">type</span>=<span class="string">"text_ws"</span> <span class="attr">indexed</span>=<span class="string">"true"</span> <span class="attr">stored</span>=<span class="string">"true"</span>/&gt;</span></span><br><span class="line">   <span class="comment">&lt;!-- 股东 --&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">field</span> <span class="attr">name</span>=<span class="string">"shareholders"</span> <span class="attr">type</span>=<span class="string">"text_ws"</span> <span class="attr">indexed</span>=<span class="string">"true"</span> <span class="attr">stored</span>=<span class="string">"false"</span>/&gt;</span></span><br><span class="line">   <span class="comment">&lt;!-- 高管 --&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">field</span> <span class="attr">name</span>=<span class="string">"senior_executive"</span> <span class="attr">type</span>=<span class="string">"text_ws"</span> <span class="attr">indexed</span>=<span class="string">"true"</span> <span class="attr">stored</span>=<span class="string">"false"</span>/&gt;</span></span><br><span class="line">   <span class="comment">&lt;!-- 联系方式 --&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">field</span> <span class="attr">name</span>=<span class="string">"contact"</span> <span class="attr">type</span>=<span class="string">"text_ws"</span> <span class="attr">indexed</span>=<span class="string">"true"</span> <span class="attr">stored</span>=<span class="string">"false"</span>/&gt;</span></span><br><span class="line">   <span class="comment">&lt;!-- 企业类型 --&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">field</span> <span class="attr">name</span>=<span class="string">"enterprise_type"</span> <span class="attr">type</span>=<span class="string">"string"</span> <span class="attr">indexed</span>=<span class="string">"false"</span> <span class="attr">stored</span>=<span class="string">"false"</span>/&gt;</span></span><br><span class="line">   <span class="comment">&lt;!-- 企业状态 --&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">field</span> <span class="attr">name</span>=<span class="string">"enterprise_status"</span> <span class="attr">type</span>=<span class="string">"string"</span> <span class="attr">indexed</span>=<span class="string">"false"</span> <span class="attr">stored</span>=<span class="string">"true"</span>/&gt;</span></span><br><span class="line">   <span class="comment">&lt;!-- 注册日期 --&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">field</span> <span class="attr">name</span>=<span class="string">"registration_date"</span> <span class="attr">type</span>=<span class="string">"date"</span> <span class="attr">indexed</span>=<span class="string">"true"</span> <span class="attr">stored</span>=<span class="string">"true"</span>/&gt;</span></span><br><span class="line">   <span class="comment">&lt;!-- 注册资本 --&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">field</span> <span class="attr">name</span>=<span class="string">"registered_capital"</span> <span class="attr">type</span>=<span class="string">"double"</span> <span class="attr">indexed</span>=<span class="string">"true"</span> <span class="attr">stored</span>=<span class="string">"true"</span>/&gt;</span></span><br><span class="line">   <span class="comment">&lt;!-- 所属区域 --&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">field</span> <span class="attr">name</span>=<span class="string">"region"</span> <span class="attr">type</span>=<span class="string">"string"</span> <span class="attr">indexed</span>=<span class="string">"true"</span> <span class="attr">stored</span>=<span class="string">"false"</span>/&gt;</span></span><br><span class="line">   <span class="comment">&lt;!-- 所属行业 --&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">field</span> <span class="attr">name</span>=<span class="string">"industry_type"</span> <span class="attr">type</span>=<span class="string">"string"</span> <span class="attr">indexed</span>=<span class="string">"true"</span> <span class="attr">stored</span>=<span class="string">"true"</span>/&gt;</span></span><br><span class="line"></span><br><span class="line">   <span class="comment">&lt;!-- </span></span><br><span class="line"><span class="comment">       利用中文分词技术，分词索引和查询。</span></span><br><span class="line"><span class="comment">   --&gt;</span></span><br><span class="line">   <span class="comment">&lt;!-- 企业名称 --&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">field</span> <span class="attr">name</span>=<span class="string">"enterprise_name"</span> <span class="attr">type</span>=<span class="string">"text_ik"</span> <span class="attr">indexed</span>=<span class="string">"true"</span> <span class="attr">stored</span>=<span class="string">"true"</span>/&gt;</span></span><br><span class="line">   <span class="comment">&lt;!-- 地址 --&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">field</span> <span class="attr">name</span>=<span class="string">"address"</span> <span class="attr">type</span>=<span class="string">"text_ik"</span> <span class="attr">indexed</span>=<span class="string">"true"</span> <span class="attr">stored</span>=<span class="string">"false"</span>/&gt;</span></span><br><span class="line">  </span><br><span class="line"><span class="tag">&lt;/<span class="name">fields</span>&gt;</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">&lt;!-- Field to use to determine and enforce document uniqueness. </span></span><br><span class="line"><span class="comment">     Unless this field is marked with required="false", it will be a required field</span></span><br><span class="line"><span class="comment">  --&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">uniqueKey</span>&gt;</span>id<span class="tag">&lt;/<span class="name">uniqueKey</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>注：scheam.xml在刚才生成的enterprise_list/conf目录下。</p>
+<h4 id="IK分词配置"><a href="#IK分词配置" class="headerlink" title="IK分词配置"></a>IK分词配置</h4><p>在scheam.xml的types标签下添加如下内容：</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">&lt;!--配置IK分词器--&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">fieldType</span> <span class="attr">name</span>=<span class="string">"text_ik"</span> <span class="attr">class</span>=<span class="string">"solr.TextField"</span>&gt;</span></span><br><span class="line">    <span class="comment">&lt;!--索引时候的分词器--&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">analyzer</span> <span class="attr">type</span>=<span class="string">"index"</span> <span class="attr">isMaxWordLength</span>=<span class="string">"false"</span> <span class="attr">class</span>=<span class="string">"org.wltea.analyzer.lucene.IKAnalyzer"</span>/&gt;</span></span><br><span class="line">    <span class="comment">&lt;!--查询时候的分词器--&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">analyzer</span> <span class="attr">type</span>=<span class="string">"query"</span> <span class="attr">isMaxWordLength</span>=<span class="string">"true"</span> <span class="attr">class</span>=<span class="string">"org.wltea.analyzer.lucene.IKAnalyzer"</span>/&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">fieldType</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>1、在/opt/cloudera/parcels/CDH/lib/solr/webapps/solr/WEB-INF创建classes目录<br>2、把IKAnalyzer.cfg.xml 和 stopword.dic添加到classes目录（不配置也行）<br>3、把IKAnalyzer2012FF_u1.jar添加到/opt/cloudera/parcels/CDH/lib/solr/webapps/solr/WEB-INF/lib目录<br>4、使用scp命令将jar文件传至，其它solr集群机器上去（参考：<code>scp IKAnalyzer2012FF_u1.jar phfinance-s6:/opt/cloudera/parcels/CDH/lib/solr/webapps/solr/WEB-INF/lib</code>）</p>
+<p><font color="red">一定要将jar文件，复制到其它solr集群机器上去，重启solr集群</font>。</p>
+<h4 id="上传配置文件至zookeeper"><a href="#上传配置文件至zookeeper" class="headerlink" title="上传配置文件至zookeeper"></a>上传配置文件至zookeeper</h4><figure class="highlight brainfuck"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">solrctl</span> <span class="literal">-</span><span class="literal">-</span><span class="comment">zk</span> <span class="comment">cumulus</span><span class="literal">-</span><span class="comment">s1:2181/solr</span> <span class="comment">instancedir</span> <span class="literal">-</span><span class="literal">-</span><span class="comment">create</span> <span class="comment">enterprise_list</span> <span class="comment">enterprise_list/</span></span><br></pre></td></tr></table></figure>
+
+<p>参数说明:<br><code>create</code>：表示创建，如果是更新配置文件，可以使用update（建议先delete再create）<br><code>enterprise_list</code>：collection名称<br><code>enterprise_list/</code>：solr配置文件目录</p>
+<p>使用<code>zookeeper-client -server cumulus-s1:2181</code>命令登录zookeeper命令行查看文件目录：<br><img src="http://www.zhangrenhua.com/back_images/hbase-solr-index2.jpg" alt="zookeeper cli"></p>
+<h4 id="创建collection-1"><a href="#创建collection-1" class="headerlink" title="创建collection"></a>创建collection</h4><figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">solrctl --solr <span class="string">http:</span><span class="comment">//cumulus-s1:8983/solr/ collection --create enterprise_list -s 3 -r 2 -m 5 -a</span></span><br></pre></td></tr></table></figure>
+
+<p>参数说明：<br><code>create</code>：表示创建，如果是更新配置文件，可以使用reload<br><code>enterprise_list</code>：collection名称<br><code>-s</code>：<numshards><br><code>-a</code>：Create collection with autoAddReplicas=true<br><code>-c</code>：&lt;collection.configName&gt;<br><code>-r</code>：<replicationfactor><br><code>-m</code>：<maxshardspernode><br><code>-n</code>：<createnodeset></createnodeset></maxshardspernode></replicationfactor></numshards></p>
+<p>可以使用<code>solrctl --help</code>命令，来查看帮助信息。</p>
+<h2 id="hbase部署"><a href="#hbase部署" class="headerlink" title="hbase部署"></a>hbase部署</h2><h3 id="Hbase表需要开启REPLICATION复制功能"><a href="#Hbase表需要开启REPLICATION复制功能" class="headerlink" title="Hbase表需要开启REPLICATION复制功能"></a>Hbase表需要开启REPLICATION复制功能</h3><p>新建表：</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">create <span class="string">'hermes:c_enterprise_list'</span>,<span class="string">'info'</span>,&#123;<span class="function"><span class="params">NAME</span> =&gt;</span> <span class="string">'info'</span>, <span class="function"><span class="params">REPLICATION_SCOPE</span> =&gt;</span><span class="number">1</span>&#125; </span><br><span class="line">#其中<span class="number">1</span>表示开启replication功能，<span class="number">0</span>表示不开启，默认为<span class="number">0</span></span><br></pre></td></tr></table></figure>
+
+<p>对于已经创建的表可以使用如下命令：</p>
+<figure class="highlight sml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">disable <span class="symbol">'hermes</span>:c_enterprise_list' </span><br><span class="line">alter <span class="symbol">'hermes</span>:c_enterprise_list',&#123;<span class="type">NAME</span> =&gt; <span class="symbol">'info'</span>, <span class="type">REPLICATION_SCOPE</span> =&gt; <span class="number">1</span>&#125; </span><br><span class="line">enable <span class="symbol">'hermes</span>:c_enterprise_list'</span><br></pre></td></tr></table></figure>
+
+<h3 id="Lily-HBase-Indexer配置"><a href="#Lily-HBase-Indexer配置" class="headerlink" title="Lily HBase Indexer配置"></a>Lily HBase Indexer配置</h3><h4 id="创建Lily-HBase-Indexer配置文件"><a href="#创建Lily-HBase-Indexer配置文件" class="headerlink" title="创建Lily HBase Indexer配置文件"></a>创建Lily HBase Indexer配置文件</h4><p>morphline-hbase-mapper.xml</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?xml version="1.0"?&gt;</span>  </span><br><span class="line"><span class="tag">&lt;<span class="name">indexer</span> <span class="attr">table</span>=<span class="string">"hermes:c_enterprise_list"</span> <span class="attr">mapper</span>=<span class="string">"com.ngdata.hbaseindexer.morphline.MorphlineResultToSolrMapper"</span>&gt;</span>  </span><br><span class="line">   </span><br><span class="line">   <span class="comment">&lt;!-- The relative or absolute path on the local file system to the morphline configuration file. --&gt;</span>  </span><br><span class="line">   <span class="comment">&lt;!-- Use relative path "morphlines.conf" for morphlines managed by Cloudera Manager --&gt;</span>  </span><br><span class="line">   <span class="tag">&lt;<span class="name">param</span> <span class="attr">name</span>=<span class="string">"morphlineFile"</span> <span class="attr">value</span>=<span class="string">"morphlines.conf"</span>/&gt;</span>  </span><br><span class="line">      </span><br><span class="line">   <span class="comment">&lt;!-- The optional morphlineId identifies a morphline if there are multiple morphlines in morphlines.conf --&gt;</span>  </span><br><span class="line">   <span class="tag">&lt;<span class="name">param</span> <span class="attr">name</span>=<span class="string">"morphlineId"</span> <span class="attr">value</span>=<span class="string">"enterprise_list"</span>/&gt;</span></span><br><span class="line">   </span><br><span class="line"><span class="tag">&lt;/<span class="name">indexer</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p><code>morphlineFile</code>：使用cloudera则默认为morphlines.conf<br><code>morphlineId</code>： 对应Key-Value Store Indexer 中配置文件Morphlines.conf 中morphlines 属性id值</p>
+<p>参考：<a href="https://github.com/NGDATA/hbase-indexer/wiki/Indexer-configuration#table。" target="_blank" rel="noopener">https://github.com/NGDATA/hbase-indexer/wiki/Indexer-configuration#table。</a></p>
+<h4 id="修改Morphlines-文件"><a href="#修改Morphlines-文件" class="headerlink" title="修改Morphlines 文件"></a>修改Morphlines 文件</h4><p>进入Key-Value Store Indexer面板-&gt;配置-&gt;查看和编辑-&gt;属性-Morphline文件：<br><img src="http://www.zhangrenhua.com/back_images/hbase-solr-index1.jpg" alt="morphline配置"></p>
+<p>morphlines.conf</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br></pre></td><td class="code"><pre><span class="line">SOLR_LOCATOR : &#123;</span><br><span class="line">  # Name of solr collection</span><br><span class="line">  collection : collection</span><br><span class="line">  </span><br><span class="line">  # ZooKeeper ensemble</span><br><span class="line">  zkHost : <span class="string">"<span class="variable">$ZK_HOST</span>"</span> </span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">morphlines : [</span><br><span class="line">&#123;</span><br><span class="line">id : enterprise_list</span><br><span class="line">importCommands : [<span class="string">"org.kitesdk.**"</span>, <span class="string">"com.ngdata.**"</span>]</span><br><span class="line"></span><br><span class="line">commands : [                    </span><br><span class="line">  &#123;</span><br><span class="line">    extractHBaseCells &#123;</span><br><span class="line">        mappings : [  </span><br><span class="line">            &#123;  </span><br><span class="line">              inputColumn : <span class="string">"info:uniform_social_credit_code"</span>  </span><br><span class="line">              outputField : <span class="string">"uniform_social_credit_code"</span>  </span><br><span class="line">             <span class="built_in"> type </span>: string   </span><br><span class="line">              source : value  </span><br><span class="line">            &#125;</span><br><span class="line">            &#123;  </span><br><span class="line">              inputColumn : <span class="string">"info:registration_no"</span>  </span><br><span class="line">              outputField : <span class="string">"registration_no"</span>  </span><br><span class="line">             <span class="built_in"> type </span>: string   </span><br><span class="line">              source : value  </span><br><span class="line">            &#125;</span><br><span class="line">            &#123;  </span><br><span class="line">              inputColumn : <span class="string">"info:taxpayer_identification_no"</span>  </span><br><span class="line">              outputField : <span class="string">"taxpayer_identification_no"</span>  </span><br><span class="line">             <span class="built_in"> type </span>: string   </span><br><span class="line">              source : value  </span><br><span class="line">            &#125;</span><br><span class="line">            &#123;  </span><br><span class="line">              inputColumn : <span class="string">"info:tax_registration_cert"</span>  </span><br><span class="line">              outputField : <span class="string">"tax_registration_cert"</span>  </span><br><span class="line">             <span class="built_in"> type </span>: string   </span><br><span class="line">              source : value  </span><br><span class="line">            &#125;</span><br><span class="line">            &#123;  </span><br><span class="line">              inputColumn : <span class="string">"info:organization_code"</span>  </span><br><span class="line">              outputField : <span class="string">"organization_code"</span>  </span><br><span class="line">             <span class="built_in"> type </span>: string   </span><br><span class="line">              source : value  </span><br><span class="line">            &#125;</span><br><span class="line">            &#123;  </span><br><span class="line">              inputColumn : <span class="string">"info:legal_representative_name"</span>  </span><br><span class="line">              outputField : <span class="string">"legal_representative_name"</span>  </span><br><span class="line">             <span class="built_in"> type </span>: string   </span><br><span class="line">              source : value  </span><br><span class="line">            &#125; </span><br><span class="line">            &#123;  </span><br><span class="line">              inputColumn : <span class="string">"info:shareholders"</span>  </span><br><span class="line">              outputField : <span class="string">"shareholders"</span>  </span><br><span class="line">             <span class="built_in"> type </span>: string   </span><br><span class="line">              source : value  </span><br><span class="line">            &#125; </span><br><span class="line">            &#123;  </span><br><span class="line">              inputColumn : <span class="string">"info:senior_executive"</span>  </span><br><span class="line">              outputField : <span class="string">"senior_executive"</span>  </span><br><span class="line">             <span class="built_in"> type </span>: string   </span><br><span class="line">              source : value  </span><br><span class="line">            &#125;  </span><br><span class="line">            &#123;  </span><br><span class="line">              inputColumn : <span class="string">"info:contact"</span>  </span><br><span class="line">              outputField : <span class="string">"contact"</span>  </span><br><span class="line">             <span class="built_in"> type </span>: string   </span><br><span class="line">              source : value  </span><br><span class="line">            &#125;</span><br><span class="line">            &#123;  </span><br><span class="line">              inputColumn : <span class="string">"info:enterprise_type"</span>  </span><br><span class="line">              outputField : <span class="string">"enterprise_type"</span>  </span><br><span class="line">             <span class="built_in"> type </span>: string   </span><br><span class="line">              source : value  </span><br><span class="line">            &#125; </span><br><span class="line">            &#123;  </span><br><span class="line">              inputColumn : <span class="string">"info:enterprise_status"</span>  </span><br><span class="line">              outputField : <span class="string">"enterprise_status"</span>  </span><br><span class="line">             <span class="built_in"> type </span>: string   </span><br><span class="line">              source : value  </span><br><span class="line">            &#125;</span><br><span class="line">            &#123;  </span><br><span class="line">              inputColumn : <span class="string">"info:registration_date"</span>  </span><br><span class="line">              outputField : <span class="string">"registration_date"</span>  </span><br><span class="line">             <span class="built_in"> type </span>: string   </span><br><span class="line">              source : value  </span><br><span class="line">            &#125; </span><br><span class="line">            &#123;  </span><br><span class="line">              inputColumn : <span class="string">"info:registered_capital"</span>  </span><br><span class="line">              outputField : <span class="string">"registered_capital"</span>  </span><br><span class="line">             <span class="built_in"> type </span>: string  </span><br><span class="line">              source : value  </span><br><span class="line">            &#125; </span><br><span class="line">            &#123;  </span><br><span class="line">              inputColumn : <span class="string">"info:region"</span>  </span><br><span class="line">              outputField : <span class="string">"region"</span>  </span><br><span class="line">             <span class="built_in"> type </span>: string   </span><br><span class="line">              source : value  </span><br><span class="line">            &#125; </span><br><span class="line">            &#123;  </span><br><span class="line">              inputColumn : <span class="string">"info:industry_type"</span>  </span><br><span class="line">              outputField : <span class="string">"industry_type"</span>  </span><br><span class="line">             <span class="built_in"> type </span>: string   </span><br><span class="line">              source : value  </span><br><span class="line">            &#125; </span><br><span class="line">            &#123;  </span><br><span class="line">              inputColumn : <span class="string">"info:enterprise_name"</span>  </span><br><span class="line">              outputField : <span class="string">"enterprise_name"</span>  </span><br><span class="line">             <span class="built_in"> type </span>: string   </span><br><span class="line">              source : value  </span><br><span class="line">            &#125; </span><br><span class="line">            &#123;  </span><br><span class="line">              inputColumn : <span class="string">"info:address"</span>  </span><br><span class="line">              outputField : <span class="string">"address"</span>  </span><br><span class="line">             <span class="built_in"> type </span>: string   </span><br><span class="line">              source : value  </span><br><span class="line">            &#125;               </span><br><span class="line">          ] </span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  &#123; convertTimestamp &#123;</span><br><span class="line">        field : registration_date</span><br><span class="line">        inputFormats : [<span class="string">"yyyy年MM月dd日"</span>, <span class="string">"yyyyMMdd"</span>, <span class="string">"yyyy-MM-dd"</span>]</span><br><span class="line">        outputTimezone : UTC</span><br><span class="line">        </span><br><span class="line">  &#125;&#125;</span><br><span class="line"></span><br><span class="line">  &#123; logDebug &#123; format : <span class="string">"output record: &#123;&#125;"</span>, args : [<span class="string">"@&#123;&#125;"</span>] &#125; &#125;</span><br><span class="line">]</span><br><span class="line">&#125;</span><br><span class="line">]</span><br></pre></td></tr></table></figure>
+
+<p><code>id</code>：表示当前morphlines文件的ID名称。<br><code>importCommands</code>：需要引入的命令包地址。<br><code>extractHBaseCells</code>：该命令用来读取HBase列数据并写入到SolrInputDocument对象中，该命令必须包含零个或者多个mappings命令对象。<br><code>mappings</code>：用来指定HBase列限定符的字段映射。<br><code>inputColumn</code>:需要写入到solr中的HBase列字段。值包含列族和列限定符，并用‘ : ’分开。其中列限定符也可以使用通配符‘<em>’来表示，譬如可以使用data:</em>表示读取只要列族为data的所有hbase列数据，也可以通过data:my*来表示读取列族为data列限定符已my开头的字段值。<br><code>outputField</code>:用来表示morphline读取的记录需要输出的数据字段名称，<font color="red">该名称必须和solr中的schema.xml文件的字段名称保持一致，否则写入不正确</font>。<br><code>type</code>:用来定义读取HBase数据的数据类型，我们知道HBase中的数据都是以byte[]的形式保存，但是所有的内容在Solr中索引为text形式，所以需要一个方法来把byte[]类型转换为实际的数据类型。type参数的值就是用来做这件事情的。现在支持的数据类型有：byte<a href="原封不动的拷贝hbase中的byte[]数据"></a>,int,long,string,boolean,float,double,short和bigdecimal。当然你也可以指定自定的数据类型，只需要实现com.ngdata.hbaseindexer.parse.ByteArrayValueMapper接口即可。<br><code>source</code>:用来指定HBase的KeyValue那一部分作为索引输入数据，可选的有‘value’和’qualifier’,当为value的时候表示使用HBase的列值作为索引输入，当为qualifier的时候表示使用HBase的列限定符作为索引输入。</p>
+<h4 id="注册Lily-HBase-Indexer"><a href="#注册Lily-HBase-Indexer" class="headerlink" title="注册Lily HBase Indexer"></a>注册Lily HBase Indexer</h4><p>注册Lily HBase Indexer configuration 和 Lily Hbase Indexer Service</p>
+<figure class="highlight smali"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">hbase-indexer<span class="built_in"> add-indexer </span>\</span><br><span class="line">    --name enterprise_list \</span><br><span class="line">    --indexer-conf /home/hermes/hermes-solr/morphline-hbase-mapper.xml \</span><br><span class="line">    --connection-param solr.zk=cumulus-s1:2181,cumulus-s2:2181,cumulus-s3:2181/solr \</span><br><span class="line">    --connection-param solr.collection=enterprise_list \</span><br><span class="line">    --zookeeper cumulus-s1:2181,cumulus-s2:2181,cumulus-s3:2181</span><br></pre></td></tr></table></figure>
+
+<p><code>name</code>：indexer名称<br><code>indexer-conf</code>：hbase映射配置文件目录<br><code>connection-param</code>：solr配置信息<br><code>zookeeper</code>：zookeeper配置信息</p>
+<p>直接输入<code>hbase-indexer</code>命令，即可查看命令行帮助信息。</p>
+<h4 id="验证Lily-HBase-Indexer"><a href="#验证Lily-HBase-Indexer" class="headerlink" title="验证Lily HBase Indexer"></a>验证Lily HBase Indexer</h4><p>验证索引器是否成功创建，<code>hbase-indexer list-indexers</code>：<br><img src="http://www.zhangrenhua.com/back_images/hbase-solr-index3.jpg" alt="list-indexers"></p>
+<p>hbase put数据：</p>
+<figure class="highlight 1c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">put 'hermes:c_enterprise_list','abcd','info:uniform_social_credit_code','<span class="number">2017</span>'</span><br></pre></td></tr></table></figure>
+
+<p>稍等一会（根据solr刷新间隔决定），查询solr，检查索引是否建好。</p>
+<p><img src="http://www.zhangrenhua.com/back_images/hbase-solr-index3.jpg" alt="solr query"></p>
+<h3 id="Hbase表数据全量导入到SOLR集群"><a href="#Hbase表数据全量导入到SOLR集群" class="headerlink" title="Hbase表数据全量导入到SOLR集群"></a>Hbase表数据全量导入到SOLR集群</h3><figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">hadoop --config <span class="regexp">/etc/</span>hadoop/conf \</span><br><span class="line">  jar <span class="regexp">/opt/</span>cloudera<span class="regexp">/parcels/</span>CDH<span class="regexp">/lib/</span>hbase-solr<span class="regexp">/tools/</span>hbase-indexer-mr-job.jar \</span><br><span class="line">  --conf <span class="regexp">/etc/</span>hbase<span class="regexp">/conf/</span>hbase-site.xml \</span><br><span class="line">  -D <span class="string">'mapred.child.java.opts=-Xmx1g'</span> \</span><br><span class="line">  --hbase-indexer-file  <span class="regexp">/home/</span>hermes<span class="regexp">/hermes-solr/</span>morphline-hbase-mapper.xml  \</span><br><span class="line">  --zk-host cumulus-<span class="string">s1:</span><span class="number">2181</span>,cumulus-<span class="string">s2:</span><span class="number">2181</span>,cumulus-<span class="string">s3:</span><span class="number">2181</span>/solr \</span><br><span class="line">  --collection enterprise_list \</span><br><span class="line">  --reducers <span class="number">0</span></span><br></pre></td></tr></table></figure>
+
+<p>在执行上面命令的目录下面，创建<code>morphline-hbase-mapper.xml</code>和<code>morphlines.conf</code>文件，内容从上面章节复制。</p>
+<p>参考：</p>
+<ul>
+<li><a href="https://www.cloudera.com/documentation/enterprise/latest/topics/search_hbase_mapreduce_indexer_tool.html" target="_blank" rel="noopener">https://www.cloudera.com/documentation/enterprise/latest/topics/search_hbase_mapreduce_indexer_tool.html</a></li>
+<li><a href="http://kitesdk.org/docs/1.1.0/morphlines/morphlines-reference-guide.html" target="_blank" rel="noopener">http://kitesdk.org/docs/1.1.0/morphlines/morphlines-reference-guide.html</a></li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>1、经验证，Lily HBase Indexer，能满足hbase数据实时索引至solr中，包括实时新增、更新、删除。<br>2、Lily HBase Indexer采用离线生成solr索引文件，对solr查询无任何负载。<br>3、可能会出现solr索引数据文件已生成，但是在solr中查询不到数据，这是solr加载索引文件的时间间隔导致的，耐心等待一会即可。</p>
+<p>本文档，是在Cloudera5.9集群基础之上操作的。</p>
+<p><a href="http://www.zhangrenhua.com/back_images/hermes-solr.tar.gz">示例附件</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/hadoop生态圈/" rel="tag"># hadoop生态圈</a>
+          
+            <a href="/tags/hbase/" rel="tag"># hbase</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/12/18/Java虚拟机性能监控与故障处理工具/" rel="next" title="Java虚拟机性能监控与故障处理工具">
+                <i class="fa fa-chevron-left"></i> Java虚拟机性能监控与故障处理工具
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/04/12/Tesseract-OCR训练文档/" rel="prev" title="Tesseract-OCR训练文档">
+                Tesseract-OCR训练文档 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+<span class="jiathis_txt">分享到：</span>
+<a class="jiathis_button_fav">收藏夹</a>
+<a class="jiathis_button_copy">复制网址</a>
+<a class="jiathis_button_email">邮件</a>
+<a class="jiathis_button_weixin">微信</a>
+<a class="jiathis_button_qzone">QQ空间</a>
+<a class="jiathis_button_tqq">腾讯微博</a>
+<a class="jiathis_button_douban">豆瓣</a>
+<a class="jiathis_button_share">一键分享</a>
+
+<a href="http://www.jiathis.com/share?uid=2140465" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank">更多</a>
+<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+var jiathis_config={
+  data_track_clickback:true,
+  summary:"",
+  shortUrl:false,
+  hideMore:false
+}
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  <p>热评文章</p>
+  <div class="ds-top-threads" data-range="weekly" data-num-items="4"></div>
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div class="ds-thread" data-thread-key="2017/02/10/Hbase使用Solr二级索引(Lily Hbase Index)/" data-title="Hbase使用Solr二级索引(Lily Hbase Index)" data-url="http://www.zhangrenhua.com/2017/02/10/Hbase使用Solr二级索引(Lily Hbase Index)/">
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="http://www.zhangrenhua.com/back_images/avatar.jpg" alt="张仁华">
+            
+              <p class="site-author-name" itemprop="name">张仁华</p>
+              <p class="site-description motion-element" itemprop="description">记录软件生涯中的点点滴滴</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">76</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">17</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/zhangrenhua/" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://weibo.com/huaHBrother" target="_blank" title="Weibo">
+                      
+                        <i class="fa fa-fw fa-globe"></i>Weibo</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://douban.com/people/huaHBrother" target="_blank" title="douban">
+                      
+                        <i class="fa fa-fw fa-globe"></i>douban</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://zhihu.com/people/huaHBrother" target="_blank" title="zhihu">
+                      
+                        <i class="fa fa-fw fa-globe"></i>zhihu</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Solr部署"><span class="nav-number">1.</span> <span class="nav-text">Solr部署</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#安装Solr集群"><span class="nav-number">1.1.</span> <span class="nav-text">安装Solr集群</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#创建collection"><span class="nav-number">1.2.</span> <span class="nav-text">创建collection</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#创建默认的collection配置文件"><span class="nav-number">1.2.1.</span> <span class="nav-text">创建默认的collection配置文件</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#修改solr-schema-xml配置文件"><span class="nav-number">1.2.2.</span> <span class="nav-text">修改solr schema.xml配置文件</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#IK分词配置"><span class="nav-number">1.2.3.</span> <span class="nav-text">IK分词配置</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#上传配置文件至zookeeper"><span class="nav-number">1.2.4.</span> <span class="nav-text">上传配置文件至zookeeper</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#创建collection-1"><span class="nav-number">1.2.5.</span> <span class="nav-text">创建collection</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#hbase部署"><span class="nav-number">2.</span> <span class="nav-text">hbase部署</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Hbase表需要开启REPLICATION复制功能"><span class="nav-number">2.1.</span> <span class="nav-text">Hbase表需要开启REPLICATION复制功能</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Lily-HBase-Indexer配置"><span class="nav-number">2.2.</span> <span class="nav-text">Lily HBase Indexer配置</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#创建Lily-HBase-Indexer配置文件"><span class="nav-number">2.2.1.</span> <span class="nav-text">创建Lily HBase Indexer配置文件</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#修改Morphlines-文件"><span class="nav-number">2.2.2.</span> <span class="nav-text">修改Morphlines 文件</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#注册Lily-HBase-Indexer"><span class="nav-number">2.2.3.</span> <span class="nav-text">注册Lily HBase Indexer</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#验证Lily-HBase-Indexer"><span class="nav-number">2.2.4.</span> <span class="nav-text">验证Lily HBase Indexer</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Hbase表数据全量导入到SOLR集群"><span class="nav-number">2.3.</span> <span class="nav-text">Hbase表数据全量导入到SOLR集群</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">3.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">张仁华</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"iissnan-notes"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

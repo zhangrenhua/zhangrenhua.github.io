@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="google-site-verification" content="zUNgN8yGBtBZ8194JTl7PXh7YvztVw494zGKJ_8qH00">
+
+
+
+
+
+
+
+
+  <meta name="baidu-site-verification" content="kqLgluU8lc">
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/favicon.ico?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="hadoop生态圈,hbase,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="hua的博客" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="在网上经常看到关于Hbase高速写入的一些文章，其中大部分就是利用Hbase提供的工具类生成HFile。并且一些文章说HFile只适合初始导入（或者表中数据为空），还有一些文章中说不管初始化还是增量添加数据都是用HFile，其实上面两种说法都不完全正确。下面我会写出Mapreduce和非MapReduce方式生成HFle并导入Hbase表中的实现。并且解释在什么时候使用这种方式最合适。">
+<meta name="keywords" content="hadoop生态圈,hbase">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Hbase快速写入解惑之HFile">
+<meta property="og:url" content="http://www.zhangrenhua.com/2016/01/28/hadoop-Hbase快速写入解惑之HFile/index.html">
+<meta property="og:site_name" content="hua的博客">
+<meta property="og:description" content="在网上经常看到关于Hbase高速写入的一些文章，其中大部分就是利用Hbase提供的工具类生成HFile。并且一些文章说HFile只适合初始导入（或者表中数据为空），还有一些文章中说不管初始化还是增量添加数据都是用HFile，其实上面两种说法都不完全正确。下面我会写出Mapreduce和非MapReduce方式生成HFle并导入Hbase表中的实现。并且解释在什么时候使用这种方式最合适。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2016-02-24T06:31:22.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Hbase快速写入解惑之HFile">
+<meta name="twitter:description" content="在网上经常看到关于Hbase高速写入的一些文章，其中大部分就是利用Hbase提供的工具类生成HFile。并且一些文章说HFile只适合初始导入（或者表中数据为空），还有一些文章中说不管初始化还是增量添加数据都是用HFile，其实上面两种说法都不完全正确。下面我会写出Mapreduce和非MapReduce方式生成HFle并导入Hbase表中的实现。并且解释在什么时候使用这种方式最合适。">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.zhangrenhua.com/2016/01/28/hadoop-Hbase快速写入解惑之HFile/">
+
+
+
+
+
+  <title>Hbase快速写入解惑之HFile | hua的博客</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-69647002-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?954f429681a4cd6dee6095ddaa2aac9a";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">hua的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">关注技术和人文的原创IT博客</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-schedule">
+          <a href="/schedule/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            日程表
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sitemap">
+          <a href="/sitemap.xml" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            站点地图
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="st-search-show-outputs">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <form class="site-search-form">
+  <input type="text" id="st-search-input" class="st-search-input st-default-search-input">
+</form>
+
+<script type="text/javascript">
+  (function(w,d,t,u,n,s,e){w['SwiftypeObject']=n;w[n]=w[n]||function(){
+    (w[n].q=w[n].q||[]).push(arguments);};s=d.createElement(t);
+    e=d.getElementsByTagName(t)[0];s.async=1;s.src=u;e.parentNode.insertBefore(s,e);
+  })(window,document,'script','//s.swiftypecdn.com/install/v2/st.js','_st');
+
+  _st('install', 'BAacTgC1f_bLy6kngppZ','2.0.0');
+</script>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.zhangrenhua.com/2016/01/28/hadoop-Hbase快速写入解惑之HFile/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="张仁华">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="http://www.zhangrenhua.com/back_images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hua的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Hbase快速写入解惑之HFile</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-01-28T19:44:47+08:00">
+                2016-01-28
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/hbase/" itemprop="url" rel="index">
+                    <span itemprop="name">hbase</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2016/01/28/hadoop-Hbase快速写入解惑之HFile/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2016/01/28/hadoop-Hbase快速写入解惑之HFile/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  在网上经常看到关于Hbase高速写入的一些文章，其中大部分就是利用Hbase提供的工具类生成HFile。并且一些文章说HFile只适合初始导入（或者表中数据为空），还有一些文章中说不管初始化还是增量添加数据都是用HFile，其实上面两种说法都不完全正确。下面我会写出Mapreduce和非MapReduce方式生成HFle并导入Hbase表中的实现。并且解释在什么时候使用这种方式最合适。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>在网上经常看到关于Hbase高速写入的一些文章，其中大部分就是利用Hbase提供的工具类生成HFile。并且一些文章说HFile只适合初始导入（或者表中数据为空），还有一些文章中说不管初始化还是增量添加数据都是用HFile，其实上面两种说法都不完全正确。下面我会写出Mapreduce和非MapReduce方式生成HFle并导入Hbase表中的实现。并且解释在什么时候使用这种方式最合适。</p>
+<h2 id="MapReduce生成HFile"><a href="#MapReduce生成HFile" class="headerlink" title="MapReduce生成HFile"></a>MapReduce生成HFile</h2><p>先建好Hbase表：</p>
+<figure class="highlight livecodeserver"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">create</span> <span class="string">'hfiletable'</span>,<span class="string">'fm1'</span>,<span class="string">'fm2'</span></span><br></pre></td></tr></table></figure>
+
+<p>测试数据，并上传至/tmp目录：</p>
+<figure class="highlight autohotkey"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">key1,</span>fm1:col1,value1</span><br><span class="line"><span class="built_in">key1,</span>fm1:col2,value2</span><br><span class="line"><span class="built_in">key1,</span>fm2:col1,value3</span><br><span class="line"><span class="built_in">key4,</span>fm1:col1,value4</span><br></pre></td></tr></table></figure>
+
+<p>示例代码：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.io.IOException;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.conf.Configuration;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.fs.FileSystem;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.fs.FsShell;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.fs.Path;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.hbase.HBaseConfiguration;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.hbase.client.HTable;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.hbase.client.Put;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.hbase.io.ImmutableBytesWritable;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.hbase.mapreduce.HFileOutputFormat2;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.hbase.mapreduce.LoadIncrementalHFiles;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.hbase.util.Bytes;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.io.LongWritable;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.io.Text;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.mapreduce.Job;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.mapreduce.Mapper;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.mapreduce.lib.input.FileInputFormat;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.mapreduce.lib.input.TextInputFormat;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;</span><br><span class="line"><span class="keyword">import</span> org.slf4j.Logger;</span><br><span class="line"><span class="keyword">import</span> org.slf4j.LoggerFactory;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">BulkLoadJob</span> </span>&#123;</span><br><span class="line">    <span class="keyword">static</span> <span class="type">Logger</span> logger = <span class="type">LoggerFactory</span>.getLogger(<span class="type">BulkLoadJob</span>.<span class="keyword">class</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">BulkLoadMap</span></span></span><br><span class="line"><span class="class">            <span class="title">extends</span> <span class="title">Mapper</span>&lt;<span class="title">LongWritable</span>, <span class="title">Text</span>, <span class="title">ImmutableBytesWritable</span>, <span class="title">Put</span>&gt; </span>&#123;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">public</span> void <span class="built_in">map</span>(<span class="type">LongWritable</span> key, <span class="type">Text</span> value, <span class="type">Context</span> context)</span><br><span class="line">                <span class="keyword">throws</span> <span class="type">IOException</span>, <span class="type">InterruptedException</span> &#123;</span><br><span class="line"></span><br><span class="line">            <span class="type">String</span>[] valueStrSplit = value.<span class="built_in">toString</span>().<span class="built_in">split</span>(<span class="string">","</span>);</span><br><span class="line">            <span class="type">String</span> hkey = valueStrSplit[<span class="number">0</span>];</span><br><span class="line">            <span class="type">String</span> family = valueStrSplit[<span class="number">1</span>].<span class="built_in">split</span>(<span class="string">":"</span>)[<span class="number">0</span>];</span><br><span class="line">            <span class="type">String</span> column = valueStrSplit[<span class="number">1</span>].<span class="built_in">split</span>(<span class="string">":"</span>)[<span class="number">1</span>];</span><br><span class="line">            <span class="type">String</span> hvalue = valueStrSplit[<span class="number">2</span>];</span><br><span class="line"></span><br><span class="line">            <span class="comment">/**</span></span><br><span class="line"><span class="comment">             * 只支持单列族并发写入，如果是多个列族得多write一次</span></span><br><span class="line"><span class="comment">             */</span></span><br><span class="line">            <span class="keyword">final</span> byte[] rowKey = <span class="type">Bytes</span>.toBytes(hkey);</span><br><span class="line">            <span class="keyword">final</span> <span class="type">ImmutableBytesWritable</span> <span class="type">HKey</span> = new <span class="type">ImmutableBytesWritable</span>(</span><br><span class="line">                    rowKey);</span><br><span class="line">            <span class="type">Put</span> put = new <span class="type">Put</span>(rowKey);</span><br><span class="line">            byte[] cell = <span class="type">Bytes</span>.toBytes(hvalue);</span><br><span class="line">            put.add(<span class="type">Bytes</span>.toBytes(family), <span class="type">Bytes</span>.toBytes(column), cell);</span><br><span class="line">            context.write(<span class="type">HKey</span>, put);</span><br><span class="line"></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> void main(<span class="type">String</span>[] args) <span class="keyword">throws</span> <span class="type">Exception</span> &#123;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/**</span></span><br><span class="line"><span class="comment">         * 此方法运行不宜小文件使用，每执行一次就会hfile就会增加，可以采用major_compact 'tablename' 进行合并</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        <span class="type">Configuration</span> conf = <span class="type">HBaseConfiguration</span>.create();</span><br><span class="line">        <span class="type">String</span> inputPath = <span class="string">"/tmp/data.txt"</span>;</span><br><span class="line">        <span class="type">String</span> outputPath = <span class="string">"/tmp/hfiledemo"</span>;</span><br><span class="line">        <span class="type">String</span> tableName = <span class="string">"hfiletable"</span>;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/**</span></span><br><span class="line"><span class="comment">         * 删除输出目录</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        <span class="type">FileSystem</span> fileSystem = <span class="type">FileSystem</span>.<span class="keyword">get</span>(conf);</span><br><span class="line">        <span class="type">Path</span> outPath = new <span class="type">Path</span>(outputPath);</span><br><span class="line">        <span class="keyword">if</span> (fileSystem.exists(outPath)) &#123;</span><br><span class="line">            fileSystem.delete(outPath, <span class="literal">true</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="type">Job</span> job = <span class="type">Job</span>.getInstance(conf, <span class="string">"HFile bulk load"</span>);</span><br><span class="line">        job.setJarByClass(<span class="type">BulkLoadJob</span>.<span class="keyword">class</span>);</span><br><span class="line">        job.setMapperClass(<span class="type">BulkLoadJob</span>.<span class="type">BulkLoadMap</span>.<span class="keyword">class</span>);</span><br><span class="line">        job.setMapOutputKeyClass(<span class="type">ImmutableBytesWritable</span>.<span class="keyword">class</span>);</span><br><span class="line">        job.setMapOutputValueClass(<span class="type">Put</span>.<span class="keyword">class</span>);</span><br><span class="line">        <span class="comment">// Disable speculative execution</span></span><br><span class="line">        job.setSpeculativeExecution(<span class="literal">false</span>);</span><br><span class="line">        job.setReduceSpeculativeExecution(<span class="literal">false</span>);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// in/out format</span></span><br><span class="line">        job.setInputFormatClass(<span class="type">TextInputFormat</span>.<span class="keyword">class</span>);</span><br><span class="line">        job.setOutputFormatClass(<span class="type">HFileOutputFormat2</span>.<span class="keyword">class</span>);</span><br><span class="line"></span><br><span class="line">        <span class="type">FileInputFormat</span>.setInputPaths(job, inputPath);</span><br><span class="line">        <span class="type">FileOutputFormat</span>.setOutputPath(job, outPath);</span><br><span class="line"></span><br><span class="line">        <span class="type">HTable</span> hTable = new <span class="type">HTable</span>(conf, tableName);</span><br><span class="line">        <span class="type">HFileOutputFormat2</span>.configureIncrementalLoad(job, hTable, hTable);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (job.waitForCompletion(<span class="literal">true</span>)) &#123;</span><br><span class="line"></span><br><span class="line">            <span class="comment">/**</span></span><br><span class="line"><span class="comment">             * 解决权限问题</span></span><br><span class="line"><span class="comment">             */</span></span><br><span class="line">            <span class="type">FsShell</span> shell = new <span class="type">FsShell</span>(conf);</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                shell.run(new <span class="type">String</span>[] &#123; <span class="string">"-chmod"</span>, <span class="string">"-R"</span>, <span class="string">"777"</span>, outputPath &#125;);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (<span class="type">Exception</span> e) &#123;</span><br><span class="line">                logger.error(<span class="string">"Couldnt change the file permissions "</span>, e);</span><br><span class="line">                <span class="keyword">throw</span> new <span class="type">IOException</span>(e);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">/**</span></span><br><span class="line"><span class="comment">             * 加载到hbase表</span></span><br><span class="line"><span class="comment">             */</span></span><br><span class="line">            <span class="type">LoadIncrementalHFiles</span> loader = new <span class="type">LoadIncrementalHFiles</span>(conf);</span><br><span class="line">            loader.doBulkLoad(outPath, hTable);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="非MapReduce生成HFile"><a href="#非MapReduce生成HFile" class="headerlink" title="非MapReduce生成HFile"></a>非MapReduce生成HFile</h2><p>示例代码：</p>
+<figure class="highlight processing"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.<span class="built_in">text</span>.DecimalFormat;</span><br><span class="line"><span class="keyword">import</span> java.util.UUID;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.conf.Configuration;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.fs.FileSystem;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.fs.Path;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.hbase.HBaseConfiguration;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.hbase.HConstants;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.hbase.KeyValue;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.hbase.client.HTable;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.hbase.io.compress.Compression;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.hbase.io.hfile.CacheConfig;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.hbase.io.hfile.HFile;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.hbase.io.hfile.HFile.Writer;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.hbase.io.hfile.HFileContext;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.hbase.mapreduce.LoadIncrementalHFiles;</span><br><span class="line"><span class="keyword">import</span> org.apache.hadoop.hbase.util.Bytes;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> class HFileGenertor &#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 建表语句，数据文件参考data.txt</span></span><br><span class="line">    <span class="comment">// create 'hfiletable','fm1','fm2'</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> main(<span class="keyword">String</span>[] args) <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        Configuration conf = HBaseConfiguration.create();</span><br><span class="line">        conf.<span class="built_in">set</span>(<span class="string">"hbase.zookeeper.quorum"</span>, <span class="string">"hynamet01,hynamet02"</span>);</span><br><span class="line">        conf.<span class="built_in">set</span>(<span class="string">"hbase.zookeeper.property.clientPort"</span>, <span class="string">"2181"</span>);</span><br><span class="line">        <span class="comment">// 默认是/hbase,根据配置文件指定</span></span><br><span class="line">        conf.<span class="built_in">set</span>(<span class="string">"zookeeper.znode.parent"</span>, <span class="string">"/hbase"</span>);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">String</span> tableName = <span class="string">"hfiletable"</span>;</span><br><span class="line">        <span class="built_in">byte</span>[] family = Bytes.toBytes(<span class="string">"fm1"</span>);</span><br><span class="line">        <span class="keyword">String</span> outputdir = <span class="string">"/tmp/zhangrenhua/hbase/"</span>;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/**</span></span><br><span class="line"><span class="comment">         * hfile 随机文件名</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        Path dir = <span class="keyword">new</span> Path(outputdir);</span><br><span class="line">        Path familydir = <span class="keyword">new</span> Path(outputdir + Bytes.toString(family),</span><br><span class="line">                UUID.randomUUID().toString());</span><br><span class="line"></span><br><span class="line">        <span class="comment">/**</span></span><br><span class="line"><span class="comment">         * 创建HFile操作对象</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        Configuration tempConf = <span class="keyword">new</span> Configuration(conf);</span><br><span class="line">        <span class="comment">// tempConf.set("hbase.metrics.showTableName", "false");</span></span><br><span class="line">        tempConf.setFloat(HConstants.HFILE_BLOCK_CACHE_SIZE_KEY, <span class="number">1.0</span>f);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 文件属性对象，比如压缩算法之类的</span></span><br><span class="line">        HFileContext fileContext = <span class="keyword">new</span> HFileContext();</span><br><span class="line">        fileContext.setCompression(Compression.Algorithm.NONE);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// HFile文件操作对象</span></span><br><span class="line">        Writer writer = HFile.getWriterFactory(conf, <span class="keyword">new</span> CacheConfig(tempConf))</span><br><span class="line">                .withPath(FileSystem.<span class="built_in">get</span>(conf), familydir)</span><br><span class="line">                .withFileContext(fileContext).create();</span><br><span class="line"></span><br><span class="line">        DecimalFormat df = <span class="keyword">new</span> DecimalFormat(<span class="string">"0000000"</span>);</span><br><span class="line"></span><br><span class="line">        KeyValue kv1 = <span class="keyword">null</span>;</span><br><span class="line">        KeyValue kv2 = <span class="keyword">null</span>;</span><br><span class="line">        KeyValue kv3 = <span class="keyword">null</span>;</span><br><span class="line">        KeyValue kv4 = <span class="keyword">null</span>;</span><br><span class="line">        KeyValue kv5 = <span class="keyword">null</span>;</span><br><span class="line">        KeyValue kv6 = <span class="keyword">null</span>;</span><br><span class="line">        KeyValue kv7 = <span class="keyword">null</span>;</span><br><span class="line">        KeyValue kv8 = <span class="keyword">null</span>;</span><br><span class="line"></span><br><span class="line">        <span class="built_in">byte</span>[] cn = Bytes.toBytes(<span class="string">"cn"</span>);</span><br><span class="line">        <span class="built_in">byte</span>[] dt = Bytes.toBytes(<span class="string">"dt"</span>);</span><br><span class="line">        <span class="built_in">byte</span>[] ic = Bytes.toBytes(<span class="string">"ic"</span>);</span><br><span class="line">        <span class="built_in">byte</span>[] ifs = Bytes.toBytes(<span class="string">"if"</span>);</span><br><span class="line">        <span class="built_in">byte</span>[] ip = Bytes.toBytes(<span class="string">"ip"</span>);</span><br><span class="line">        <span class="built_in">byte</span>[] le = Bytes.toBytes(<span class="string">"le"</span>);</span><br><span class="line">        <span class="built_in">byte</span>[] mn = Bytes.toBytes(<span class="string">"mn"</span>);</span><br><span class="line">        <span class="built_in">byte</span>[] pi = Bytes.toBytes(<span class="string">"pi"</span>);</span><br><span class="line"></span><br><span class="line">        <span class="built_in">int</span> maxLength = <span class="number">100</span>;</span><br><span class="line">        <span class="keyword">for</span> (<span class="built_in">int</span> i = <span class="number">0</span>; i &lt; maxLength; i++) &#123;</span><br><span class="line">            <span class="keyword">String</span> currentTime = System.currentTimeMillis() + df.format(i);</span><br><span class="line">            <span class="keyword">long</span> current = System.currentTimeMillis();</span><br><span class="line">            <span class="comment">// rowkey和列都要按照字典序的方式顺序写入，否则会报错的</span></span><br><span class="line">            kv1 = <span class="keyword">new</span> KeyValue(Bytes.toBytes(currentTime), family, cn, current,</span><br><span class="line">                    KeyValue.Type.Put, Bytes.toBytes(<span class="string">"3"</span>));</span><br><span class="line"></span><br><span class="line">            kv2 = <span class="keyword">new</span> KeyValue(Bytes.toBytes(currentTime), family, dt, current,</span><br><span class="line">                    KeyValue.Type.Put, Bytes.toBytes(<span class="string">"6"</span>));</span><br><span class="line"></span><br><span class="line">            kv3 = <span class="keyword">new</span> KeyValue(Bytes.toBytes(currentTime), family, ic, current,</span><br><span class="line">                    KeyValue.Type.Put, Bytes.toBytes(<span class="string">"8"</span>));</span><br><span class="line"></span><br><span class="line">            kv4 = <span class="keyword">new</span> KeyValue(Bytes.toBytes(currentTime), family, ifs, current,</span><br><span class="line">                    KeyValue.Type.Put, Bytes.toBytes(<span class="string">"7"</span>));</span><br><span class="line"></span><br><span class="line">            kv5 = <span class="keyword">new</span> KeyValue(Bytes.toBytes(currentTime), family, ip, current,</span><br><span class="line">                    KeyValue.Type.Put, Bytes.toBytes(<span class="string">"4"</span>));</span><br><span class="line"></span><br><span class="line">            kv6 = <span class="keyword">new</span> KeyValue(Bytes.toBytes(currentTime), family, le, current,</span><br><span class="line">                    KeyValue.Type.Put, Bytes.toBytes(<span class="string">"2"</span>));</span><br><span class="line"></span><br><span class="line">            kv7 = <span class="keyword">new</span> KeyValue(Bytes.toBytes(currentTime), family, mn, current,</span><br><span class="line">                    KeyValue.Type.Put, Bytes.toBytes(<span class="string">"5"</span>));</span><br><span class="line"></span><br><span class="line">            kv8 = <span class="keyword">new</span> KeyValue(Bytes.toBytes(currentTime), family, pi, current,</span><br><span class="line">                    KeyValue.Type.Put, Bytes.toBytes(<span class="string">"1"</span>));</span><br><span class="line"></span><br><span class="line">            writer.<span class="built_in">append</span>(kv1);</span><br><span class="line"></span><br><span class="line">            writer.<span class="built_in">append</span>(kv2);</span><br><span class="line">            writer.<span class="built_in">append</span>(kv3);</span><br><span class="line">            writer.<span class="built_in">append</span>(kv4);</span><br><span class="line">            writer.<span class="built_in">append</span>(kv5);</span><br><span class="line">            writer.<span class="built_in">append</span>(kv6);</span><br><span class="line">            writer.<span class="built_in">append</span>(kv7);</span><br><span class="line">            writer.<span class="built_in">append</span>(kv8);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        writer.close();</span><br><span class="line"></span><br><span class="line">        <span class="comment">/**</span></span><br><span class="line"><span class="comment">         * 把生成的HFile导入到hbase当中</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        HTable table = <span class="keyword">new</span> HTable(conf, tableName);</span><br><span class="line">        LoadIncrementalHFiles loader = <span class="keyword">new</span> LoadIncrementalHFiles(conf);</span><br><span class="line">        loader.doBulkLoad(dir, table);</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>上面代码利用hbase的数据信息按照特定格式存储在hdfs内这一原理，直接生成这种hdfs内存储的数据格式文件，然后上传至合适位置，即完成巨量数据快速入库的办法。配合mapreduce完成，高效便捷，而且不占用region资源，增添负载。</p>
+<h3 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h3><p>1、生成的hfile文件<code>RowKey</code>必须是有序的。<br>2、在最后一步将HFile加载到hbase中时，会检查rowkey，并会根据rowkey来进行split（如果数据集中的rowkey分散在多个region的多个hfile中，那么split的动静就会很大），所有一般情况下只适合用来做表初始化。<br>3、每执行一次都会生成一到多个HFile，如果数据量小，小文件太多，如不调用合并方法，则会影响Hbase查询性能。</p>
+<p>那么在哪些情况下使用此方法写入Hbase最为合适？<br>1、数据初始化导入表中，使用此方法效率最好。<br>2、如果表的rowkey是以时间戳或自然顺序持续增长的大量数据则使用此方法<code>批量</code>写入数据最为合适。<br>3、如果数据量很大也可以使用此方法导入，但是会造成大量的HFile split。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/hadoop生态圈/" rel="tag"># hadoop生态圈</a>
+          
+            <a href="/tags/hbase/" rel="tag"># hbase</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/01/26/hadoop-Hbase集群快照备份和表数据导入导出/" rel="next" title="Hbase集群快照备份和表数据导入导出的三种方式">
+                <i class="fa fa-chevron-left"></i> Hbase集群快照备份和表数据导入导出的三种方式
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/01/31/hadoop-Hive进阶-高级特性/" rel="prev" title="Hive进阶-高级特性">
+                Hive进阶-高级特性 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+<span class="jiathis_txt">分享到：</span>
+<a class="jiathis_button_fav">收藏夹</a>
+<a class="jiathis_button_copy">复制网址</a>
+<a class="jiathis_button_email">邮件</a>
+<a class="jiathis_button_weixin">微信</a>
+<a class="jiathis_button_qzone">QQ空间</a>
+<a class="jiathis_button_tqq">腾讯微博</a>
+<a class="jiathis_button_douban">豆瓣</a>
+<a class="jiathis_button_share">一键分享</a>
+
+<a href="http://www.jiathis.com/share?uid=2140465" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank">更多</a>
+<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+var jiathis_config={
+  data_track_clickback:true,
+  summary:"",
+  shortUrl:false,
+  hideMore:false
+}
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  <p>热评文章</p>
+  <div class="ds-top-threads" data-range="weekly" data-num-items="4"></div>
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div class="ds-thread" data-thread-key="2016/01/28/hadoop-Hbase快速写入解惑之HFile/" data-title="Hbase快速写入解惑之HFile" data-url="http://www.zhangrenhua.com/2016/01/28/hadoop-Hbase快速写入解惑之HFile/">
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="http://www.zhangrenhua.com/back_images/avatar.jpg" alt="张仁华">
+            
+              <p class="site-author-name" itemprop="name">张仁华</p>
+              <p class="site-description motion-element" itemprop="description">记录软件生涯中的点点滴滴</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">76</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">17</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/zhangrenhua/" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://weibo.com/huaHBrother" target="_blank" title="Weibo">
+                      
+                        <i class="fa fa-fw fa-globe"></i>Weibo</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://douban.com/people/huaHBrother" target="_blank" title="douban">
+                      
+                        <i class="fa fa-fw fa-globe"></i>douban</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://zhihu.com/people/huaHBrother" target="_blank" title="zhihu">
+                      
+                        <i class="fa fa-fw fa-globe"></i>zhihu</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#MapReduce生成HFile"><span class="nav-number">2.</span> <span class="nav-text">MapReduce生成HFile</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#非MapReduce生成HFile"><span class="nav-number">3.</span> <span class="nav-text">非MapReduce生成HFile</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#注意事项"><span class="nav-number">4.1.</span> <span class="nav-text">注意事项</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">张仁华</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"iissnan-notes"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="google-site-verification" content="zUNgN8yGBtBZ8194JTl7PXh7YvztVw494zGKJ_8qH00">
+
+
+
+
+
+
+
+
+  <meta name="baidu-site-verification" content="kqLgluU8lc">
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/favicon.ico?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="hadoop生态圈,hbase,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="hua的博客" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="HBase Snapshots允许你对一个表进行快照（即可用副本），它不会对Region Servers产生很大的影响，它进行复制和恢复操作的时候不包括数据拷贝。导出快照到另外的集群也不会对Region Servers产生影响。下面告诉你如何使用Snapshots功能以及表数据导入导出的三种方式。">
+<meta name="keywords" content="hadoop生态圈,hbase">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Hbase集群快照备份和表数据导入导出的三种方式">
+<meta property="og:url" content="http://www.zhangrenhua.com/2016/01/26/hadoop-Hbase集群快照备份和表数据导入导出/index.html">
+<meta property="og:site_name" content="hua的博客">
+<meta property="og:description" content="HBase Snapshots允许你对一个表进行快照（即可用副本），它不会对Region Servers产生很大的影响，它进行复制和恢复操作的时候不包括数据拷贝。导出快照到另外的集群也不会对Region Servers产生影响。下面告诉你如何使用Snapshots功能以及表数据导入导出的三种方式。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2016-01-28T03:48:30.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Hbase集群快照备份和表数据导入导出的三种方式">
+<meta name="twitter:description" content="HBase Snapshots允许你对一个表进行快照（即可用副本），它不会对Region Servers产生很大的影响，它进行复制和恢复操作的时候不包括数据拷贝。导出快照到另外的集群也不会对Region Servers产生影响。下面告诉你如何使用Snapshots功能以及表数据导入导出的三种方式。">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.zhangrenhua.com/2016/01/26/hadoop-Hbase集群快照备份和表数据导入导出/">
+
+
+
+
+
+  <title>Hbase集群快照备份和表数据导入导出的三种方式 | hua的博客</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-69647002-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?954f429681a4cd6dee6095ddaa2aac9a";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">hua的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">关注技术和人文的原创IT博客</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-schedule">
+          <a href="/schedule/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            日程表
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sitemap">
+          <a href="/sitemap.xml" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            站点地图
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="st-search-show-outputs">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <form class="site-search-form">
+  <input type="text" id="st-search-input" class="st-search-input st-default-search-input">
+</form>
+
+<script type="text/javascript">
+  (function(w,d,t,u,n,s,e){w['SwiftypeObject']=n;w[n]=w[n]||function(){
+    (w[n].q=w[n].q||[]).push(arguments);};s=d.createElement(t);
+    e=d.getElementsByTagName(t)[0];s.async=1;s.src=u;e.parentNode.insertBefore(s,e);
+  })(window,document,'script','//s.swiftypecdn.com/install/v2/st.js','_st');
+
+  _st('install', 'BAacTgC1f_bLy6kngppZ','2.0.0');
+</script>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.zhangrenhua.com/2016/01/26/hadoop-Hbase集群快照备份和表数据导入导出/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="张仁华">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="http://www.zhangrenhua.com/back_images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hua的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Hbase集群快照备份和表数据导入导出的三种方式</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-01-26T19:33:25+08:00">
+                2016-01-26
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/hbase/" itemprop="url" rel="index">
+                    <span itemprop="name">hbase</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2016/01/26/hadoop-Hbase集群快照备份和表数据导入导出/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2016/01/26/hadoop-Hbase集群快照备份和表数据导入导出/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  HBase Snapshots允许你对一个表进行快照（即可用副本），它不会对Region Servers产生很大的影响，它进行复制和恢复操作的时候不包括数据拷贝。导出快照到另外的集群也不会对Region Servers产生影响。下面告诉你如何使用Snapshots功能以及表数据导入导出的三种方式。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>HBase Snapshots允许你对一个表进行快照（即可用副本），它不会对Region Servers产生很大的影响，它进行复制和恢复操作的时候不包括数据拷贝。导出快照到另外的集群也不会对Region Servers产生影响。下面告诉你如何使用Snapshots功能以及表数据导入导出的三种方式。</p>
+<h2 id="Snapshots快照"><a href="#Snapshots快照" class="headerlink" title="Snapshots快照"></a>Snapshots快照</h2><p>1、开启快照支持功能，在0.95+之后的版本都是默认开启的，在0.94.6+是默认关闭</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">name</span>&gt;</span>hbase.snapshot.enabled<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">value</span>&gt;</span>true<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>2、给表建立快照，不管表是启用或者禁用状态，这个操作不会进行数据拷贝</p>
+<figure class="highlight dockerfile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ ./bin/hbase <span class="keyword">shell</span><span class="bash"> </span></span><br><span class="line">hbase&gt; snapshot <span class="string">'myTable'</span>, <span class="string">'myTableSnapshot-122112'</span></span><br></pre></td></tr></table></figure>
+
+<p>3、列出已经存在的快照</p>
+<figure class="highlight dockerfile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ ./bin/hbase <span class="keyword">shell</span><span class="bash"> </span></span><br><span class="line">hbase&gt; list_snapshots</span><br></pre></td></tr></table></figure>
+
+<p>4、删除快照</p>
+<figure class="highlight dockerfile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ ./bin/hbase <span class="keyword">shell</span><span class="bash"> </span></span><br><span class="line">hbase&gt; delete_snapshot <span class="string">'myTableSnapshot-122112'</span></span><br></pre></td></tr></table></figure>
+
+<p>5、从快照复制生成一个新表</p>
+<figure class="highlight dockerfile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ ./bin/hbase <span class="keyword">shell</span><span class="bash"> </span></span><br><span class="line">hbase&gt; clone_snapshot <span class="string">'myTableSnapshot-122112'</span>, <span class="string">'myNewTestTable'</span></span><br></pre></td></tr></table></figure>
+
+<p>6、用快照恢复数据，它需要先禁用表，再进行恢复</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> ./bin/hbase shell</span></span><br><span class="line"><span class="meta">hbase&gt;</span><span class="bash"> <span class="built_in">disable</span> <span class="string">'myTable'</span> </span></span><br><span class="line"><span class="meta">hbase&gt;</span><span class="bash"> restore_snapshot <span class="string">'myTableSnapshot-122112'</span></span></span><br></pre></td></tr></table></figure>
+
+<p>提示：因为备份（replication）是系统日志级别的，而快照是文件系统级别的，当使用快照恢复之后，副本会和master处于不同的状态，如果你需要使用恢复的话，你要停止备份，并且重置bootstrap。</p>
+<p>如果是因为不正确的客户端行为导致数据丢失，全表恢复又需要表被禁用，可以采用快照生成一个新表，然后从新表中把需要的数据用map-reduce拷贝到主表当中。</p>
+<p>7、复制到别的集群当中<br>该操作要用hbase的账户执行，并且在hdfs当中要有hbase的账户建立的临时目录（hbase.tmp.dir参数控制）</p>
+<p>采用16个mappers来把一个名为MySnapshot的快照复制到一个名为srv2的集群当中</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ bin/hbase class org<span class="selector-class">.apache</span><span class="selector-class">.hadoop</span><span class="selector-class">.hbase</span><span class="selector-class">.snapshot</span><span class="selector-class">.ExportSnapshot</span> -snapshot MySnapshot -copy-to hdfs:<span class="comment">//srv2:8020/hbase -mappers 16</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>限制带宽消耗</strong><br>导出的快照，通过指定-bandwidth参数，它需要代表每秒兆字节的整数时，可以限制带宽消耗。下面的例子在上述实施例限制为200 MB /秒。</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ bin/hbase org<span class="selector-class">.apache</span><span class="selector-class">.hadoop</span><span class="selector-class">.hbase</span><span class="selector-class">.snapshot</span><span class="selector-class">.ExportSnapshot</span> -snapshot MySnapshot -copy-to hdfs:<span class="comment">//srv2:8082/hbase -mappers 16 -bandwidth 200</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="表数据导入导出"><a href="#表数据导入导出" class="headerlink" title="表数据导入导出"></a>表数据导入导出</h2><h3 id="表数据导出"><a href="#表数据导出" class="headerlink" title="表数据导出"></a>表数据导出</h3><p>导出是一个实用工具，将转储表的内容，HDFS的序列文件。通过调用：</p>
+<figure class="highlight fsharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ bin/hbase org.apache.hadoop.hbase.mapreduce.Export &lt;tablename&gt; &lt;outputdir&gt; <span class="meta">[&lt;versions&gt; [&lt;starttime&gt; [&lt;endtime&gt;]</span>]]</span><br></pre></td></tr></table></figure>
+
+<p><strong>参数说明：</strong><br><code>tablename（必选）</code>：表名<br><code>outputdir（必选）</code>：导出的hdfs的路径<br><code>versions（可选）</code>：导出版本数<br><code>starttime（可选）</code>：导出数据的起始时间（注意这里的起始时间是指数据的timestamp，比如我传入的的昨天的日期，则代表导出昨天以后数据）<br><code>endtime（可选）</code>：导出数据的结束时间（同样是指数据的timestamp）</p>
+<p>默认情况下，导出工具仅导出而不必考虑存储版本数给定cell的最新版本。要导出多个版本，替换<versions> 与版本的所需数量。</versions></p>
+<p>注：缓存输入扫描通过hbase.client.scanner.caching在任务配置中配置。</p>
+<h3 id="表数据导入"><a href="#表数据导入" class="headerlink" title="表数据导入"></a>表数据导入</h3><p>导入是一种实用工具，将加载已导出回HBase的数据。通过调用：</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ bin/hbase org<span class="selector-class">.apache</span><span class="selector-class">.hadoop</span><span class="selector-class">.hbase</span><span class="selector-class">.mapreduce</span><span class="selector-class">.Import</span> &lt;tablename&gt; &lt;inputdir&gt;</span><br></pre></td></tr></table></figure>
+
+<p>要导入在0.96集群或起0.94导出的文件，运行导入命令时，如下需要设置系统属性“base.import.version”：</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ bin/hbase -Dhbase<span class="selector-class">.import</span><span class="selector-class">.version</span>=<span class="number">0.94</span> org<span class="selector-class">.apache</span><span class="selector-class">.hadoop</span><span class="selector-class">.hbase</span><span class="selector-class">.mapreduce</span><span class="selector-class">.Import</span> &lt;tablename&gt; &lt;inputdir&gt;</span><br></pre></td></tr></table></figure>
+
+<p><strong>参数说明:</strong><br><code>tablename</code>：表名<br><code>inputdir</code>：数据存储的路径</p>
+<p><font color="red">如果表中存在数据，会以追加的方式导入。</font></p>
+<h2 id="ImportTsv导入"><a href="#ImportTsv导入" class="headerlink" title="ImportTsv导入"></a>ImportTsv导入</h2><p>ImportTsv是Hbase提供的一个命令行工具，可以将存储在HDFS上的自定义分隔符（默认\t）的数据文件，通过一条命令方便的导入到HBase表中，对于大数据量导入非常实用，其中包含两种方式将数据导入到HBase表中：<br>第一种是使用TableOutputformat在reduce中插入数据；<br>第二种是先生成HFile格式的文件，再执行一个叫做CompleteBulkLoad的命令，将文件move到HBase表空间目录下，同时提供给client查询。</p>
+<p>例如，假设我们将数据装载到一个名为“test”用的ColumnFamily名为“D”两列“C1”和“C2”的表。</p>
+<figure class="highlight elixir"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$ </span>bin/hbase</span><br><span class="line"><span class="variable">$ </span>create <span class="string">'test'</span>,<span class="string">'d'</span></span><br></pre></td></tr></table></figure>
+
+<p>假定一个输入文件内容为：</p>
+<figure class="highlight armasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="symbol">row1</span>,<span class="built_in">c1</span>,<span class="built_in">c2</span></span><br><span class="line"><span class="symbol">row2</span>,<span class="built_in">c1</span>,<span class="built_in">c2</span></span><br><span class="line"><span class="symbol">row3</span>,<span class="built_in">c1</span>,<span class="built_in">c2</span></span><br><span class="line"><span class="symbol">row4</span>,<span class="built_in">c1</span>,<span class="built_in">c2</span></span><br><span class="line"><span class="symbol">row5</span>,<span class="built_in">c1</span>,<span class="built_in">c2</span></span><br><span class="line"><span class="symbol">row6</span>,<span class="built_in">c1</span>,<span class="built_in">c2</span></span><br><span class="line"><span class="symbol">row7</span>,<span class="built_in">c1</span>,<span class="built_in">c2</span></span><br><span class="line"><span class="symbol">row8</span>,<span class="built_in">c1</span>,<span class="built_in">c2</span></span><br><span class="line"><span class="symbol">row9</span>,<span class="built_in">c1</span>,<span class="built_in">c2</span></span><br><span class="line"><span class="symbol">row10</span>,<span class="built_in">c1</span>,<span class="built_in">c2</span></span><br></pre></td></tr></table></figure>
+
+<p>将文件上传至hdfs的/tmp目录，并命名为data.txt</p>
+<p>对于ImportTsv使用该输入文件，在命令行必须是这样的：</p>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hbase org.apache.hadoop.hbase.mapreduce.ImportTsv  -Dimporttsv.separator=<span class="string">','</span> -Dimporttsv.columns=HBASE_ROW_KEY,<span class="string">d:</span>c1,<span class="string">d:</span>c2 test <span class="regexp">/tmp/</span>data.txt</span><br></pre></td></tr></table></figure>
+
+<p><strong>其他包含 -D的可指定的选项包括：</strong><br><code>-Dimporttsv.skip.bad.lines=false</code> – 若遇到无效行则失败<br><code>-Dimporttsv.separator=|</code> – 文件中代替tabs的分隔符<br><code>-Dimporttsv.timestamp=currentTimeAsLong</code> – 导入时使用指定的时间戳<br><code>-Dimporttsv.mapper.class=my.Mapper</code> – 使用用户指定的Mapper类来代替默认的org.apache.hadoop.hbase.mapreduce.TsvImporterMapper</p>
+<p>并且在这个例子中，第一列是rowkey，这就是为什么HBASE_ROW_KEY被使用。第二、三列为：“d:c1” and “d:c2”，如果你已经准备了大量的数据进行批量加载，确保目标HBase的表是预分区的。</p>
+<p><font color="red">如果表中存在数据，会以追加的方式导入。</font></p>
+<h3 id="利用bulkload-将数据导入到"><a href="#利用bulkload-将数据导入到" class="headerlink" title="利用bulkload 将数据导入到"></a>利用bulkload 将数据导入到</h3><p>利用importTSV生成HFile：</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hbase org.apache.hadoop.hbase.mapreduce.ImportTsv -Dimporttsv.<span class="attribute">separator</span>=<span class="string">","</span> -Dimporttsv.bulk.<span class="attribute">output</span>=/tmp/zhangrenhua/hbase -Dimporttsv.<span class="attribute">columns</span>=HBASE_ROW_KEY,d:c1,d:c2 test /tmp/data.txt</span><br></pre></td></tr></table></figure>
+
+<p>将HFile导入到Hbase：</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hbase org<span class="selector-class">.apache</span><span class="selector-class">.hadoop</span><span class="selector-class">.hbase</span><span class="selector-class">.mapreduce</span><span class="selector-class">.LoadIncrementalHFiles</span> /tmp/zhangrenhua/hbase test</span><br></pre></td></tr></table></figure>
+
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>在使用ImportTsv时，一定要注意参数importtsv.bulk.output的配置，通常来说使用Bulk output的方式对Regionserver来说更加友好一些，这种方式加载数据几乎不占用Regionserver的计算资源，因为只是在HDFS上移动了HFile文件，然后通知HMaster将该Regionserver的一个或多个region上线。</p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
+<li><a href="http://hbase.apache.org/book.html#tools" target="_blank" rel="noopener">http://hbase.apache.org/book.html#tools</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/hadoop生态圈/" rel="tag"># hadoop生态圈</a>
+          
+            <a href="/tags/hbase/" rel="tag"># hbase</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/01/20/hadoop-HbaseGC调优原理分析/" rel="next" title="Hbase GC调优原理分析">
+                <i class="fa fa-chevron-left"></i> Hbase GC调优原理分析
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/01/28/hadoop-Hbase快速写入解惑之HFile/" rel="prev" title="Hbase快速写入解惑之HFile">
+                Hbase快速写入解惑之HFile <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+<span class="jiathis_txt">分享到：</span>
+<a class="jiathis_button_fav">收藏夹</a>
+<a class="jiathis_button_copy">复制网址</a>
+<a class="jiathis_button_email">邮件</a>
+<a class="jiathis_button_weixin">微信</a>
+<a class="jiathis_button_qzone">QQ空间</a>
+<a class="jiathis_button_tqq">腾讯微博</a>
+<a class="jiathis_button_douban">豆瓣</a>
+<a class="jiathis_button_share">一键分享</a>
+
+<a href="http://www.jiathis.com/share?uid=2140465" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank">更多</a>
+<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+var jiathis_config={
+  data_track_clickback:true,
+  summary:"",
+  shortUrl:false,
+  hideMore:false
+}
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  <p>热评文章</p>
+  <div class="ds-top-threads" data-range="weekly" data-num-items="4"></div>
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div class="ds-thread" data-thread-key="2016/01/26/hadoop-Hbase集群快照备份和表数据导入导出/" data-title="Hbase集群快照备份和表数据导入导出的三种方式" data-url="http://www.zhangrenhua.com/2016/01/26/hadoop-Hbase集群快照备份和表数据导入导出/">
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="http://www.zhangrenhua.com/back_images/avatar.jpg" alt="张仁华">
+            
+              <p class="site-author-name" itemprop="name">张仁华</p>
+              <p class="site-description motion-element" itemprop="description">记录软件生涯中的点点滴滴</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">76</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">17</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/zhangrenhua/" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://weibo.com/huaHBrother" target="_blank" title="Weibo">
+                      
+                        <i class="fa fa-fw fa-globe"></i>Weibo</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://douban.com/people/huaHBrother" target="_blank" title="douban">
+                      
+                        <i class="fa fa-fw fa-globe"></i>douban</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://zhihu.com/people/huaHBrother" target="_blank" title="zhihu">
+                      
+                        <i class="fa fa-fw fa-globe"></i>zhihu</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Snapshots快照"><span class="nav-number">2.</span> <span class="nav-text">Snapshots快照</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#表数据导入导出"><span class="nav-number">3.</span> <span class="nav-text">表数据导入导出</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#表数据导出"><span class="nav-number">3.1.</span> <span class="nav-text">表数据导出</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#表数据导入"><span class="nav-number">3.2.</span> <span class="nav-text">表数据导入</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ImportTsv导入"><span class="nav-number">4.</span> <span class="nav-text">ImportTsv导入</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#利用bulkload-将数据导入到"><span class="nav-number">4.1.</span> <span class="nav-text">利用bulkload 将数据导入到</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">5.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">6.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">张仁华</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"iissnan-notes"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

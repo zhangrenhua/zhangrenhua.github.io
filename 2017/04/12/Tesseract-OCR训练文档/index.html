@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="google-site-verification" content="zUNgN8yGBtBZ8194JTl7PXh7YvztVw494zGKJ_8qH00">
+
+
+
+
+
+
+
+
+  <meta name="baidu-site-verification" content="kqLgluU8lc">
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/favicon.ico?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="ocr,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="hua的博客" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="Tesseract-OCR是一个图像只能字符识别技术（支持中文），对于一些比较标准的图片字符，识别率还是很高的，但是对于一些比较复杂（比如：手写字符），识别率就很低。下面主要讲解，如何提高一些不太标准或者相似的字符识别率。">
+<meta name="keywords" content="ocr">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Tesseract-OCR训练文档">
+<meta property="og:url" content="http://www.zhangrenhua.com/2017/04/12/Tesseract-OCR训练文档/index.html">
+<meta property="og:site_name" content="hua的博客">
+<meta property="og:description" content="Tesseract-OCR是一个图像只能字符识别技术（支持中文），对于一些比较标准的图片字符，识别率还是很高的，但是对于一些比较复杂（比如：手写字符），识别率就很低。下面主要讲解，如何提高一些不太标准或者相似的字符识别率。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/jtessboxeditor3.jpg">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/jtessboxeditor4.jpg">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/jtessboxeditor1.jpg">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/jtessboxeditor2.jpg">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/jtessboxeditor5.jpg">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/jtessboxeditor6.jpg">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/jtessboxeditor7.jpg">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/jtessboxeditor8.jpg">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/jtessboxeditor9.jpg">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/jtessboxeditor10.jpg">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/jtessboxeditor11.jpg">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/jtessboxeditor12.jpg">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/jtessboxeditor13.jpg">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/jtessboxeditor14.jpg">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/jtessboxeditor15.jpg">
+<meta property="og:updated_time" content="2019-07-11T06:42:50.805Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Tesseract-OCR训练文档">
+<meta name="twitter:description" content="Tesseract-OCR是一个图像只能字符识别技术（支持中文），对于一些比较标准的图片字符，识别率还是很高的，但是对于一些比较复杂（比如：手写字符），识别率就很低。下面主要讲解，如何提高一些不太标准或者相似的字符识别率。">
+<meta name="twitter:image" content="http://www.zhangrenhua.com/back_images/jtessboxeditor3.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.zhangrenhua.com/2017/04/12/Tesseract-OCR训练文档/">
+
+
+
+
+
+  <title>Tesseract-OCR训练文档 | hua的博客</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-69647002-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?954f429681a4cd6dee6095ddaa2aac9a";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">hua的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">关注技术和人文的原创IT博客</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-schedule">
+          <a href="/schedule/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            日程表
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sitemap">
+          <a href="/sitemap.xml" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            站点地图
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="st-search-show-outputs">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <form class="site-search-form">
+  <input type="text" id="st-search-input" class="st-search-input st-default-search-input">
+</form>
+
+<script type="text/javascript">
+  (function(w,d,t,u,n,s,e){w['SwiftypeObject']=n;w[n]=w[n]||function(){
+    (w[n].q=w[n].q||[]).push(arguments);};s=d.createElement(t);
+    e=d.getElementsByTagName(t)[0];s.async=1;s.src=u;e.parentNode.insertBefore(s,e);
+  })(window,document,'script','//s.swiftypecdn.com/install/v2/st.js','_st');
+
+  _st('install', 'BAacTgC1f_bLy6kngppZ','2.0.0');
+</script>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.zhangrenhua.com/2017/04/12/Tesseract-OCR训练文档/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="张仁华">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="http://www.zhangrenhua.com/back_images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hua的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Tesseract-OCR训练文档</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-04-12T13:39:29+08:00">
+                2017-04-12
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/ocr/" itemprop="url" rel="index">
+                    <span itemprop="name">ocr</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2017/04/12/Tesseract-OCR训练文档/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2017/04/12/Tesseract-OCR训练文档/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  Tesseract-OCR是一个图像只能字符识别技术（支持中文），对于一些比较标准的图片字符，识别率还是很高的，但是对于一些比较复杂（比如：手写字符），识别率就很低。下面主要讲解，如何提高一些不太标准或者相似的字符识别率。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>Tesseract-OCR是一个图像只能字符识别技术（支持中文），对于一些比较标准的图片字符，识别率还是很高的，但是对于一些比较复杂（比如：手写字符），识别率就很低。下面主要讲解，如何提高一些不太标准或者相似的字符识别率。</p>
+<h2 id="工作环境"><a href="#工作环境" class="headerlink" title="工作环境"></a>工作环境</h2><ul>
+<li><a href="http://www.zhangrenhua.com/back_images/tesseract-ocr-setup-3.02.02.exe">Tesseract-OCR引擎（3.02.02）</a></li>
+<li><a href="http://www.zhangrenhua.com/back_images/jTessBoxEditor-1.4.zip">jTessBoxEditor用来训练字库</a></li>
+<li><a href="http://www.oracle.com/technetwork/java/javase/archive-139210.html" target="_blank" rel="noopener">java jdk（1.7或更高版本）</a></li>
+</ul>
+<p>以上程序都是基于windows操作系统，exe文件下载直接运行安装，zip文件直接解压就行</p>
+<h3 id="linux安装"><a href="#linux安装" class="headerlink" title="linux安装"></a>linux安装</h3><p>在yum安装前，需要epel源：</p>
+<figure class="highlight autoit"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[root<span class="symbol">@root</span> yum.repos.d]<span class="meta"># yum install epel-release</span></span><br></pre></td></tr></table></figure>
+
+<p>/etc/yum.repos.d目录下就多了一个epel.repo文件</p>
+<p>开始yum安装Tesseract：</p>
+<figure class="highlight autoit"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[root<span class="symbol">@root</span> yum.repos.d]<span class="meta"># yum install tesseract</span></span><br></pre></td></tr></table></figure>
+
+<p>测试是否安装成功：</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">[root@root tesseract]# tesseract</span><br><span class="line"></span><br><span class="line">Usage:</span><br><span class="line">  tesseract imagename|stdin outputbase|stdout [options<span class="built_in">..</span>.] [configfile<span class="built_in">..</span>.]</span><br><span class="line"></span><br><span class="line">OCR options:</span><br><span class="line">  --tessdata-dir /path  specify the location of tessdata path</span><br><span class="line">  --user-words /path/<span class="keyword">to</span>/file    specify the location of<span class="built_in"> user </span>words file</span><br><span class="line">  --user-patterns /path/<span class="keyword">to</span>/file specify the location of<span class="built_in"> user </span>patterns file</span><br><span class="line">  -l lang[+lang]        specify language(s) used <span class="keyword">for</span> OCR</span><br><span class="line">  -c <span class="attribute">configvar</span>=value    <span class="builtin-name">set</span> value <span class="keyword">for</span> control parameter.</span><br><span class="line">                        Multiple -c arguments are allowed.</span><br><span class="line">  -psm pagesegmode      specify<span class="built_in"> page </span>segmentation mode.</span><br><span class="line">These options must occur before any configfile.</span><br><span class="line"></span><br><span class="line">pagesegmode values are:</span><br><span class="line">  0 = Orientation <span class="keyword">and</span><span class="built_in"> script </span>detection (OSD) only.</span><br><span class="line">  1 = Automatic<span class="built_in"> page </span>segmentation with OSD.</span><br><span class="line">  2 = Automatic<span class="built_in"> page </span>segmentation, but <span class="literal">no</span> OSD, <span class="keyword">or</span> OCR</span><br><span class="line">  3 = Fully automatic<span class="built_in"> page </span>segmentation, but <span class="literal">no</span> OSD. (Default)</span><br><span class="line">  4 = Assume a single column of text of variable sizes.</span><br><span class="line">  5 = Assume a single uniform block of vertically aligned text.</span><br><span class="line">  6 = Assume a single uniform block of text.</span><br><span class="line">  7 = Treat the image as a single text line.</span><br><span class="line">  8 = Treat the image as a single word.</span><br><span class="line">  9 = Treat the image as a single word <span class="keyword">in</span> a circle.</span><br><span class="line">  10 = Treat the image as a single character.</span><br><span class="line"></span><br><span class="line">Single options:</span><br><span class="line">  -v --version: version info</span><br><span class="line">  --list-langs: list available languages <span class="keyword">for</span> tesseract engine. Can be used with --tessdata-dir.</span><br><span class="line">  --print-parameters: <span class="builtin-name">print</span> tesseract parameters <span class="keyword">to</span> the stdout.</span><br></pre></td></tr></table></figure>
+
+<h2 id="识别图片"><a href="#识别图片" class="headerlink" title="识别图片"></a>识别图片</h2><p><img src="http://www.zhangrenhua.com/back_images/jtessboxeditor3.jpg" alt="jTessBoxEditor images"></p>
+<p>先下载<a href="http://www.zhangrenhua.com/back_images/jtessboxeditor-images.zip">测试图片</a>，解压，通过命令行进入到图片目录，执行下面命令</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tesseract <span class="number">1</span><span class="selector-class">.png</span> result -l eng</span><br></pre></td></tr></table></figure>
+
+<p><img src="http://www.zhangrenhua.com/back_images/jtessboxeditor4.jpg" alt="jTessBoxEditor test"></p>
+<p>发现上面两张图片，识别都出错了，下面就开始进行字符训练。</p>
+<h2 id="jTessBoxEditor训练"><a href="#jTessBoxEditor训练" class="headerlink" title="jTessBoxEditor训练"></a>jTessBoxEditor训练</h2><h3 id="jTessBoxEditor安装"><a href="#jTessBoxEditor安装" class="headerlink" title="jTessBoxEditor安装"></a>jTessBoxEditor安装</h3><p>jTessBoxEditor需要jre7（Java Runtime Environment）以上的版本支持。<br>安装完jre后，下载jTessBoxEditor，解压，运行train.bat文件即可运行<br><img src="http://www.zhangrenhua.com/back_images/jtessboxeditor1.jpg" alt="jTessBoxEditor start"></p>
+<p>运行界面<br><img src="http://www.zhangrenhua.com/back_images/jtessboxeditor2.jpg" alt="jTessBoxEditor started"></p>
+<h3 id="合同图片"><a href="#合同图片" class="headerlink" title="合同图片"></a>合同图片</h3><p>运行jTessBoxEditor工具，把所有图片合成一张.tif格式的图片<br><img src="http://www.zhangrenhua.com/back_images/jtessboxeditor5.jpg" alt="jTessBoxEditor merge-tiff1"></p>
+<p>打开所有要合成的图片(刚才在下的图片)<br><img src="http://www.zhangrenhua.com/back_images/jtessboxeditor6.jpg" alt="jTessBoxEditor merge-tiff2"></p>
+<p>将合成的.tif图片命名为<code>LAN.test.exp0</code><br><img src="http://www.zhangrenhua.com/back_images/jtessboxeditor7.jpg" alt="jTessBoxEditor merge-tiff2"></p>
+<p>必须要按以下格式命名</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="selector-tag">tif</span>命名规范：</span><br><span class="line"><span class="selector-attr">[lang]</span>.<span class="selector-attr">[fontname]</span><span class="selector-class">.exp</span><span class="selector-attr">[num]</span><span class="selector-class">.tif</span></span><br><span class="line">其中<span class="selector-tag">lang</span>为语言名称，<span class="selector-tag">fontname</span>为字体名称，<span class="selector-tag">num</span>为序号，可以随便定义。</span><br></pre></td></tr></table></figure>
+
+<p>提示创建成功，在图片目录下生成一个<code>LAN.test.exp0.tif</code>的文件<br><img src="http://www.zhangrenhua.com/back_images/jtessboxeditor8.jpg" alt="jTessBoxEditor merge-tiff2"></p>
+<h3 id="生成box文件"><a href="#生成box文件" class="headerlink" title="生成box文件"></a>生成box文件</h3><p>在<code>LAN.test.exp0.tif</code>所在的目录下打开一个命令行，产生相应的Box文件（*.box），该文件记录了tesseract识别出来的每一个字和其位置坐标。</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ tesseract LAN.test.exp0.tif LAN.test.exp0 batch.nochop makebox</span><br><span class="line">Tesseract Open Source OCR Engine v3.02 with Leptonica</span><br><span class="line">Page 1 of 2</span><br><span class="line">Page 2 of 2</span><br></pre></td></tr></table></figure>
+
+<p>这时会在目录下生成一个<code>LAN.test.exp0.box</code>文件（可以用记事本打开，查看文字识别的坐标信息）</p>
+<h3 id="修正文字"><a href="#修正文字" class="headerlink" title="修正文字"></a>修正文字</h3><p>使用jTessBoxEditor开始修正文字<br><img src="http://www.zhangrenhua.com/back_images/jtessboxeditor9.jpg" alt="jTessBoxEditor boxeditor1"></p>
+<p>打开后，可以看到第一张图片识别正确<br><img src="http://www.zhangrenhua.com/back_images/jtessboxeditor10.jpg" alt="jTessBoxEditor boxeditor1"></p>
+<p>这样的话，我们点击下一页，处理后面的图片<br><img src="http://www.zhangrenhua.com/back_images/jtessboxeditor11.jpg" alt="jTessBoxEditor boxeditor1"></p>
+<p>后面这张图片识别出错，我们手动调整并保存（如果）<br><img src="http://www.zhangrenhua.com/back_images/jtessboxeditor12.jpg" alt="jTessBoxEditor boxeditor1"></p>
+<p>注：<font color="red">有可能打开的tif文件并不能识别出字符，所以直接跳过继续下一张图片处理，如果出现多个字符未分割，则可通过界面上的<code>split</code>进行分割。</font></p>
+<h3 id="产生字符特征文件（-tr）"><a href="#产生字符特征文件（-tr）" class="headerlink" title="产生字符特征文件（*.tr）"></a>产生字符特征文件（*.tr）</h3><figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">$ tesseract LAN.test.exp0.tif LAN.test.exp0 nobatch box.train</span><br><span class="line">Tesseract Open Source OCR Engine v3.02 with Leptonica</span><br><span class="line">Page 1 of 2</span><br><span class="line">APPLY_BOXES:</span><br><span class="line">   Boxes read <span class="keyword">from</span> boxfile:       4</span><br><span class="line">   Found 4 good blobs.</span><br><span class="line">TRAINING <span class="built_in">..</span>. Font name = test</span><br><span class="line">Generated training data <span class="keyword">for</span> 2 words</span><br><span class="line">Page 2 of 2</span><br><span class="line">APPLY_BOXES:</span><br><span class="line">   Boxes read <span class="keyword">from</span> boxfile:       4</span><br><span class="line">   Found 4 good blobs.</span><br><span class="line">Generated training data <span class="keyword">for</span> 1 words</span><br></pre></td></tr></table></figure>
+
+<p>出现上面提示信息，则成功创建<code>LAN.test.exp0.tr</code>文件</p>
+<h3 id="产生计算字符集（unicharset）"><a href="#产生计算字符集（unicharset）" class="headerlink" title="产生计算字符集（unicharset）"></a>产生计算字符集（unicharset）</h3><figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">unicharset_extractor LAN<span class="selector-class">.test</span><span class="selector-class">.exp0</span><span class="selector-class">.box</span></span><br><span class="line">Extracting unicharset from LAN<span class="selector-class">.test</span><span class="selector-class">.exp0</span><span class="selector-class">.box</span></span><br><span class="line">Wrote unicharset file ./unicharset.</span><br></pre></td></tr></table></figure>
+
+<p>创建unicharset文件，如果有多个box文件，可在命令行后面追加空格隔开（如：unicharset_extractor LAN.test.exp0.box LAN.test.exp1.box）</p>
+<h3 id="定义字体特征文件并聚集字符特征"><a href="#定义字体特征文件并聚集字符特征" class="headerlink" title="定义字体特征文件并聚集字符特征"></a>定义字体特征文件并聚集字符特征</h3><p><strong>新建<code>font_properties</code>文件</strong><br>设置编码为UTF-8无BOM编码格式，内容如下</p>
+<figure class="highlight subunit"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">test </span>0 0 0 0 0</span><br></pre></td></tr></table></figure>
+
+<p>注意:这里test必须与训练名中的字体名称保持一致,填入下面内容 ,这里全取值为0，表示字体不是粗体、斜体等等。</p>
+<p><strong>聚类shape</strong></p>
+<figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">$ <span class="keyword">shapeclustering </span>–F font_properties  -U unicharset –O LAN.unicharset LAN.test.exp0.tr</span><br><span class="line">Reading LAN.test.exp0.tr ...</span><br><span class="line"><span class="keyword">Building </span>master <span class="keyword">shape </span>table</span><br><span class="line">Computing <span class="keyword">shape </span><span class="keyword">distances...</span></span><br><span class="line"><span class="keyword">Stopped </span>with <span class="number">0</span> merged, min <span class="keyword">dist </span><span class="number">999</span>.<span class="number">000000</span></span><br><span class="line">Computing <span class="keyword">shape </span><span class="keyword">distances... </span><span class="number">0</span></span><br><span class="line">Stopped with <span class="number">0</span> merged, min <span class="keyword">dist </span><span class="number">999</span>.<span class="number">000000</span></span><br><span class="line">Computing <span class="keyword">shape </span><span class="keyword">distances... </span><span class="number">0</span></span><br><span class="line">Stopped with <span class="number">0</span> merged, min <span class="keyword">dist </span><span class="number">999</span>.<span class="number">000000</span></span><br><span class="line">Computing <span class="keyword">shape </span><span class="keyword">distances... </span><span class="number">0</span></span><br><span class="line">Stopped with <span class="number">0</span> merged, min <span class="keyword">dist </span><span class="number">999</span>.<span class="number">000000</span></span><br><span class="line">Computing <span class="keyword">shape </span><span class="keyword">distances... </span><span class="number">0</span></span><br><span class="line">Stopped with <span class="number">0</span> merged, min <span class="keyword">dist </span><span class="number">999</span>.<span class="number">000000</span></span><br><span class="line">Computing <span class="keyword">shape </span><span class="keyword">distances... </span><span class="number">0</span></span><br><span class="line">Stopped with <span class="number">0</span> merged, min <span class="keyword">dist </span><span class="number">999</span>.<span class="number">000000</span></span><br><span class="line">Computing <span class="keyword">shape </span><span class="keyword">distances... </span><span class="number">0</span></span><br><span class="line">Stopped with <span class="number">0</span> merged, min <span class="keyword">dist </span><span class="number">999</span>.<span class="number">000000</span></span><br><span class="line">Computing <span class="keyword">shape </span><span class="keyword">distances... </span><span class="number">0</span></span><br><span class="line">Stopped with <span class="number">0</span> merged, min <span class="keyword">dist </span><span class="number">999</span>.<span class="number">000000</span></span><br><span class="line">Computing <span class="keyword">shape </span><span class="keyword">distances...</span></span><br><span class="line"><span class="keyword">Stopped </span>with <span class="number">0</span> merged, min <span class="keyword">dist </span><span class="number">999</span>.<span class="number">000000</span></span><br><span class="line">Computing <span class="keyword">shape </span><span class="keyword">distances...</span></span><br><span class="line"><span class="keyword">Stopped </span>with <span class="number">0</span> merged, min <span class="keyword">dist </span><span class="number">999</span>.<span class="number">000000</span></span><br><span class="line">Computing <span class="keyword">shape </span><span class="keyword">distances... </span><span class="number">0</span> <span class="number">1</span> <span class="number">2</span> <span class="number">3</span> <span class="number">4</span> <span class="number">5</span> <span class="number">6</span></span><br><span class="line">Stopped with <span class="number">0</span> merged, min <span class="keyword">dist </span><span class="number">0</span>.<span class="number">492188</span></span><br><span class="line">Master <span class="keyword">shape_table:Number </span>of <span class="keyword">shapes </span>= <span class="number">7</span> max unichars = <span class="number">1</span> number with <span class="keyword">multiple </span>unichars = <span class="number">0</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>聚集字符特征</strong></p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ mftraining -F font_properties  -U unicharset LAN<span class="selector-class">.test</span><span class="selector-class">.exp0</span><span class="selector-class">.tr</span></span><br><span class="line">Read shape <span class="selector-tag">table</span> shapetable of <span class="number">7</span> shapes</span><br><span class="line">Reading LAN<span class="selector-class">.test</span><span class="selector-class">.exp0</span><span class="selector-class">.tr</span> ...</span><br><span class="line">Done!</span><br></pre></td></tr></table></figure>
+
+<p><strong>成字符形状正常化特征文件normproto</strong></p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">$ cntraining LAN<span class="selector-class">.test</span><span class="selector-class">.exp0</span><span class="selector-class">.tr</span></span><br><span class="line">Reading LAN<span class="selector-class">.test</span><span class="selector-class">.exp0</span><span class="selector-class">.tr</span> ...</span><br><span class="line">Clustering ...</span><br><span class="line"></span><br><span class="line">Writing normproto ...</span><br></pre></td></tr></table></figure>
+
+<p><strong>合并训练文件</strong><br>把unicharset, inttemp, normproto, pffmtable,shapetable这四个文件加上前缀”test.”</p>
+<figure class="highlight stata"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">rename</span> unicharset <span class="keyword">test</span>.unicharset</span><br><span class="line"><span class="keyword">rename</span> inttemp <span class="keyword">test</span>.inttemp</span><br><span class="line"><span class="keyword">rename</span> normproto <span class="keyword">test</span>.normproto</span><br><span class="line"><span class="keyword">rename</span> pffmtable <span class="keyword">test</span>.pffmtable</span><br><span class="line"><span class="keyword">rename</span> shapetable <span class="keyword">test</span>.shapetable</span><br></pre></td></tr></table></figure>
+
+<p>生成语言包</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">combine_tessdata test.</span><br><span class="line">Combining tessdata files</span><br><span class="line">TessdataManager combined tesseract data files.</span><br><span class="line">Offset <span class="keyword">for</span><span class="built_in"> type </span>0 is -1</span><br><span class="line">Offset <span class="keyword">for</span><span class="built_in"> type </span>1 is 140</span><br><span class="line">Offset <span class="keyword">for</span><span class="built_in"> type </span>2 is -1</span><br><span class="line">Offset <span class="keyword">for</span><span class="built_in"> type </span>3 is 603</span><br><span class="line">Offset <span class="keyword">for</span><span class="built_in"> type </span>4 is 127965</span><br><span class="line">Offset <span class="keyword">for</span><span class="built_in"> type </span>5 is 128027</span><br><span class="line">Offset <span class="keyword">for</span><span class="built_in"> type </span>6 is -1</span><br><span class="line">Offset <span class="keyword">for</span><span class="built_in"> type </span>7 is -1</span><br><span class="line">Offset <span class="keyword">for</span><span class="built_in"> type </span>8 is -1</span><br><span class="line">Offset <span class="keyword">for</span><span class="built_in"> type </span>9 is -1</span><br><span class="line">Offset <span class="keyword">for</span><span class="built_in"> type </span>10 is -1</span><br><span class="line">Offset <span class="keyword">for</span><span class="built_in"> type </span>11 is -1</span><br><span class="line">Offset <span class="keyword">for</span><span class="built_in"> type </span>12 is -1</span><br><span class="line">Offset <span class="keyword">for</span><span class="built_in"> type </span>13 is 129164</span><br><span class="line">Offset <span class="keyword">for</span><span class="built_in"> type </span>14 is -1</span><br><span class="line">Offset <span class="keyword">for</span><span class="built_in"> type </span>15 is -1</span><br><span class="line">Offset <span class="keyword">for</span><span class="built_in"> type </span>16 is -1</span><br></pre></td></tr></table></figure>
+
+<p>此时语言包已生成，整个目录下的文件列表如下<br><img src="http://www.zhangrenhua.com/back_images/jtessboxeditor13.jpg" alt="jTessBoxEditor all"></p>
+<h3 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h3><p>将<code>test.traineddata</code>文件复制到tesseract-OCR安装目录下的tessdata目录下<br><img src="http://www.zhangrenhua.com/back_images/jtessboxeditor14.jpg" alt="jTessBoxEditor all"></p>
+<p>执行命令验证</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> tesseract 2.png result -l <span class="built_in">test</span></span></span><br></pre></td></tr></table></figure>
+
+<p><code>-l</code>：指定刚才生成的语言包test</p>
+<p>验证结果<br><img src="http://www.zhangrenhua.com/back_images/jtessboxeditor15.jpg" alt="jTessBoxEditor test"></p>
+<p>通过上图可以看出，训练之后第二张图片已经识别成功</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>如果想通过这种训练方式来解决图片识别率问题，那么训练库就得比较全，得把所有可能出现的字符内容图片都要训练处理。</p>
+<h2 id="帮助文档"><a href="#帮助文档" class="headerlink" title="帮助文档"></a>帮助文档</h2><ul>
+<li><a href="http://vietocr.sourceforge.net/training.html" target="_blank" rel="noopener">http://vietocr.sourceforge.net/training.html</a></li>
+<li><a href="https://github.com/tesseract-ocr/tesseract" target="_blank" rel="noopener">https://github.com/tesseract-ocr/tesseract</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/ocr/" rel="tag"># ocr</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/02/10/Hbase使用Solr二级索引(Lily Hbase Index)/" rel="next" title="Hbase使用Solr二级索引(Lily Hbase Index)">
+                <i class="fa fa-chevron-left"></i> Hbase使用Solr二级索引(Lily Hbase Index)
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/05/16/hadoop-Hive进阶-LDAP用户登录控制/" rel="prev" title="Hive/impala进阶-LDAP用户登录控制">
+                Hive/impala进阶-LDAP用户登录控制 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+<span class="jiathis_txt">分享到：</span>
+<a class="jiathis_button_fav">收藏夹</a>
+<a class="jiathis_button_copy">复制网址</a>
+<a class="jiathis_button_email">邮件</a>
+<a class="jiathis_button_weixin">微信</a>
+<a class="jiathis_button_qzone">QQ空间</a>
+<a class="jiathis_button_tqq">腾讯微博</a>
+<a class="jiathis_button_douban">豆瓣</a>
+<a class="jiathis_button_share">一键分享</a>
+
+<a href="http://www.jiathis.com/share?uid=2140465" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank">更多</a>
+<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+var jiathis_config={
+  data_track_clickback:true,
+  summary:"",
+  shortUrl:false,
+  hideMore:false
+}
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  <p>热评文章</p>
+  <div class="ds-top-threads" data-range="weekly" data-num-items="4"></div>
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div class="ds-thread" data-thread-key="2017/04/12/Tesseract-OCR训练文档/" data-title="Tesseract-OCR训练文档" data-url="http://www.zhangrenhua.com/2017/04/12/Tesseract-OCR训练文档/">
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="http://www.zhangrenhua.com/back_images/avatar.jpg" alt="张仁华">
+            
+              <p class="site-author-name" itemprop="name">张仁华</p>
+              <p class="site-description motion-element" itemprop="description">记录软件生涯中的点点滴滴</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">76</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">17</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/zhangrenhua/" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://weibo.com/huaHBrother" target="_blank" title="Weibo">
+                      
+                        <i class="fa fa-fw fa-globe"></i>Weibo</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://douban.com/people/huaHBrother" target="_blank" title="douban">
+                      
+                        <i class="fa fa-fw fa-globe"></i>douban</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://zhihu.com/people/huaHBrother" target="_blank" title="zhihu">
+                      
+                        <i class="fa fa-fw fa-globe"></i>zhihu</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#工作环境"><span class="nav-number">2.</span> <span class="nav-text">工作环境</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#linux安装"><span class="nav-number">2.1.</span> <span class="nav-text">linux安装</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#识别图片"><span class="nav-number">3.</span> <span class="nav-text">识别图片</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#jTessBoxEditor训练"><span class="nav-number">4.</span> <span class="nav-text">jTessBoxEditor训练</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#jTessBoxEditor安装"><span class="nav-number">4.1.</span> <span class="nav-text">jTessBoxEditor安装</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#合同图片"><span class="nav-number">4.2.</span> <span class="nav-text">合同图片</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#生成box文件"><span class="nav-number">4.3.</span> <span class="nav-text">生成box文件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#修正文字"><span class="nav-number">4.4.</span> <span class="nav-text">修正文字</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#产生字符特征文件（-tr）"><span class="nav-number">4.5.</span> <span class="nav-text">产生字符特征文件（*.tr）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#产生计算字符集（unicharset）"><span class="nav-number">4.6.</span> <span class="nav-text">产生计算字符集（unicharset）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#定义字体特征文件并聚集字符特征"><span class="nav-number">4.7.</span> <span class="nav-text">定义字体特征文件并聚集字符特征</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#验证"><span class="nav-number">4.8.</span> <span class="nav-text">验证</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">5.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#帮助文档"><span class="nav-number">6.</span> <span class="nav-text">帮助文档</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">张仁华</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"iissnan-notes"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

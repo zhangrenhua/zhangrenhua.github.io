@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="google-site-verification" content="zUNgN8yGBtBZ8194JTl7PXh7YvztVw494zGKJ_8qH00">
+
+
+
+
+
+
+
+
+  <meta name="baidu-site-verification" content="kqLgluU8lc">
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/favicon.ico?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="java,hadoop生态圈,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="hua的博客" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="YARN是Hadoop新版（2.x）中的资源控制框架。本文旨在深入剖析ResourceManager的调度器，探讨三种调度器的设计侧重，最后给出一些配置建议和参数解释。为了方便查阅源代码，原代码位置使用[类名:行号]方式表示。名词解释：ResourceManager：以下简称RM。YARN的中控模块，负责统一规划资源的使用。NodeManager:以下简称NM。YARN的资源结点模块，负责启动管理">
+<meta name="keywords" content="java,hadoop生态圈">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Yarn ResourceManager调度器">
+<meta property="og:url" content="http://www.zhangrenhua.com/2015/12/23/hadoop-Yarn-调度器/index.html">
+<meta property="og:site_name" content="hua的博客">
+<meta property="og:description" content="YARN是Hadoop新版（2.x）中的资源控制框架。本文旨在深入剖析ResourceManager的调度器，探讨三种调度器的设计侧重，最后给出一些配置建议和参数解释。为了方便查阅源代码，原代码位置使用[类名:行号]方式表示。名词解释：ResourceManager：以下简称RM。YARN的中控模块，负责统一规划资源的使用。NodeManager:以下简称NM。YARN的资源结点模块，负责启动管理">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/resource_manager.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/%E8%B5%84%E6%BA%90%E5%88%86%E9%85%8D%E6%A8%A1%E5%9E%8B.jpg">
+<meta property="og:updated_time" content="2019-07-11T06:43:13.740Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Yarn ResourceManager调度器">
+<meta name="twitter:description" content="YARN是Hadoop新版（2.x）中的资源控制框架。本文旨在深入剖析ResourceManager的调度器，探讨三种调度器的设计侧重，最后给出一些配置建议和参数解释。为了方便查阅源代码，原代码位置使用[类名:行号]方式表示。名词解释：ResourceManager：以下简称RM。YARN的中控模块，负责统一规划资源的使用。NodeManager:以下简称NM。YARN的资源结点模块，负责启动管理">
+<meta name="twitter:image" content="http://www.zhangrenhua.com/back_images/resource_manager.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.zhangrenhua.com/2015/12/23/hadoop-Yarn-调度器/">
+
+
+
+
+
+  <title>Yarn ResourceManager调度器 | hua的博客</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-69647002-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?954f429681a4cd6dee6095ddaa2aac9a";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">hua的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">关注技术和人文的原创IT博客</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-schedule">
+          <a href="/schedule/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            日程表
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sitemap">
+          <a href="/sitemap.xml" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            站点地图
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="st-search-show-outputs">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <form class="site-search-form">
+  <input type="text" id="st-search-input" class="st-search-input st-default-search-input">
+</form>
+
+<script type="text/javascript">
+  (function(w,d,t,u,n,s,e){w['SwiftypeObject']=n;w[n]=w[n]||function(){
+    (w[n].q=w[n].q||[]).push(arguments);};s=d.createElement(t);
+    e=d.getElementsByTagName(t)[0];s.async=1;s.src=u;e.parentNode.insertBefore(s,e);
+  })(window,document,'script','//s.swiftypecdn.com/install/v2/st.js','_st');
+
+  _st('install', 'BAacTgC1f_bLy6kngppZ','2.0.0');
+</script>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.zhangrenhua.com/2015/12/23/hadoop-Yarn-调度器/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="张仁华">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="http://www.zhangrenhua.com/back_images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hua的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Yarn ResourceManager调度器</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2015-12-23T20:43:58+08:00">
+                2015-12-23
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/yarn/" itemprop="url" rel="index">
+                    <span itemprop="name">yarn</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2015/12/23/hadoop-Yarn-调度器/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2015/12/23/hadoop-Yarn-调度器/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  YARN是Hadoop新版（2.x）中的资源控制框架。本文旨在深入剖析ResourceManager的调度器，探讨三种调度器的设计侧重，最后给出一些配置建议和参数解释。<br>为了方便查阅源代码，原代码位置使用[类名:行号]方式表示。<br>名词解释：<br>ResourceManager：以下简称RM。YARN的中控模块，负责统一规划资源的使用。<br>NodeManager:以下简称NM。YARN的资源结点模块，负责启动管理container。<br>ApplicationMaster:以下简称AM。YARN中每个应用都会启动一个AM，负责向RM申请资源，请求NM启动container，并告诉container做什么事情。<br>Container：资源容器。YARN中所有的应用都是在container之上运行的。AM也是在container上运行的，不过AM的container是RM申请的。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>YARN是Hadoop新版（2.x）中的资源控制框架。本文旨在深入剖析ResourceManager的调度器，探讨三种调度器的设计侧重，最后给出一些配置建议和参数解释。</p>
+<p>为了方便查阅源代码，原代码位置使用[类名:行号]方式表示。</p>
+<p>名词解释：</p>
+<p>ResourceManager：以下简称RM。YARN的中控模块，负责统一规划资源的使用。</p>
+<p>NodeManager:以下简称NM。YARN的资源结点模块，负责启动管理container。</p>
+<p>ApplicationMaster:以下简称AM。YARN中每个应用都会启动一个AM，负责向RM申请资源，请求NM启动container，并告诉container做什么事情。</p>
+<p>Container：资源容器。YARN中所有的应用都是在container之上运行的。AM也是在container上运行的，不过AM的container是RM申请的。</p>
+<h2 id="RM中的调度器"><a href="#RM中的调度器" class="headerlink" title="RM中的调度器"></a>RM中的调度器</h2><p>ResourceManager是YARN资源控制框架的中心模块，负责集群中所有的资源的统一管理和分配。它接收来自NM的汇报，建立AM，并将资源派送给AM。整体的RM的框架可以参考：<a href="http://hortonworks.com/blog/apache-hadoop-YARN-resourcemanager/" target="_blank" rel="noopener">RM总体架构</a></p>
+<p><img src="http://www.zhangrenhua.com/back_images/resource_manager.png" alt="Alt text"></p>
+<p>最初的hadoop的版本只有FifoScheduler（先进先出调度器）。当Hadoop集群在大规模使用的时候，如何整合资源和分配资源就是一个迫切的需求。对此，Yahoo!和facebook先后开发了CapacityScheduler（容量调度器）和FairScheduler（公平调度器）。在新版本中，这两个调度器在保持核心算法的基础上，也被重新开发了一次。（实际上所有整个YARN的代码都是重写的…）</p>
+<h2 id="调度器的接口"><a href="#调度器的接口" class="headerlink" title="调度器的接口"></a>调度器的接口</h2><p>首先来了解一下调度器的工作方式和对外暴露的接口：[ResourceScheduler:36]</p>
+<p>一个完整的调度器在内存中都会维护一个队列，应用，NM，Container的关系。同时，一个调度器也是一个事件处理器，通过RM的异步的事件调用机制知晓外部的发生的事情。要跟外部交互也要发送相应的事件。调度器一共要处理6个调度事件。</p>
+<table>
+<thead>
+<tr>
+<th>事件</th>
+<th>发送时机</th>
+<th>处理逻辑</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>NODE_REMOVED</td>
+<td>一个NM被添加</td>
+<td>增加总资源池的大小，修改内存状态。</td>
+</tr>
+<tr>
+<td>NODE_ADDED</td>
+<td>一个NM被移除</td>
+<td>删除一个NM,减少总资源池的大小，回收内存状态中在这个NM上的Container，对每个container发送KILL事件。</td>
+</tr>
+<tr>
+<td>NODE_UPDATE</td>
+<td>一个NM跟RM进行心跳</td>
+<td>调度器会根据当前的NM状况，在这个NM上为某一个AM分配Container，并记录这个Container的信息，留待AM获取。这个部分是调度器真正分配container的部分。后面会重点描述。</td>
+</tr>
+<tr>
+<td>APP_ADDED</td>
+<td>一个新的应用被提交</td>
+<td>如果接受应用，发送APP_ACCEPTED事件，否则发送APP_REJECTED事件。</td>
+</tr>
+<tr>
+<td>APP_REMOVED</td>
+<td>一个应用移除</td>
+<td>可能是正常或者被杀死。清除内存中这个应用的所有的container，对每个container发送KILL事件。</td>
+</tr>
+<tr>
+<td>CONTAINER_EXPIRED</td>
+<td>一个container过期未被使用</td>
+<td>修改内存中这个contianer相关的内存状态。</td>
+</tr>
+</tbody></table>
+<p>除了这6个事件，还有一个函数会在AM跟RM心跳的时候会被调用。[YARNScheduler：105]<br><code>Allocation allocate(ApplicationAttemptId appAttemptId,List&lt;ResourceRequest&gt; ask,List&lt;ContainerId&gt; release);</code></p>
+<p>AM会告诉调度器一些资源申请的请求和已经使用完的container的列表，然后获取到已经在NODE_UPDATE分配给这个应用的container的分配。</p>
+<p>可以看到调度器接受资源的申请和分配资源这个动作是异步的。</p>
+<h2 id="资源分配模型"><a href="#资源分配模型" class="headerlink" title="资源分配模型"></a>资源分配模型</h2><p>无论FifoScheduler，CapacityScheduler和FairScheduler的核心资源分配模型都是一样的。</p>
+<p>调度器维护一群队列的信息。用户可以向一个或者多个队列提交应用。每次NM心跳的时候，调度器，根据一定的规则选择一个队列，再在队列上选择一个应用，尝试在这个应用上分配资源。不过，因为一些参数限制了分配失败，就会继续选择下一个应用。在选择了一个应用之后，这个应用对应也会有很多的资源申请的请求。调度器会优先匹配本地资源是申请请求，其次是同机架的，最后的任意机器的。</p>
+<p><img src="http://www.zhangrenhua.com/back_images/%E8%B5%84%E6%BA%90%E5%88%86%E9%85%8D%E6%A8%A1%E5%9E%8B.jpg" alt="Alt text"></p>
+<p>总的来说，3种调度器就是在回答如何选择一个队列，在一个队列上如何选择一个应用的问题。</p>
+<p>当然，实际上，比起简单的FifoScheduler。CapacityScheduler和FairScheduler还有更多新奇好玩的特性。</p>
+<h2 id="调度器比较"><a href="#调度器比较" class="headerlink" title="调度器比较"></a>调度器比较</h2><p>我们先比较下3种调度器。</p>
+<table>
+<thead>
+<tr>
+<th>调度器</th>
+<th>FifoScheduler</th>
+<th>CapacityScheduler</th>
+<th>FairScheduler</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>设计目的</td>
+<td>最简单的调度器，易于理解和上手</td>
+<td>多用户的情况下，最大化集群的吞吐和利用率</td>
+<td>多用户的情况下，强调用户公平地贡献资源</td>
+</tr>
+<tr>
+<td>队列组织方式</td>
+<td>单队列</td>
+<td>树状组织队列。无论父队列还是子队列都会有资源参数限制，子队列的资源限制计算是基于父队列的。应用提交到叶子队列。</td>
+<td>树状组织队列。但是父队列和子队列没有参数继承关系。父队列的资源限制对子队列没有影响。应用提交到叶子队列。</td>
+</tr>
+<tr>
+<td>资源限制</td>
+<td>无</td>
+<td>父子队列之间有容量关系。每个队列限制了资源使用量，全局最大资源使用量，最大活跃应用数量等。</td>
+<td>每个叶子队列有最小共享量，最大资源量和最大活跃应用数量。用户有最大活跃应用数量的全局配置。</td>
+</tr>
+<tr>
+<td>队列ACL限制</td>
+<td>可以限制应用提交权限</td>
+<td>可以限制应用提交权限和队列开关权限，父子队列间的ACL会继承。</td>
+<td>可以限制应用提交权限，父子队列间的ACL会继承。但是由于支持客户端动态创建队列，需要限制默认队列的应用数量。目前，还看不到关闭动态创建队列的选项。</td>
+</tr>
+<tr>
+<td>队列排序算法</td>
+<td>无</td>
+<td>按照队列的资源使用量最小的优先</td>
+<td>根据公平排序算法排序</td>
+</tr>
+<tr>
+<td>应用选择算法</td>
+<td>先进先出</td>
+<td>先进先出</td>
+<td>先进先出或者公平排序算法</td>
+</tr>
+<tr>
+<td>本地优先分配</td>
+<td>支持</td>
+<td>支持</td>
+<td>支持</td>
+</tr>
+<tr>
+<td>延迟调度</td>
+<td>不支持</td>
+<td>不支持</td>
+<td>支持</td>
+</tr>
+<tr>
+<td>资源抢占</td>
+<td>不支持</td>
+<td>不支持</td>
+<td>支持，看到代码中也有实现。但是，由于本特性还在开发阶段，本文没有真实试验。</td>
+</tr>
+</tbody></table>
+<p>简单总结下：</p>
+<p><strong>FifoScheduler：</strong>最简单的调度器，按照先进先出的方式处理应用。只有一个队列可提交应用，所有用户提交到这个队列。可以针对这个队列设置ACL。没有应用优先级可以配置。</p>
+<p><strong>CapacityScheduler：</strong>可以看作是FifoScheduler的多队列版本。每个队列可以限制资源使用量。但是，队列间的资源分配以使用量作排列依据，使得容量小的队列有竞争优势。集群整体吞吐较大。延迟调度机制使得应用可以放弃，夸机器或者夸机架的调度机会，争取本地调度。</p>
+<p><strong>FairScheduler：</strong>多队列，多用户共享资源。特有的客户端创建队列的特性，使得权限控制不太完美。根据队列设定的最小共享量或者权重等参数，按比例共享资源。延迟调度机制跟CapacityScheduler的目的类似，但是实现方式稍有不同。资源抢占特性，是指调度器能够依据公平资源共享算法，计算每个队列应得的资源，将超额资源的队列的部分容器释放掉的特性。</p>
+<h2 id="本地优化与延迟调度"><a href="#本地优化与延迟调度" class="headerlink" title="本地优化与延迟调度"></a>本地优化与延迟调度</h2><p>我们解释一下什么是本地优化和延迟调度。</p>
+<p>Hadoop是构建在以hdfs为基础的文件系统之上的。YARN所运行的应用的绝大部分输入都是hdfs上的文件。而hdfs上的文件的是分块多副本存储的。假设文件系统的备份因子是3。则每一个文件块都会在3个机器上有副本。在YARN运行应用的时候，AM会将输入文件进行切割，然后，AM向RM申请的container来运行task来处理这些被切割的文件段。</p>
+<p>假如输入文件在ABC三个机器上有备份，那如果AM申请到的container在这3个机器上的其中一个，那这个task就无须从其它机器上传输要处理的文件段，节省网络传输。这就是Hadoop的本地优化。所以Hadoop的文件备份数量除了和数据安全有关，还对应用运行效率有莫大关系。</p>
+<p>YARN的实现本地优化的方式是AM给RM提交的资源申请的时候，会同时发送本地申请，机架申请和任意申请。然后，RM的匹配这些资源申请的时候，会先匹配本地申请，再匹配机架申请，最后才匹配任意申请。关于AM资源申请机制可以参考：<a href="http://dongxicheng.org/mapreduce-nextgen/yarnmrv2-mrappmaster-containerallocator/" target="_blank" rel="noopener">ContainerAlloctor分析</a></p>
+<p>而延迟调度机制，就是调度器在匹配本地申请失败的时候，匹配机架申请或者任意申请成功的时候，允许略过这次的资源分配，直到达到延迟调度次数上限。CapacityScheduler和FairScheduler在延迟调度上的实现稍有不同，前者的调度次数是根据规则计算的，后者的调度次数通过配置指定的，但实际的含义是一样的。</p>
+<h2 id="参数配置"><a href="#参数配置" class="headerlink" title="参数配置"></a>参数配置</h2><h3 id="调度器的集群配置"><a href="#调度器的集群配置" class="headerlink" title="调度器的集群配置"></a>调度器的集群配置</h3><p>学习中，请稍等。。。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/java/" rel="tag"># java</a>
+          
+            <a href="/tags/hadoop生态圈/" rel="tag"># hadoop生态圈</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2015/12/20/hadoop-序列化/" rel="next" title="Hadoop中序列化（Writable）接口">
+                <i class="fa fa-chevron-left"></i> Hadoop中序列化（Writable）接口
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2015/12/24/hadoop-spark-eclipse调试/" rel="prev" title="Spark Eclipse本地运行以及远程debug调试">
+                Spark Eclipse本地运行以及远程debug调试 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+<span class="jiathis_txt">分享到：</span>
+<a class="jiathis_button_fav">收藏夹</a>
+<a class="jiathis_button_copy">复制网址</a>
+<a class="jiathis_button_email">邮件</a>
+<a class="jiathis_button_weixin">微信</a>
+<a class="jiathis_button_qzone">QQ空间</a>
+<a class="jiathis_button_tqq">腾讯微博</a>
+<a class="jiathis_button_douban">豆瓣</a>
+<a class="jiathis_button_share">一键分享</a>
+
+<a href="http://www.jiathis.com/share?uid=2140465" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank">更多</a>
+<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+var jiathis_config={
+  data_track_clickback:true,
+  summary:"",
+  shortUrl:false,
+  hideMore:false
+}
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  <p>热评文章</p>
+  <div class="ds-top-threads" data-range="weekly" data-num-items="4"></div>
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div class="ds-thread" data-thread-key="2015/12/23/hadoop-Yarn-调度器/" data-title="Yarn ResourceManager调度器" data-url="http://www.zhangrenhua.com/2015/12/23/hadoop-Yarn-调度器/">
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="http://www.zhangrenhua.com/back_images/avatar.jpg" alt="张仁华">
+            
+              <p class="site-author-name" itemprop="name">张仁华</p>
+              <p class="site-description motion-element" itemprop="description">记录软件生涯中的点点滴滴</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">76</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">17</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/zhangrenhua/" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://weibo.com/huaHBrother" target="_blank" title="Weibo">
+                      
+                        <i class="fa fa-fw fa-globe"></i>Weibo</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://douban.com/people/huaHBrother" target="_blank" title="douban">
+                      
+                        <i class="fa fa-fw fa-globe"></i>douban</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://zhihu.com/people/huaHBrother" target="_blank" title="zhihu">
+                      
+                        <i class="fa fa-fw fa-globe"></i>zhihu</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RM中的调度器"><span class="nav-number">2.</span> <span class="nav-text">RM中的调度器</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#调度器的接口"><span class="nav-number">3.</span> <span class="nav-text">调度器的接口</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#资源分配模型"><span class="nav-number">4.</span> <span class="nav-text">资源分配模型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#调度器比较"><span class="nav-number">5.</span> <span class="nav-text">调度器比较</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#本地优化与延迟调度"><span class="nav-number">6.</span> <span class="nav-text">本地优化与延迟调度</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参数配置"><span class="nav-number">7.</span> <span class="nav-text">参数配置</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#调度器的集群配置"><span class="nav-number">7.1.</span> <span class="nav-text">调度器的集群配置</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">张仁华</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"iissnan-notes"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

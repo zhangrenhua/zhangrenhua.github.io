@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="google-site-verification" content="zUNgN8yGBtBZ8194JTl7PXh7YvztVw494zGKJ_8qH00">
+
+
+
+
+
+
+
+
+  <meta name="baidu-site-verification" content="kqLgluU8lc">
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/favicon.ico?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="hadoop生态圈,spark,scala,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="hua的博客" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="最近由于项目需要，利用Spark加载数据到HDFS/Hive表中，传统做法可以使用Pig或者自己编写MapReduce。本来打算使用Pig，由于Cloudera5.3中的Pig运行驱动还是MapReduce(最新版本已经支持Spark)，并且来源数据格式千奇百怪，定长、首行有注释、多字符分割、文件编码、数据类型多等问题，所以没有使用Pig。当然这些问题都可以通过Pig提供的自定义UDF来解决，一些">
+<meta name="keywords" content="hadoop生态圈,spark,scala">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Spark数据加载 To (HDFS&#x2F;Hive)">
+<meta property="og:url" content="http://www.zhangrenhua.com/2016/04/19/hadoop-spark-dataload/index.html">
+<meta property="og:site_name" content="hua的博客">
+<meta property="og:description" content="最近由于项目需要，利用Spark加载数据到HDFS/Hive表中，传统做法可以使用Pig或者自己编写MapReduce。本来打算使用Pig，由于Cloudera5.3中的Pig运行驱动还是MapReduce(最新版本已经支持Spark)，并且来源数据格式千奇百怪，定长、首行有注释、多字符分割、文件编码、数据类型多等问题，所以没有使用Pig。当然这些问题都可以通过Pig提供的自定义UDF来解决，一些">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/hadoop-spark-sql-demo-sel.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/hadoop-spark-dataload-test5.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/hadoop-spark-dataload-test1.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/hadoop-spark-dataload-test2.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/hadoop-spark-dataload-test3.png">
+<meta property="og:image" content="http://www.zhangrenhua.com/back_images/hadoop-spark-dataload-test4.png">
+<meta property="og:updated_time" content="2019-07-11T06:43:13.734Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Spark数据加载 To (HDFS&#x2F;Hive)">
+<meta name="twitter:description" content="最近由于项目需要，利用Spark加载数据到HDFS/Hive表中，传统做法可以使用Pig或者自己编写MapReduce。本来打算使用Pig，由于Cloudera5.3中的Pig运行驱动还是MapReduce(最新版本已经支持Spark)，并且来源数据格式千奇百怪，定长、首行有注释、多字符分割、文件编码、数据类型多等问题，所以没有使用Pig。当然这些问题都可以通过Pig提供的自定义UDF来解决，一些">
+<meta name="twitter:image" content="http://www.zhangrenhua.com/back_images/hadoop-spark-sql-demo-sel.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.zhangrenhua.com/2016/04/19/hadoop-spark-dataload/">
+
+
+
+
+
+  <title>Spark数据加载 To (HDFS/Hive) | hua的博客</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-69647002-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?954f429681a4cd6dee6095ddaa2aac9a";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">hua的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">关注技术和人文的原创IT博客</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-schedule">
+          <a href="/schedule/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            日程表
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sitemap">
+          <a href="/sitemap.xml" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            站点地图
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="st-search-show-outputs">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <form class="site-search-form">
+  <input type="text" id="st-search-input" class="st-search-input st-default-search-input">
+</form>
+
+<script type="text/javascript">
+  (function(w,d,t,u,n,s,e){w['SwiftypeObject']=n;w[n]=w[n]||function(){
+    (w[n].q=w[n].q||[]).push(arguments);};s=d.createElement(t);
+    e=d.getElementsByTagName(t)[0];s.async=1;s.src=u;e.parentNode.insertBefore(s,e);
+  })(window,document,'script','//s.swiftypecdn.com/install/v2/st.js','_st');
+
+  _st('install', 'BAacTgC1f_bLy6kngppZ','2.0.0');
+</script>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.zhangrenhua.com/2016/04/19/hadoop-spark-dataload/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="张仁华">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="http://www.zhangrenhua.com/back_images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hua的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Spark数据加载 To (HDFS/Hive)</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-04-19T20:40:16+08:00">
+                2016-04-19
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/spark/" itemprop="url" rel="index">
+                    <span itemprop="name">spark</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2016/04/19/hadoop-spark-dataload/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2016/04/19/hadoop-spark-dataload/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  最近由于项目需要，利用Spark加载数据到HDFS/Hive表中，传统做法可以使用Pig或者自己编写MapReduce。本来打算使用Pig，由于Cloudera5.3中的Pig运行驱动还是MapReduce(最新版本已经支持Spark)，并且来源数据格式千奇百怪，定长、首行有注释、多字符分割、文件编码、数据类型多等问题，所以没有使用Pig。当然这些问题都可以通过Pig提供的自定义UDF来解决，一些标准的数据加工处理，还是建议使用Pig，毕竟PigLatin语法的确很丰富。<br><br>笔者使用Spark1.6.0，Spark升级尤为频繁，每次都修复大量bug，所以选择新版本。<br>本人第一次编写scala程序，望大家多多指教。<br>地址：https://github.com/zhangrenhua/dataload
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>最近由于项目需要，利用Spark加载数据到HDFS/Hive表中，传统做法可以使用Pig或者自己编写MapReduce。本来打算使用Pig，由于Cloudera5.3中的Pig运行驱动还是MapReduce(最新版本已经支持Spark)，并且来源数据格式千奇百怪，定长、首行有注释、多字符分割、文件编码、数据类型多等问题，所以没有使用Pig。当然这些问题都可以通过Pig提供的自定义UDF来解决，一些标准的数据加工处理，还是建议使用Pig，毕竟PigLatin语法的确很丰富。</p>
+<p>笔者使用Spark1.6.0，Spark升级尤为频繁，每次都修复大量bug，所以选择新版本。<br>本人第一次编写scala程序，望大家多多指教。</p>
+<p>项目地址：<a href="https://github.com/zhangrenhua/dataload" target="_blank" rel="noopener">https://github.com/zhangrenhua/dataload</a></p>
+<h2 id="项目功能"><a href="#项目功能" class="headerlink" title="项目功能"></a>项目功能</h2><p>本项目采用Spark + Spark Sql，主要用来，将一些常用格式的数据加工到Hive或者HDFS中。其中功能细节如下：</p>
+<p><strong>数据层面</strong><br>1、文件名正则匹配<br>2、文件读取跳过前面几行<br>3、文件内容编码转换<br>4、按行或者固定分割符读取每行记录</p>
+<p><strong>文件解析</strong><br>1、字段定长分割<br>2、字段，单/多字符分割<br>3、根据正则表达式解析字段</p>
+<p><strong>文件存储</strong><br>1、自动数据类型转换，存入Hive<br>2、字段拼接，存入HDFS</p>
+<p><strong>待开发</strong><br>1、字段过滤器（简单的过滤规则）<br>2、增加数据存储之前/后的一些SQL执行<br>3、支持更多的数据类型<br>4、更多类型的字段格式化</p>
+<h2 id="配置项说明"><a href="#配置项说明" class="headerlink" title="配置项说明"></a>配置项说明</h2><p>配置示例：</p>
+<figure class="highlight lsl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line">demo &#123;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// hadoop 参数配置</span></span><br><span class="line">  hadoop &#123;</span><br><span class="line">    mapreduce.input.fileinputformat.input.dir.recursive = true <span class="comment">// 递归</span></span><br><span class="line">    input.file.filter = <span class="string">".*"</span> <span class="comment">// 文件正则</span></span><br><span class="line">    skip.header.line.count = <span class="number">0</span> <span class="comment">//跳过文件前几行</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// spark 参数配置</span></span><br><span class="line">  spark &#123;</span><br><span class="line">    spark.serializer = <span class="string">"org.apache.spark.serializer.KryoSerializer"</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  data.input.path = <span class="string">"/tmp/input/demo"</span> <span class="comment">// 数据目录</span></span><br><span class="line">  file.text.decode = <span class="string">"UTF-8"</span> <span class="comment">// 字符解码</span></span><br><span class="line">  data.input.line.regex.str = <span class="string">".*"</span> <span class="comment">// 行的正则匹配表达式，可以为空</span></span><br><span class="line">  data.input.line.regex.err.exit = false <span class="comment">// 正则不匹配则异常退出</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">  columns.split.type = <span class="string">"regex"</span> <span class="comment">// 字段分割类型，fixed:定长,splitstr:字符分割,regex:正则分割</span></span><br><span class="line">  <span class="comment">// 字符分割，参数</span></span><br><span class="line">  columns.split.splitstr &#123;</span><br><span class="line">    str = <span class="string">"<span class="subst">\\</span>|"</span> <span class="comment">// 字段分隔符</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 定长分割，参数</span></span><br><span class="line">  columns.split.fixed &#123;</span><br><span class="line">    columns.length = <span class="string">"1,1,3,1,5,4,10,23"</span> <span class="comment">// 字段定长分割，如：10,12,34</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 正则表达式分割，参数</span></span><br><span class="line">  columns.split.regex &#123;</span><br><span class="line">    <span class="comment">// 正则表达式</span></span><br><span class="line">    regex.str = <span class="string">"(<span class="subst">\\</span>w+)<span class="subst">\\</span>|(<span class="subst">\\</span>d+)<span class="subst">\\</span>|([+-]?<span class="subst">\\</span>d*<span class="subst">\\</span>.<span class="subst">\\</span>d+)<span class="subst">\\</span>|(<span class="subst">\\</span>d+)<span class="subst">\\</span>|([+-]?<span class="subst">\\</span>d*<span class="subst">\\</span>.<span class="subst">\\</span>d+)<span class="subst">\\</span>|(<span class="subst">\\</span>w+)<span class="subst">\\</span>|([<span class="subst">\\</span>d<span class="subst">\\</span>s-]+)<span class="subst">\\</span>|([<span class="subst">\\</span>d-<span class="subst">\\</span>s:<span class="subst">\\</span>.]+)"</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  columns.fixed.length = <span class="number">-1</span> <span class="comment">// 字段长度，用于分割后校验,-1:不校验</span></span><br><span class="line"></span><br><span class="line">  columns.format &#123;</span><br><span class="line">    date<span class="number">.6</span> = <span class="string">"yyyy-MM-dd"</span> <span class="comment">// 日期格式化,字段序号</span></span><br><span class="line">    date<span class="number">.7</span> = <span class="string">"yyyy-MM-dd HH:mm:ss.S"</span> <span class="comment">// 日期格式化,字段序号</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">  data.store.type = <span class="string">"hive"</span> <span class="comment">// 数据存储类型,hive：存入hive表，text:数据目录</span></span><br><span class="line">  <span class="comment">// 存入hive</span></span><br><span class="line">  data.store.hive.tablename = <span class="string">"default.demo"</span> <span class="comment">// 类型为hive：表名</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">// 文本输出</span></span><br><span class="line">  data.store.text.output.path = <span class="string">"/tmp/output/demo"</span> <span class="comment">// 类型为text：输出目录</span></span><br><span class="line">  data.store.text.columns.splitstr = <span class="string">"&amp;"</span> <span class="comment">// 存储的分割符</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>参数说明：<br><code>columns.split.type</code>：字段分割类型，fixed:定长,splitstr:字符分割,regex:正则分割<br><br><code>data.store.type</code>：控制数据存储类型,hive：存入hive表，text:数据目录</p>
+<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><h3 id="hive建表"><a href="#hive建表" class="headerlink" title="hive建表"></a>hive建表</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">DROP</span> <span class="keyword">TABLE</span></span><br><span class="line">    demo;</span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span></span><br><span class="line">    demo</span><br><span class="line">    (</span><br><span class="line">        a <span class="keyword">string</span>,</span><br><span class="line">        b <span class="built_in">INT</span>,</span><br><span class="line">        c <span class="built_in">FLOAT</span>,</span><br><span class="line">        d <span class="built_in">bigint</span>,</span><br><span class="line">        e <span class="built_in">DECIMAL</span>(<span class="number">10</span>,<span class="number">2</span>),</span><br><span class="line">        f <span class="built_in">BOOLEAN</span>,</span><br><span class="line">        g <span class="built_in">DATE</span>,</span><br><span class="line">        h <span class="built_in">TIMESTAMP</span></span><br><span class="line">    );</span><br><span class="line"></span><br><span class="line"><span class="keyword">DROP</span> <span class="keyword">TABLE</span></span><br><span class="line">    demo;</span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span></span><br><span class="line">    demo</span><br><span class="line">    (</span><br><span class="line">        a <span class="keyword">string</span>,</span><br><span class="line">        b <span class="built_in">INT</span>,</span><br><span class="line">        c <span class="built_in">FLOAT</span>,</span><br><span class="line">        d <span class="built_in">bigint</span>,</span><br><span class="line">        e <span class="built_in">DECIMAL</span>(<span class="number">10</span>,<span class="number">2</span>),</span><br><span class="line">        f <span class="built_in">BOOLEAN</span>,</span><br><span class="line">        g <span class="built_in">DATE</span>,</span><br><span class="line">        h <span class="built_in">TIMESTAMP</span></span><br><span class="line">    )</span><br><span class="line">    <span class="keyword">stored</span> <span class="keyword">as</span> orc;</span><br></pre></td></tr></table></figure>
+
+<p>parquet 不支持date类型,所以没测试。</p>
+<h3 id="测试数据"><a href="#测试数据" class="headerlink" title="测试数据"></a>测试数据</h3><p>字符/正则分割，测试数据(data.txt)：</p>
+<figure class="highlight coq"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">a|<span class="type">1</span>|<span class="type">1</span><span class="number">.1</span>|<span class="type">2</span>|<span class="type">12</span><span class="number">.56</span>|<span class="type">true</span>|<span class="type">2016</span><span class="number">-04</span><span class="number">-24</span>|<span class="type">2016</span><span class="number">-04</span><span class="number">-24</span> <span class="number">12</span>:<span class="number">12</span>:<span class="number">12.123</span></span><br><span class="line">b|<span class="type">2</span>|<span class="type">1</span><span class="number">.2</span>|<span class="type">3</span>|<span class="type">12</span><span class="number">.57</span>|<span class="type">false</span>|<span class="type">2016</span><span class="number">-04</span><span class="number">-24</span>|<span class="type">2016</span><span class="number">-04</span><span class="number">-24</span> <span class="number">12</span>:<span class="number">12</span>:<span class="number">12.124</span></span><br><span class="line">c|<span class="type">3</span>|<span class="type">1</span><span class="number">.3</span>|<span class="type">4</span>|<span class="type">12</span><span class="number">.58</span>|<span class="type">false</span>|<span class="type">2016</span><span class="number">-04</span><span class="number">-24</span>|<span class="type">2016</span><span class="number">-04</span><span class="number">-24</span> <span class="number">12</span>:<span class="number">12</span>:<span class="number">12.125</span></span><br></pre></td></tr></table></figure>
+
+<p>定长分割，测试数据(data1.txt):</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="selector-tag">a11</span><span class="selector-class">.1212</span><span class="selector-class">.56true2016-04-242016-04-24</span> 12<span class="selector-pseudo">:12</span><span class="selector-pseudo">:12.123</span></span><br><span class="line"><span class="selector-tag">b21</span><span class="selector-class">.2312</span><span class="selector-class">.57false2016-04-242016-04-24</span> 12<span class="selector-pseudo">:12</span><span class="selector-pseudo">:12.124</span></span><br><span class="line"><span class="selector-tag">c31</span><span class="selector-class">.3412</span><span class="selector-class">.58false2016-04-242016-04-24</span> 12<span class="selector-pseudo">:12</span><span class="selector-pseudo">:12.125</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="运行测试"><a href="#运行测试" class="headerlink" title="运行测试"></a>运行测试</h3><p>设置本地运行模式setMaster(“local[2]”)，运行DataLoad.scala即可。</p>
+<p>测试结果：<br><img src="http://www.zhangrenhua.com/back_images/hadoop-spark-sql-demo-sel.png" alt="Alt text"></p>
+<p>本次只是简单的功能测试，后续我会加入大数据量测试结果。</p>
+<h2 id="apache访问日志测试"><a href="#apache访问日志测试" class="headerlink" title="apache访问日志测试"></a>apache访问日志测试</h2><h3 id="建表"><a href="#建表" class="headerlink" title="建表"></a>建表</h3><p>DROP TABLE<br>    APACHE_LOG_BASE;<br>CREATE TABLE<br>    APACHE_LOG_BASE<br>    (<br>        IP STRING COMMENT ‘访问IP’,<br>        UNIQUEID STRING COMMENT ‘浏览者标识’,<br>        AUTHENINFORMATION STRING COMMENT ‘验证信息’,<br>        REQ_DATETIME STRING COMMENT ‘请求时间’,<br>        RESPON_DURATION STRING COMMENT ‘响应时间’,<br>        RESOURCE STRING COMMENT ‘方法资源协议’,<br>        ACCESS_STATUS STRING COMMENT ‘状态代码’,<br>        FLOW_VALUE STRING COMMENT ‘流量’,<br>        URL STRING COMMENT ‘请求URL’,<br>        BROWSER_TYPE STRING COMMENT ‘浏览器标识’<br>    )stored AS parquet;</p>
+<h3 id="数据文件"><a href="#数据文件" class="headerlink" title="数据文件"></a>数据文件</h3><p>样式：</p>
+<figure class="highlight accesslog"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">121.239.44.41</span> - - <span class="string">[01/Jul/2015:08:02:52 +0800]</span> <span class="number">0</span> <span class="string">"<span class="keyword">GET</span> /pweb/js/ui/init.js?version=1.1 HTTP/1.0"</span> <span class="number">301</span> <span class="number">272</span> <span class="string">"https://ebanks.xxx.com/pweb/InlineTransferPre.do?_RestoreFromQueue=true&amp;_QueueName=PageRoot&amp;_QueueLevel=1"</span> <span class="string">"Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0)"</span></span><br><span class="line"><span class="number">218.82.139.244</span> - - <span class="string">[01/Jul/2015:08:02:52 +0800]</span> <span class="number">0</span> <span class="string">"<span class="keyword">GET</span> /pweb/zh_CN/default/images/menubg.gif HTTP/1.0"</span> <span class="number">301</span> <span class="number">278</span> <span class="string">"https://ebanks.xxx.com/pweb/prelogin.do?LoginType=R&amp;_locale=zh_CN"</span> <span class="string">"Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; Trident/5.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729)"</span></span><br><span class="line"><span class="number">121.239.44.41</span> - - <span class="string">[01/Jul/2015:08:02:52 +0800]</span> <span class="number">0</span> <span class="string">"<span class="keyword">GET</span> /pweb/script.do HTTP/1.0"</span> <span class="number">200</span> <span class="number">35965</span> <span class="string">"https://ebanks.xx.com/pweb/InlineTransferPre.do?_RestoreFromQueue=true&amp;_QueueName=PageRoot&amp;_QueueLevel=1"</span> <span class="string">"Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0)"</span></span><br><span class="line"><span class="number">101.229.155.246</span> - - <span class="string">[01/Jul/2015:08:02:52 +0800]</span> <span class="number">0</span> <span class="string">"<span class="keyword">GET</span> /pweb/zh_CN/default/images/login_up.png HTTP/1.0"</span> <span class="number">301</span> <span class="number">280</span> <span class="string">"https://ebanks.xx.com/pweb/prelogin.do?LoginType=R&amp;_locale=zh_CN"</span> <span class="string">"Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; WOW64; Trident/7.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; .NET4.0C; .NET4.0E)"</span></span><br><span class="line"><span class="number">101.229.155.246</span> - - <span class="string">[01/Jul/2015:08:02:52 +0800]</span> <span class="number">0</span> <span class="string">"<span class="keyword">GET</span> /pweb/zh_CN/default/images/titbg_02_center.gif HTTP/1.0"</span> <span class="number">301</span> <span class="number">287</span> <span class="string">"https://ebanks.xx.com/pweb/prelogin.do?LoginType=R&amp;_locale=zh_CN"</span> <span class="string">"Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; WOW64; Trident/7.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; .NET4.0C; .NET4.0E)"</span></span><br></pre></td></tr></table></figure>
+
+<p>由于数据涉及隐私所以没全部拿出，下图是我用text格式保存时的数据大小：<br><img src="http://www.zhangrenhua.com/back_images/hadoop-spark-dataload-test5.png" alt="Alt text"></p>
+<h3 id="配置文件"><a href="#配置文件" class="headerlink" title="配置文件"></a>配置文件</h3><figure class="highlight stata"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line">demo &#123;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// hadoop 配置信息</span></span><br><span class="line">  hadoop &#123;</span><br><span class="line">    mapreduce.<span class="keyword">input</span>.fileinputformat.<span class="keyword">input</span>.<span class="keyword">dir</span>.recursive = true <span class="comment">// 递归</span></span><br><span class="line">    <span class="keyword">input</span>.<span class="keyword">file</span>.filter = <span class="string">".*"</span> <span class="comment">// 文件正则</span></span><br><span class="line">    skip.header.<span class="keyword">line</span>.<span class="keyword">count</span> = 0 <span class="comment">//跳过文件前几行</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// spark 配置信息</span></span><br><span class="line">  spark &#123;</span><br><span class="line">    spark.serializer = <span class="string">"org.apache.spark.serializer.KryoSerializer"</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  data.<span class="keyword">input</span>.path = <span class="string">"/tmp/dataload"</span> <span class="comment">// 数据目录</span></span><br><span class="line">  <span class="keyword">file</span>.text.<span class="keyword">decode</span> = <span class="string">"UTF-8"</span> <span class="comment">// 字符解码</span></span><br><span class="line">  data.<span class="keyword">input</span>.<span class="keyword">line</span>.regex.str = <span class="string">".*"</span> <span class="comment">// 行的正则匹配表达式，可以为空</span></span><br><span class="line">  data.<span class="keyword">input</span>.<span class="keyword">line</span>.regex.<span class="keyword">err</span>.<span class="keyword">exit</span> = false <span class="comment">// 正则不匹配则异常退出</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">  columns.<span class="keyword">split</span>.<span class="keyword">type</span> = <span class="string">"regex"</span> <span class="comment">// 字段分割类型，fixed:定长,splitstr:字符分割,regex:正则分割</span></span><br><span class="line">  <span class="comment">// 字符分割，参数</span></span><br><span class="line">  columns.<span class="keyword">split</span>.splitstr &#123;</span><br><span class="line">    str = <span class="string">"\\|"</span> <span class="comment">// 字段分隔符</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 定长分割，参数</span></span><br><span class="line">  columns.<span class="keyword">split</span>.fixed &#123;</span><br><span class="line">    columns.length = <span class="string">"1,1,3,1,5,4,10,23"</span> <span class="comment">// 字段定长分割，如：10,12,34</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 正则表达式分割，参数</span></span><br><span class="line">  columns.<span class="keyword">split</span>.regex &#123;</span><br><span class="line">    <span class="comment">// 正则表达式</span></span><br><span class="line">    regex.str = <span class="string">"^([\\d.]+) (\\S+) (\\S+) \\[([\\w\\d:/]+\\s[+\\-]\\d&#123;4&#125;)\\] (\\d+) \"</span>(.+?)\<span class="string">" (\\d&#123;3&#125;) (\\d+?) \"</span>([^\<span class="string">"]+)\"</span> \<span class="string">"([^\"</span>]+)\<span class="string">".*"</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  columns.fixed.length = -1 <span class="comment">// 字段长度，用于分割后校验,-1:不校验</span></span><br><span class="line"></span><br><span class="line">  columns.<span class="keyword">format</span> &#123;</span><br><span class="line">    <span class="comment">// date.6 = "yyyy-MM-dd" // 日期格式化,字段序号</span></span><br><span class="line">    <span class="comment">// date.7 = "yyyy-MM-dd HH:mm:ss.S" // 日期格式化,字段序号</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">  data.store.<span class="keyword">type</span> = <span class="string">"hive"</span> <span class="comment">// 数据存储类型,hive：存入hive表，text:数据目录</span></span><br><span class="line">  <span class="comment">// 存入hive</span></span><br><span class="line">  data.store.hive.tablename = <span class="string">"test.apache_log_base"</span> <span class="comment">// 类型为hive：表名</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">// 文本输出</span></span><br><span class="line">  data.store.text.output.path = <span class="string">"/tmp/output/demo"</span> <span class="comment">// 类型为text：输出目录</span></span><br><span class="line">  data.store.text.columns.splitstr = <span class="string">"&amp;"</span> <span class="comment">// 存储的分割符</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果你的apache日志格式不是这样可以修改 regex.str正则表达式。</p>
+<h3 id="运行测试-1"><a href="#运行测试-1" class="headerlink" title="运行测试"></a>运行测试</h3><p>执行脚本:</p>
+<figure class="highlight crystal"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">spark-submit --driver-memory <span class="number">1</span>g --driver-java-options -<span class="symbol">XX:</span>MaxPermSize=<span class="number">128</span>m \</span><br><span class="line">    --executor-cores <span class="number">3</span> --num-executors <span class="number">2</span>  \</span><br><span class="line">    --jars /home/hdper/spark/<span class="class"><span class="keyword">lib</span>/<span class="title">datanucleus</span>-<span class="title">api</span>-<span class="title">jdo</span>-3.2.6.<span class="title">jar</span>,/<span class="title">home</span>/<span class="title">hdper</span>/<span class="title">spark</span>/<span class="title">lib</span>/<span class="title">datanucleus</span>-<span class="title">core</span>-3.2.10.<span class="title">jar</span> \</span></span><br><span class="line">    --files /home/hdper/appstest/zhangrenhua/dataload/demo.conf,<span class="regexp">/etc/hive</span><span class="regexp">/conf/hive</span>-site.xml --<span class="class"><span class="keyword">class</span> <span class="title">com</span>.<span class="title">hua</span>.<span class="title">spark</span>.<span class="title">dataload</span>.<span class="title">DataLoad</span> \</span></span><br><span class="line">    --master yarn-cluster dataload-<span class="number">1.0</span>-SNAPSHOT.jar demo demo.conf</span><br></pre></td></tr></table></figure>
+
+<p>由于测试集群有点问题，所以只开2个executor,每个executor使用3个cpu并行执行，执行截图：</p>
+<p><img src="http://www.zhangrenhua.com/back_images/hadoop-spark-dataload-test1.png" alt="Alt text"><br>spark task</p>
+<p><img src="http://www.zhangrenhua.com/back_images/hadoop-spark-dataload-test2.png" alt="Alt text"><br>spark task detail</p>
+<p><img src="http://www.zhangrenhua.com/back_images/hadoop-spark-dataload-test3.png" alt="Alt text"><br>spark-submit success</p>
+<p><img src="http://www.zhangrenhua.com/back_images/hadoop-spark-dataload-test4.png" alt="Alt text"><br>yarn detail</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/hadoop生态圈/" rel="tag"># hadoop生态圈</a>
+          
+            <a href="/tags/spark/" rel="tag"># spark</a>
+          
+            <a href="/tags/scala/" rel="tag"># scala</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/03/16/hadoop-kafka生产者消费者示例详解/" rel="next" title="kafka生产者消费者示例详解">
+                <i class="fa fa-chevron-left"></i> kafka生产者消费者示例详解
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/05/04/Openssl、Tomcat9(Http2 APR)、Https单双向认证/" rel="prev" title="Openssl、Tomcat9(Http2 APR)、Https单/双向认证">
+                Openssl、Tomcat9(Http2 APR)、Https单/双向认证 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+<span class="jiathis_txt">分享到：</span>
+<a class="jiathis_button_fav">收藏夹</a>
+<a class="jiathis_button_copy">复制网址</a>
+<a class="jiathis_button_email">邮件</a>
+<a class="jiathis_button_weixin">微信</a>
+<a class="jiathis_button_qzone">QQ空间</a>
+<a class="jiathis_button_tqq">腾讯微博</a>
+<a class="jiathis_button_douban">豆瓣</a>
+<a class="jiathis_button_share">一键分享</a>
+
+<a href="http://www.jiathis.com/share?uid=2140465" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank">更多</a>
+<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+var jiathis_config={
+  data_track_clickback:true,
+  summary:"",
+  shortUrl:false,
+  hideMore:false
+}
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  <p>热评文章</p>
+  <div class="ds-top-threads" data-range="weekly" data-num-items="4"></div>
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div class="ds-thread" data-thread-key="2016/04/19/hadoop-spark-dataload/" data-title="Spark数据加载 To (HDFS/Hive)" data-url="http://www.zhangrenhua.com/2016/04/19/hadoop-spark-dataload/">
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="http://www.zhangrenhua.com/back_images/avatar.jpg" alt="张仁华">
+            
+              <p class="site-author-name" itemprop="name">张仁华</p>
+              <p class="site-description motion-element" itemprop="description">记录软件生涯中的点点滴滴</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">76</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">17</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/zhangrenhua/" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://weibo.com/huaHBrother" target="_blank" title="Weibo">
+                      
+                        <i class="fa fa-fw fa-globe"></i>Weibo</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://douban.com/people/huaHBrother" target="_blank" title="douban">
+                      
+                        <i class="fa fa-fw fa-globe"></i>douban</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://zhihu.com/people/huaHBrother" target="_blank" title="zhihu">
+                      
+                        <i class="fa fa-fw fa-globe"></i>zhihu</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#项目功能"><span class="nav-number">2.</span> <span class="nav-text">项目功能</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#配置项说明"><span class="nav-number">3.</span> <span class="nav-text">配置项说明</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#测试"><span class="nav-number">4.</span> <span class="nav-text">测试</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#hive建表"><span class="nav-number">4.1.</span> <span class="nav-text">hive建表</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#测试数据"><span class="nav-number">4.2.</span> <span class="nav-text">测试数据</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#运行测试"><span class="nav-number">4.3.</span> <span class="nav-text">运行测试</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#apache访问日志测试"><span class="nav-number">5.</span> <span class="nav-text">apache访问日志测试</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#建表"><span class="nav-number">5.1.</span> <span class="nav-text">建表</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#数据文件"><span class="nav-number">5.2.</span> <span class="nav-text">数据文件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#配置文件"><span class="nav-number">5.3.</span> <span class="nav-text">配置文件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#运行测试-1"><span class="nav-number">5.4.</span> <span class="nav-text">运行测试</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">张仁华</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"iissnan-notes"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

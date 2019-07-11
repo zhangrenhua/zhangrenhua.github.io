@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="google-site-verification" content="zUNgN8yGBtBZ8194JTl7PXh7YvztVw494zGKJ_8qH00">
+
+
+
+
+
+
+
+
+  <meta name="baidu-site-verification" content="kqLgluU8lc">
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/favicon.ico?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="java,hadoop生态圈,hbase,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="hua的博客" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="前面一篇文章主要描述了Hbase的一些常用参数以及调优方法，下面主要针对Java GC（Hbase）调优分析，并详细讲解Hbase中出现full gc的几种情况，根据对应的方法进行参数调节就可使Hbase性能提升。">
+<meta name="keywords" content="java,hadoop生态圈,hbase">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Hbase GC调优原理分析">
+<meta property="og:url" content="http://www.zhangrenhua.com/2016/01/20/hadoop-HbaseGC调优原理分析/index.html">
+<meta property="og:site_name" content="hua的博客">
+<meta property="og:description" content="前面一篇文章主要描述了Hbase的一些常用参数以及调优方法，下面主要针对Java GC（Hbase）调优分析，并详细讲解Hbase中出现full gc的几种情况，根据对应的方法进行参数调节就可使Hbase性能提升。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2016-01-20T12:00:50.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Hbase GC调优原理分析">
+<meta name="twitter:description" content="前面一篇文章主要描述了Hbase的一些常用参数以及调优方法，下面主要针对Java GC（Hbase）调优分析，并详细讲解Hbase中出现full gc的几种情况，根据对应的方法进行参数调节就可使Hbase性能提升。">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.zhangrenhua.com/2016/01/20/hadoop-HbaseGC调优原理分析/">
+
+
+
+
+
+  <title>Hbase GC调优原理分析 | hua的博客</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-69647002-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?954f429681a4cd6dee6095ddaa2aac9a";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">hua的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">关注技术和人文的原创IT博客</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-schedule">
+          <a href="/schedule/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            日程表
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sitemap">
+          <a href="/sitemap.xml" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            站点地图
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="st-search-show-outputs">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <form class="site-search-form">
+  <input type="text" id="st-search-input" class="st-search-input st-default-search-input">
+</form>
+
+<script type="text/javascript">
+  (function(w,d,t,u,n,s,e){w['SwiftypeObject']=n;w[n]=w[n]||function(){
+    (w[n].q=w[n].q||[]).push(arguments);};s=d.createElement(t);
+    e=d.getElementsByTagName(t)[0];s.async=1;s.src=u;e.parentNode.insertBefore(s,e);
+  })(window,document,'script','//s.swiftypecdn.com/install/v2/st.js','_st');
+
+  _st('install', 'BAacTgC1f_bLy6kngppZ','2.0.0');
+</script>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.zhangrenhua.com/2016/01/20/hadoop-HbaseGC调优原理分析/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="张仁华">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="http://www.zhangrenhua.com/back_images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="hua的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Hbase GC调优原理分析</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-01-20T20:00:36+08:00">
+                2016-01-20
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/hbase/" itemprop="url" rel="index">
+                    <span itemprop="name">hbase</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2016/01/20/hadoop-HbaseGC调优原理分析/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2016/01/20/hadoop-HbaseGC调优原理分析/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  前面一篇文章主要描述了Hbase的一些常用参数以及调优方法，下面主要针对Java GC（Hbase）调优分析，并详细讲解Hbase中出现full gc的几种情况，根据对应的方法进行参数调节就可使Hbase性能提升。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>前面一篇文章主要描述了Hbase的一些常用参数以及调优方法，下面主要针对Java GC（Hbase）调优分析，并详细讲解Hbase中出现full gc的几种情况，根据对应的方法进行参数调节就可使Hbase性能提升。</p>
+<h2 id="堆和堆内存！"><a href="#堆和堆内存！" class="headerlink" title="堆和堆内存！"></a>堆和堆内存！</h2><p>廉价商用服务器上的内存数量在过去的几年中不断的增长。当Apache的HBase的项目于2007年开始时，运行Hadoop的典型配置有4到8GB内存。今天，大多数Hadoop客户以至少24G内存运行Hadoop，使用48G甚至72G内存的客户也变得越来越普遍，而内存使用成本则继续回落。表面上，这对像HBase的数据库这样对延迟敏感的软件来说，这似乎是一个伟大的胜利，大量的内存可以容纳更多的数据缓存，在刷新到磁盘前作为写入缓，避免昂贵的磁盘寻址和读。然而在实践中，HBase使用的内存不断增长，但JDK可用的垃圾收集算法仍然相同。这导致了HBase的许多用户的一个主要问题：随着Java使用堆大小继续增长，垃圾回收导致的“stop-the-world”时间变得越来越长。这在实践中意味着什么？</p>
+<p>在垃圾回收导致的“stop-the-world”期间，任何到HBase客户端请求都不会被处理，造成用户可见的延迟，甚至超时。如果因为暂停导致请求超过一分钟响应，HBase本身也可能会停止 - 仅仅因为垃圾回收导致这样的延迟显得很不值。</p>
+<p>HBase依赖Apache Zookeeper的管理群集成员和生命周期。如果服务器暂停的时间过长，它将无法发送心跳ping消息到Zookeeper quorum（译者注：Zookeeper的分布式算法），其余的服务器将假定该服务器已经死亡。这将导致主服务器启动特定的恢复程序，替换被认为死亡的服务器。当这个服务器从暂停中恢复时，会发现所有它拥有的租约都被撤销，进而只好自杀。HBase的开发团队已经亲切地称这种情况为朱丽叶暂停，此情况下 - 主服务器（罗密欧）假定边缘服务器（朱丽叶）死亡的（其实它真没死，只是睡觉），因此需要一些激烈的行动（恢复）。当边缘服务器从GC暂停中醒过来，它发现了一个巨大的错误已经铸成，只好结束自己的生命。这是一个非常可怕的故障！<br>（译者注：由于Java GC导致的心跳包没有及时响应问题，在对延时要求敏感的场景非常普遍。曾经有一个业务场景，集群中的服务器每500ms发送一次心跳包到mater服务器，而master服务器由于GC导致没有及时响应心跳包，进而认为服务器死亡，导致故障）</p>
+<p>做过大负载HBase集群负载测试的人应该对上述问题很熟悉，在典型的硬件环境上，每GB的堆可以导致Hadoop暂停8-10秒。则分配8G堆的Hadoop会因GC暂停一分钟以上。<br>（译者注：Hadoop这个回收时间比较恐怖，我在线上服务分配36G Heap，平均FullGC暂停时间是6-8秒，因此万恶不是“大堆”为首，而是“内存使用方式不当”为首。这也是后文中调优的原因所在）<br>不管人们如何调整，事实证明这个问题是完全不可避免的。由于这是一个共同的问题，而且每况愈下。因此在今年年初，它成为一个Cloudera的优先项目。在这篇文的其余部分，我将介绍我们开发的方法，该解决方案在很大程度上消除了这个问题。</p>
+<h2 id="Java的GC背景"><a href="#Java的GC背景" class="headerlink" title="Java的GC背景"></a>Java的GC背景</h2><p>为了彻底了解GC暂停的问题，有必要了解有一些在Java GC的技术背景。这里只作出一些简单描述，所以我非常鼓励你做进一步的研究。如果你已经在GC的专家，随时跳过这一节。</p>
+<p>Generational GC（译者注：即分“代”回收算法） Java的垃圾回收器通常工作在Generational GC模式，该模式基于一个假设：假设大多数对象英年早逝，还是坚持相当长的时间？（译者注：事实上两种情况同时存在）例如，在RPC请求缓冲区中对象将只存活几毫秒，而在HBase的MemStore数据的数据可能会存活许多分钟。很显然用两种不同的垃圾收集算法处理两种不同的生命周期的对象更好些。因此，JVM把对象分成两代：年轻代(New)和老年代(Old)。分配对象时，JVM在年轻代里分配对象。如果一个对象经过几次GC在还存活在年轻代，垃圾回收程序就把这个对象搬迁到老年代，在这里我们假设数据是会存活很长时间。</p>
+<p>在大多数对延迟敏感的场景，比如HBase，我们建议使用JVM参数：-XX:+ UseParNewGC和-XX:+ UseConcMarkSweepGC。</p>
+<h3 id="Parallel-New-Collector"><a href="#Parallel-New-Collector" class="headerlink" title="Parallel New Collector"></a>Parallel New Collector</h3><p>Parallel New Collector是“stop-the-world”复制收集。每当它运行时，它首先暂停所有的Java线程。然后，它追踪的对象引用来确定些对象是活的（仍然有程序引用这些对象）。最后它移动活动对象到堆里的空闲空间，并更新到这些对象的指针指向新的地址。</p>
+<p><strong>重点是：</strong><br>1、它stop-the-world，但不是很长。因为年轻代通常是相当小的，它可以非常迅速地完成其工作。在生产环境中，我们通常建议不超过512MB ，这导致即使在最坏的情况下，年轻代GC暂停的时间也不到几百毫秒。</p>
+<p>（译者注：似乎很少见到有配置这么小得Yong区，一般是New：Old=1:8，比如：-Xms8g -Xmx8g -Xmn1g；不过作者的说法也可以试一试。原则是，不管你把JVM Heap设置多大，Yong区都不要设置的过大）</p>
+<p>2、它复制活动对象到一个自由的堆区，同时在每次回收后压缩（compating）自由空间。因此每次GC后，free space在年轻代都是一个连续的块，这意味着再次分配可以是非常有效的。</p>
+<p>每次Parallel New collector复制一个对象，该对象的计数器递增。当对象在年轻代多次复制后仍存活，决定了它属于长寿命的对象，将移动到老年代。在对象被移入老年代之前，在年轻代内被拷贝的最大次数被称为tenuring threshold。</p>
+<h3 id="Concurrent-Mark-Sweep-collector"><a href="#Concurrent-Mark-Sweep-collector" class="headerlink" title="Concurrent-Mark-Sweep collector"></a>Concurrent-Mark-Sweep collector</h3><p>每一次新的并行收集器运行时，它将移动一些对象到老年代，老年代最终将被填满。因此我们需要一个回收老年代的策略。Concurrent-Mark-Sweep collector（CMS）是负责清除老年代里的死对象。</p>
+<p>CMS的收集工作包括一系列阶段。某些阶段stop-the world，某些阶段则和其他Java应用程序同时运行。主要阶段是：<br>1、初始标志（停止世界）。在这个阶段CMS对根对象打标记。根对象是线程直接引用的对象 - 例如，该线程使用的局部变量。这个阶段是的暂停是短暂的，因为根对象数量很少。</p>
+<p>2、并发标记（并行）。现在CMS从根对象开始标记被根对象引用的所有对象，直到它标记完系统中的所有活动对象</p>
+<p>3、重标记（停止世界）。由于对象可能有引用改变，新的对象可能已经在并发标记创建的，我们需要回去考虑那些在这个阶段被创建的对象。这也是个短期的停顿，因为有一个特殊的数据结构，让我们只需要检查那些在上一个阶段被修改的对象。</p>
+<p>4、并发扫描（并行）。现在，我们继续梳理在堆中的所有对象。任何没有被标记的对象将会被回收并视为空闲空间。在此期间分配的新对象也会被打标记，以免被回收。</p>
+<p><strong>这里要注意的重要事情是：</strong><br>1、stop-the-world的阶段很短。而扫描整个堆和清除死对象这种长期工作可以和Java线程并行发生。</p>
+<p>2、CMS不搬迁的活动对象，所以自由空间可以分布在整个堆的不同区块。我们将稍后回来！（译者注：这个是优化的重点，稍后的系列文章会继续介绍）</p>
+<h3 id="CMS的失效模式（CMS-Failure）"><a href="#CMS的失效模式（CMS-Failure）" class="headerlink" title="CMS的失效模式（CMS Failure）"></a>CMS的失效模式（CMS Failure）</h3><p>正如我所描述的，CMS看起来真的很棒 - 只停留很短的时间，而繁重的工作都可以和Java线程同时进行。那么当我们在重负载下运行分配了大Heap HBase时，GC是如何造成我们看到的多分钟暂停的呢？事实证明，CMS有两种故障模式。</p>
+<h4 id="并发模式失败"><a href="#并发模式失败" class="headerlink" title="并发模式失败"></a>并发模式失败</h4><p>第一种失败的模式，是简单的并发模式失败。最好的一个例子：假设有一个8GB堆，已经使用了7GB。当CMS的收集开始第一阶段，它欢快的隆隆的做着并发标记。与此同时，有更多的数据被分配到老年代。如果老年代增长的速度太快，在CMS完成第一阶段标记工作之前就填满了全部老年代。这时候因为没有自由空间，CMS就无法工作！CMS必须放弃并行工作，并回落到停止世界（stop-the-world）单线程复制收集算法。此算法开始搬迁堆，检查所有活动对象，并释放了所有死角。长时间的停顿后，该程序可能会继续。</p>
+<p>但我们可以很容易的通过调整JVM参数避免并发模式失败：我们只需要鼓励CMS提前开始工作！设置-XX：CMSInitiatingOccupancyFraction = N，其中N是堆在开始收集过程中的百分比。HBase仔细的计算了内存使用，以保持其只使用60％的堆空间，所以我们通常将此值设置为大约70。（译者注：同时也可以考虑Old区的30%要比Young区大，这样即使Young区在CMS之前全部搬迁到Old区也不会把Old区填满）</p>
+<h4 id="碎片导致的CMS失败"><a href="#碎片导致的CMS失败" class="headerlink" title="碎片导致的CMS失败"></a>碎片导致的CMS失败</h4><p>这种故障模式是多一点复杂。回想一下，CMS收集不搬迁对象，而是简单地跟踪所有堆的自由空间，而且自有空间是分开的。作为一个思想实验，想象我拨出1亿个对象，每个1KB，这正是1GB堆的总用量为1GB。然后，我释放所有奇数对象，所以我有500MB的自有空间，然而自由空间都是1KB的块。如果我需要分配一个2KB的对象，尽管我表面上有500MB免费空间，依然会无处可放。这就是所谓的内存碎片。因为CMS不搬迁对象，不管如何让CMS提前启动，都不可以解决这个问题！发生此问题时，CM再次回落到复制收集器，该方法能够压缩所有的对象并释放空间。</p>
+<h2 id="GC知识已经足够了！回到HBase来！"><a href="#GC知识已经足够了！回到HBase来！" class="headerlink" title="GC知识已经足够了！回到HBase来！"></a>GC知识已经足够了！回到HBase来！</h2><p>让我们回来并使用我们关于Java GC的知识思考HBase：<br>通过设置的CMSInitiatingOccupancyFraction，一些用户能够避免GC的问题。但对于其他的场景，GC会经常发生，无论CMSInitiatingOccupancyFraction设置的多么低。我们则经常看到在这些GC停顿时，堆还有几个GB的自由空间！鉴于这些情况，我们推测，我们的问题应该是由碎片引起的，而不是一些内存泄漏或不当调整。</p>
+<h2 id="Hbase-GC配置参考"><a href="#Hbase-GC配置参考" class="headerlink" title="Hbase GC配置参考"></a>Hbase GC配置参考</h2><figure class="highlight haml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">export HBASE_REGIONSERVER_OPTS="-Xmx16g </span><br><span class="line"> -<span class="ruby">Xms16g -Xmn1g -<span class="symbol">XX:</span>+UseParNewGC</span></span><br><span class="line"><span class="ruby"> -<span class="symbol">XX:</span>+UseConcMarkSweepGC </span></span><br><span class="line"><span class="ruby"> -<span class="symbol">XX:</span>CMSInitiatingOccupancyFraction=<span class="number">70</span> </span></span><br><span class="line"><span class="ruby"> -Djava.net.preferIPv4Stack=<span class="literal">true</span></span></span><br></pre></td></tr></table></figure>
+
+<p><strong>参数解释：</strong></p>
+<p><code>-Xms16g、-Xmx16g</code>：内存大小，根据集群情况设置，建议不要超过18G。<br><code>-Xmn1g</code>：年轻代大小。<br><code>-XX:+UseParNewGC</code>：设置年轻代为并发回收<br><code>-XX:+UseConcMarkSweepGC</code>：启用CMS算法<br><code>-XX:CMSInitiatingOccupancyFraction=70</code>：年老代使用了70%时回收内存<br><code>-Djava.net.preferIPv4Stack=true</code>：禁用IPv6</p>
+<p><strong>可选参数：</strong><br>-XX:-CMSConcurrentMTEnabled（-号代表否认）<br>    当该标志被启用时，并发的CMS阶段将以多线程执行(因此，多个GC线程会与所有的应用程序线程并行工作)。<br>    该标志已经默认开启，如果顺序执行更好，这取决于所使用的硬件，多线程执行可以通过-XX：-CMSConcurremntMTEnabled禁用。</p>
+<p>-XX:+CMSIncrementalMode. 在增量模式下，CMS 收集器在并发阶段，不会独占整个周期，<br>    而会周期性的暂停，唤醒应用线程。收集器把并发阶段工作，划分为片段，安排在次级(minor) 回收之间运行。<br>    这对需要低延迟，运行在少量CPU服务器上的应用很有用。</p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>原文地址：<a href="http://www.cloudera.com/blog/2011/02/avoiding-full-gcs-in-hbase-with-memstore-local-allocation-buffers-part-1/" target="_blank" rel="noopener">http://www.cloudera.com/blog/2011/02/avoiding-full-gcs-in-hbase-with-memstore-local-allocation-buffers-part-1/</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/java/" rel="tag"># java</a>
+          
+            <a href="/tags/hadoop生态圈/" rel="tag"># hadoop生态圈</a>
+          
+            <a href="/tags/hbase/" rel="tag"># hbase</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/01/17/hadoop-Hbase参数优化以及问题汇总/" rel="next" title="Hbase参数优化以及问题汇总">
+                <i class="fa fa-chevron-left"></i> Hbase参数优化以及问题汇总
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/01/26/hadoop-Hbase集群快照备份和表数据导入导出/" rel="prev" title="Hbase集群快照备份和表数据导入导出的三种方式">
+                Hbase集群快照备份和表数据导入导出的三种方式 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+<span class="jiathis_txt">分享到：</span>
+<a class="jiathis_button_fav">收藏夹</a>
+<a class="jiathis_button_copy">复制网址</a>
+<a class="jiathis_button_email">邮件</a>
+<a class="jiathis_button_weixin">微信</a>
+<a class="jiathis_button_qzone">QQ空间</a>
+<a class="jiathis_button_tqq">腾讯微博</a>
+<a class="jiathis_button_douban">豆瓣</a>
+<a class="jiathis_button_share">一键分享</a>
+
+<a href="http://www.jiathis.com/share?uid=2140465" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank">更多</a>
+<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+var jiathis_config={
+  data_track_clickback:true,
+  summary:"",
+  shortUrl:false,
+  hideMore:false
+}
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  <p>热评文章</p>
+  <div class="ds-top-threads" data-range="weekly" data-num-items="4"></div>
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div class="ds-thread" data-thread-key="2016/01/20/hadoop-HbaseGC调优原理分析/" data-title="Hbase GC调优原理分析" data-url="http://www.zhangrenhua.com/2016/01/20/hadoop-HbaseGC调优原理分析/">
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="http://www.zhangrenhua.com/back_images/avatar.jpg" alt="张仁华">
+            
+              <p class="site-author-name" itemprop="name">张仁华</p>
+              <p class="site-description motion-element" itemprop="description">记录软件生涯中的点点滴滴</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">76</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">17</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/zhangrenhua/" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://weibo.com/huaHBrother" target="_blank" title="Weibo">
+                      
+                        <i class="fa fa-fw fa-globe"></i>Weibo</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://douban.com/people/huaHBrother" target="_blank" title="douban">
+                      
+                        <i class="fa fa-fw fa-globe"></i>douban</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="http://zhihu.com/people/huaHBrother" target="_blank" title="zhihu">
+                      
+                        <i class="fa fa-fw fa-globe"></i>zhihu</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#堆和堆内存！"><span class="nav-number">2.</span> <span class="nav-text">堆和堆内存！</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Java的GC背景"><span class="nav-number">3.</span> <span class="nav-text">Java的GC背景</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Parallel-New-Collector"><span class="nav-number">3.1.</span> <span class="nav-text">Parallel New Collector</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Concurrent-Mark-Sweep-collector"><span class="nav-number">3.2.</span> <span class="nav-text">Concurrent-Mark-Sweep collector</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#CMS的失效模式（CMS-Failure）"><span class="nav-number">3.3.</span> <span class="nav-text">CMS的失效模式（CMS Failure）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#并发模式失败"><span class="nav-number">3.3.1.</span> <span class="nav-text">并发模式失败</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#碎片导致的CMS失败"><span class="nav-number">3.3.2.</span> <span class="nav-text">碎片导致的CMS失败</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#GC知识已经足够了！回到HBase来！"><span class="nav-number">4.</span> <span class="nav-text">GC知识已经足够了！回到HBase来！</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Hbase-GC配置参考"><span class="nav-number">5.</span> <span class="nav-text">Hbase GC配置参考</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">6.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">张仁华</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"iissnan-notes"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
